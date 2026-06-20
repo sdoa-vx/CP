@@ -1,8 +1,8 @@
 <svg viewBox="0 0 360 360" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <style>
-      /* Forces the entire browser page canvas to be dark when viewed directly */
-      :root { background-color: #1a1410; }
+      /* Forces the entire browser page canvas to match GitHub dark mode when viewed directly */
+      :root { background-color: #0D1117; }
 
       @keyframes dsCircuitFlow { to { stroke-dashoffset: -1000; } }
       @keyframes dsGlow { 0%, 100% { opacity: 0.35; transform: scale(1); } 50% { opacity: 0.85; transform: scale(1.18); } }
@@ -22,6 +22,8 @@
       .ring-1 { stroke: #E8B85C; stroke-width: 1; opacity: 0.95; }
     </style>
   </defs>
+
+  <rect width="360" height="360" fill="#0D1117" />
 
   <circle cx="180" cy="180" r="176" fill="#1a1410" />
 
