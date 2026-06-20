@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" x-data>
+<head>
+  <meta charset="UTF-8">
+  <title>SDOA MCP — Dashboard</title>
+  <link rel="stylesheet" href="/public/styles.css">
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <script src="https://unpkg.com/alpinejs@3.x.x" defer></script>
+  <script src="/public/app.js" defer></script>
+</head>
+<body class="dark">
+  <header>
+    <h1>SDOA MCP Dashboard</h1>
+    <nav>
+      <button hx-get="/dashboard/views/proposals" hx-target="#view">Proposals</button>
+      <button hx-get="/dashboard/views/peers" hx-target="#view">Federation</button>
+      <button hx-get="/dashboard/views/pipeline" hx-target="#view">Pipeline</button>
+      <button hx-get="/dashboard/views/health" hx-target="#view">Health</button>
+      <button hx-get="/dashboard/views/logs" hx-target="#view">Logs</button>
+    </nav>
+  </header>
+  <main id="view" hx-get="/dashboard/views/proposals" hx-trigger="load"></main>
+</body>
+</html>

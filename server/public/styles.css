@@ -1,0 +1,54 @@
+body.dark {
+  background: #121212;
+  color: #e0e0e0;
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  background: #1e1e1e;
+  padding: 16px;
+  border-bottom: 1px solid #333;
+}
+
+nav button {
+  margin-right: 12px;
+  padding: 8px 14px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+nav button:hover {
+  background: #333;
+}
+
+main {
+  padding: 24px;
+}
+
+table.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+table.table th, table.table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #333;
+}
+table.table tr:hover {
+  background: #1e1e1e;
+}
+.stats {
+  margin-bottom: 20px;
+}
+.stats span {
+  margin-right: 15px;
+  padding: 5px 10px;
+  background: #2a2a2a;
+  border-radius: 4px;
+}

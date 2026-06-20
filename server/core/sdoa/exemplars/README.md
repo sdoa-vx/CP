@@ -1,6 +1,6 @@
 # SDOA Exemplars
 
-This directory contains verbatim copies of canonical SDOA v5.0 source files from `D:\projects\SDOAvX`. These are the reference implementations — use them to understand how real SDOA modules are structured.
+This directory contains verbatim copies of canonical SDOA v5.0 source files from `C:\SDOAvX`. These are the reference implementations — use them to understand how real SDOA modules are structured.
 
 ## Core Infrastructure (`_variances/SDOAvX/sdoa-core/src/`)
 

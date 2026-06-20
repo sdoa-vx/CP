@@ -1,0 +1,41 @@
+⭐ SDOA THE AESTHETIC STANDARD — VISUAL THEME SPECIFICATION SHEETVersion: 1.0.0Classification: Canonical — UI Presentation & Token Engineering ReferenceTarget SDOA File: ui/tokens.css   This specification outlines the raw values, layouts, and cryptographic geometry required to enforce the unique "Industrial Minimalist meets Sacred Geometry" visual theme consistently across different software builds, mirroring the precise aesthetic signature found in the standalone SDOA Compendium package.SECTION 1 — CORE CHROMATIC PALETTE (THE VOLCANIC ASH)All implementations must use custom properties mapped to these specific hex values. Pure blacks, generic tech blues, and high-saturation neon greens are strictly prohibited.Token NameHex ValueRGB ChannelsArchitectural Purpose--color-canvas-bg#1A1410rgb(26, 20, 16)Heavy monolithic background base; warm volcanic ash / slag texturing.--color-core-amber#F0C674rgb(240, 198, 116)Radiant singularity core; high-luminance functional accenting.--color-filament-gold#E8B85Crgb(232, 184, 92)Structural mathematical vectors; outer boundaries and prime typography.--color-filament-brass#D1A45Argb(209, 164, 90)Secondary vector strokes; orbital grid framing.--color-bronze-muted#9A8050rgb(154, 128, 80)Muted industrial tracking text; lower-hierarchy operational data.--color-sink-crimson#2A1215rgb(42, 18, 21)Core error background; stable, desaturated deep crimson block.--color-sink-coral#FF8A80rgb(255, 138, 128)Error message text; high-visibility industrial alert tracking.SECTION 2 — TYPOGRAPHIC CONTRAST HIERARCHYThe visual theme intentionally leverages the tension between classical monumental serifs and sterile, utilitarian monospaced precise layouts.2.1 Monumental Core TitlesFont Family: Georgia, Garamond, serifLetter Spacing: 14px (Aggressively wide tracking)Font Weight: Bold / HeavyColor Target: --color-filament-goldIntent: Evokes monolithic architectural weight and timeless legacy authority.2.2 Utilitarian Engineering Headers & TextFont Family: ui-monospace, SFMono-Regular, SF Pro Mono, Menlo, Monaco, Consolas, monospaceLetter Spacing: 6pxFont Weight: Regular / MediumText Transform: uppercaseColor Target: --color-bronze-mutedIntent: Evokes precise, sterile, machine-readable code outputs.SECTION 3 — SACRED GEOMETRY VECTOR EMBLEM (SVG SPEC)The center-of-screen splash layout must be rendered using a single <svg> element with an origin frame coordinates system viewBox="-250 -250 500 500".3.1 Blueprint Matrix CoordinatesSVGSECTION 4 — IMMUNOLOGY TRACES (CRITICAL ERROR OVERLAY)When modules breach compliance gates or file payloads fail initialization, the system drops its layout and paints a raw, industrial error console.  Positioning: Fixed, bottom of viewport, full width.Background: --color-sink-crimson   Border Top: 2px solid #FF8A80Typography: ui-monospace, monospace exclusively, font-size: 13px, line-height: 1.6.Padding Layout: 24px padding box around raw stack traces.Color Target: --color-sink-coralSECTION 5 — ARCHITECTURAL CSS PATTERN (CORE CLASSES)To ensure compliance with Section 9 of the Whitepaper (CSS belongs to UI sovereigns), inject these boilerplate structural layout variables directly into your global shell wrapper:  CSS:root {
+  --color-canvas-bg: #1a1410;
+  --color-core-amber: #f0c674;
+  --color-filament-gold: #e8b85c;
+  --color-filament-brass: #d1a45a;
+  --color-bronze-muted: #9a8050;
+  --color-sink-crimson: #2a1215;
+  --color-sink-coral: #ff8a80;
+}
+
+body {
+  background-color: var(--color-canvas-bg);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.sdoa-monolith-title {
+  font-family: "Georgia", serif;
+  font-size: 56px;
+  color: var(--color-filament-gold);
+  letter-spacing: 14px;
+  text-align: center;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.sdoa-industrial-sub {
+  font-family: ui-monospace, monospace;
+  font-size: 22px;
+  color: var(--color-bronze-muted);
+  letter-spacing: 6px;
+  text-align: center;
+  text-transform: uppercase;
+  margin-top: 12px;
+}
+SECTION 6 — AUTOMATED TOKEN ANTI-ENTROPY GATEEvery software build pipeline using the SDOA MCP must enforce that any component implementing UI elements uses the exact tokens mapped above.  If the Token Detector scans local UI stylesheets and flags 3 or more occurrences of hardcoded colors other than these canonical choices, the build pipeline must automatically trigger a refactor warn or re-route those definitions back to ui/tokens.css.  

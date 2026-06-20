@@ -1,0 +1,65 @@
+🤖 Local AI Servers & Models
+Ollama is running locally and serving the following models:
+
+running - codellama:latest (3.8 GB) - Specialized code generation
+also available:
+llama3.2:latest (2.0 GB) - General purpose & fast reasoning
+nomic-embed-text:latest (274 MB) - Semantic search & embeddings
+llama3:8b (4.7 GB) - Advanced reasoning and instruction following
+
+🛠️ AI Command-Line Interfaces (CLIs)
+These CLIs are in the system PATH and available for scripts:
+
+agy - Antigravity CLI
+ollama - Local inference engine CLI
+claude - Anthropic CLI
+gemini - Google Gemini CLI
+
+
+huggingface_hub (v0.36.2)
+openai (v2.34.0)
+transformers (v4.52.0.dev0)
+
+🐍 Python AI SDKs
+Global Python libraries available for custom AI scripting:
+
+
+🧩 IDE Extensions (Installed in Antigravity ide)
+AI & Pipeline Integration
+Ghost — Terminal Intelligence 0.1.4 - Local terminal debugging (powered by Ollama)
+Seshat -- Gemini Bridge 0.1.0 - Gemini AI integration
+Antigravity Remote Control - 3.1.3
+Better Antigravity 0.8.0
+Language & Framework Support
+Python: Python for VSCode 2026.4.0, Python Debugger 2026.6.0, Python Environments 1.20.1, Pyrefly VS Code 1.0.9001
+Java: Extension Pack for Java 0.31.1, Language support for Java 1.54.0, Debugger for Java 0.59.0, Maven for Java 0.45.3, Gradle for Java 3.17.0, Project Manager for Java 0.27.5, Test Runner for Java 0.45.0
+C/C++: clangd C/C++ 0.6.0, CMake Tools 1.23.52
+Go: Golang.GO 0.54.0
+Ruby: Ruby LSP 0.10.4
+Lua: lua-language-server 3.18.2
+Web & Scripting: PowerShell for VSCode 2025.4.0, ESLint 3.0.24, Debugger for Chrome 4.12.6
+Quality, Formatting & Diagnostics
+Error Lens 3.28.0 - Inline error diagnostics
+SonarQube for IDE 5.3.0 - Advanced code quality and security analysis
+Prettier - Code formatter 12.4.0
+Typos spell checker 0.2.52
+Version Control & Utilities
+GitLens — Git supercharged 18.1.0
+Git Graph 1.30.0
+Draw.io Integration 1.6.6
+Luna Paint — Image Editor 0.18.0
+Even Better TOML 0.21.2
+YAML 1.23.0
+⚙️ IDE (Built-in Features - Antigravity)
+Configuration Editing 1.0.0
+Emmet 1.0.0
+Extension Authoring 1.0.0
+Git Base 1.0.0
+GitHub 0.0.1
+GitHub Authentication 0.0.2
+JSON Language Features 1.0.0
+Markdown Language Features 1.0.0
+Markdown Math 1.0.0
+Merge Conflict 1.0.0
+Node Debug Auto-attach 1.0.0
+TypeScript and JavaScript Language Features 1.0.0

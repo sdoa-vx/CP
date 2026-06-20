@@ -1,7 +1,7 @@
 # SDOA Canonical Rulebook
 
 **Self-Describing Object Architecture — v5.0**
-Synthesized from 53 source files in `D:\projects\SDOAvX` as of 2026-06-17.
+Synthesized from 53 source files in `C:\SDOAvX` as of 2026-06-17.
 
 ---
 
@@ -140,7 +140,7 @@ const ceiling = limits.HARD_CEILING; // 500
 
 ## Sources
 
-All rules were extracted from 53 files in `D:\projects\SDOAvX`:
+All rules were extracted from 53 files in `C:\SDOAvX`:
 
 - `SDOA-Whitepaper-Technical.txt` — architectural principles and sovereignty model
 - `SDOA-Governance-Outline.txt` — governance, probation pipeline, operational roles

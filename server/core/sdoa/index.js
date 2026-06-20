@@ -4,7 +4,7 @@
  * index.js — SDOA Rulebook Root Barrel Export
  *
  * Synthesized from: SDOA-Whitepaper-Technical.txt, SDOA-Governance-Outline.txt,
- * SDOA-Historical-Timeline.txt, all source files in D:\projects\SDOAvX
+ * SDOA-Historical-Timeline.txt, all source files in C:\SDOAvX
  *
  * This is the single entry point for the SDOA canonical rulebook.
  * All rules, schemas, registries, and constraints are accessible from here.

@@ -1,0 +1,477 @@
+MCP vs MCP
+
+In the SDOA Compendium, the term MCP is used internally to mean Migration & Compliance Pipeline, because within the doctrine it describes the constitutional executor that enforces SDOA’s rules. That’s the architectural process — the engine that validates manifests, runs compliance gates, and manages evolution.
+
+|BUT| 
+
+the Model Context Protocol (MCP)  — the Open VSX‑loadable standard — is the platform implementation we were building to make that pipeline accessible across editors (VS Code, VSCodium, Cursor, Zed, etc.).
+
+
+. Dual identity summary (drop in README)
+md
+# SDOA MCP — Dual Identity
+
+Internal:
+- Name: SDOA‑MCP
+- Meaning: Migration & Compliance Pipeline
+- Role: Constitutional executor of the SDOA doctrine
+- Scope: Enforces manifests, gates, lifecycle, innovation, and migration
+
+External:
+- Name: MCP (Model Context Protocol)
+- Meaning: Standard protocol for tool integrations (VS Code, Cursor, Zed, etc.)
+- Role: Exposes SDOA‑MCP as an MCP server
+- Scope: Lets clients call SDOA‑MCP capabilities via MCP requests
+
+Relationship:
+- The VSX MCP server exposes the SDOA‑MCP engine.
+- The SDOA‑MCP engine runs inside the MCP server.
+2. Full VSX extension manifest (conceptual package.json)
+json
+{
+  "name": "sdoa-mcp",
+  "displayName": "SDOA MCP — Migration & Compliance Pipeline",
+  "description": "Model Context Protocol server exposing the SDOA Migration & Compliance Pipeline.",
+  "version": "0.1.0",
+  "publisher": "sdoa",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Other"],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "mcp.servers": [
+      {
+        "id": "sdoa-mcp",
+        "title": "SDOA Migration & Compliance Pipeline",
+        "type": "modelContextProtocol",
+        "command": "sdoa.mcp.start",
+        "entrypoint": "./dist/mcp-server.js"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.1.0",
+    "sdoa-mcp-engine": "file:./engine"
+  }
+}
+3. MCP server capability schema (what the MCP server exposes)
+ts
+// src/mcp/capabilities.ts
+
+export type SdoaMcpCapability =
+  | "sdoa.migrate"
+  | "sdoa.validate"
+  | "sdoa.detectInnovation"
+  | "sdoa.mapReuse"
+  | "sdoa.plan"
+  | "sdoa.patch"
+  | "sdoa.audit";
+
+export interface SdoaMcpCapabilities {
+  engineId: "sdoa.mcp";
+  engineVersion: "5.2";
+  capabilities: SdoaMcpCapability[];
+}
+
+export const SDOA_MCP_CAPABILITIES: SdoaMcpCapabilities = {
+  engineId: "sdoa.mcp",
+  engineVersion: "5.2",
+  capabilities: [
+    "sdoa.migrate",
+    "sdoa.validate",
+    "sdoa.detectInnovation",
+    "sdoa.mapReuse",
+    "sdoa.plan",
+    "sdoa.patch",
+    "sdoa.audit"
+  ]
+};
+MCP server advertises these to clients via the Model Context Protocol handshake.
+
+4. SDOA‑MCP engine manifest (internal constitutional identity)
+json
+// engine/engine.manifest.json
+{
+  "id": "sdoa.mcp",
+  "name": "SDOA Migration & Compliance Pipeline",
+  "role": "constitutional-executor",
+  "version": "5.2.0",
+  "sdoa": {
+    "operationalRole": "engine",
+    "layer": null,
+    "placement": "system/engines/mcp",
+    "manifest": {
+      "type": "engine",
+      "runtime": "node",
+      "version": "5.2.0",
+      "docs": {
+        "description": "Executes the SDOA Migration & Compliance Pipeline.",
+        "last_modified": "2026-06-18T00:00:00Z"
+      }
+    }
+  },
+  "capabilities": {
+    "migrate": true,
+    "validate": true,
+    "detectInnovation": true,
+    "mapReuse": true,
+    "plan": true,
+    "patch": true,
+    "audit": true
+  }
+}
+This is the manifest the SDOA registry and ProbationOfficer see.
+
+5. Folder structure for the VSX‑loadable MCP package
+text
+sdoa-mcp/
+  package.json
+  tsconfig.json
+  README.md
+
+  src/
+    extension.ts          # VSX activation, wiring to MCP server
+    mcp-server.ts         # MCP server entrypoint
+    mcp/
+      capabilities.ts     # MCP capability schema
+      protocol.ts         # request/response types
+    engine-adapter/
+      index.ts            # bridge between MCP server and SDOA-MCP engine
+
+  engine/
+    engine.manifest.json  # SDOA-MCP engine manifest
+    src/
+      index.ts            # public engine API
+      migrate.ts          # Migration pipeline
+      validate.ts         # Compliance checks
+      detectInnovation.ts # Innovation Detector integration
+      mapReuse.ts         # Reuse Mapper integration
+      plan.ts             # plan generation
+      patch.ts            # patch synthesis
+      audit.ts            # audit trail & reporting
+
+  dist/
+    extension.js
+    mcp-server.js
+    engine/
+      index.js
+      ...
+6. Protocol contract between VSX MCP and SDOA‑MCP engine
+6.1. MCP‑level request/response (Model Context Protocol)
+ts
+// src/mcp/protocol.ts
+
+export interface SdoaMcpRequestBase {
+  id: string;
+  capability: SdoaMcpCapability;
+}
+
+export interface SdoaMcpResponseBase {
+  id: string;
+  success: boolean;
+  error?: string;
+}
+
+export interface SdoaMigrateRequest extends SdoaMcpRequestBase {
+  capability: "sdoa.migrate";
+  payload: {
+    projectRoot: string;
+    targetPhase?: number; // 0–9 from Book III · The Migration
+  };
+}
+
+export interface SdoaMigrateResponse extends SdoaMcpResponseBase {
+  payload?: {
+    phasesCompleted: number[];
+    reportPath: string;
+  };
+}
+
+// Similar shapes for validate, detectInnovation, mapReuse, plan, patch, audit…
+The MCP server receives these via the Model Context Protocol SDK and forwards them to the engine.
+
+6.2. Engine‑level contract (internal SDOA‑MCP API)
+ts
+// engine/src/index.ts
+
+export interface EngineContext {
+  projectRoot: string;
+  configPath?: string;
+}
+
+export interface MigrateOptions {
+  targetPhase?: number;
+}
+
+export interface MigrateResult {
+  phasesCompleted: number[];
+  reportPath: string;
+}
+
+export interface ValidateResult {
+  ok: boolean;
+  violations: string[];
+}
+
+export interface InnovationResult {
+  innovationsPath: string; // innovation.json
+  proposalsCount: number;
+}
+
+export interface SdoaMcpEngine {
+  migrate(ctx: EngineContext, options: MigrateOptions): Promise<MigrateResult>;
+  validate(ctx: EngineContext): Promise<ValidateResult>;
+  detectInnovation(ctx: EngineContext): Promise<InnovationResult>;
+  mapReuse(ctx: EngineContext): Promise<void>;
+  plan(ctx: EngineContext): Promise<void>;
+  patch(ctx: EngineContext): Promise<void>;
+  audit(ctx: EngineContext): Promise<void>;
+}
+6.3. Adapter between MCP server and engine
+ts
+// src/engine-adapter/index.ts
+
+import {
+  SdoaMcpEngine,
+  EngineContext,
+  MigrateOptions
+} from "../../engine/src/index";
+import {
+  SdoaMigrateRequest,
+  SdoaMigrateResponse
+} from "../mcp/protocol";
+
+export class EngineAdapter {
+  constructor(private engine: SdoaMcpEngine) {}
+
+  async handleMigrate(req: SdoaMigrateRequest): Promise<SdoaMigrateResponse> {
+    const ctx: EngineContext = { projectRoot: req.payload.projectRoot };
+    const options: MigrateOptions = { targetPhase: req.payload.targetPhase };
+
+    try {
+      const result = await this.engine.migrate(ctx, options);
+      return {
+        id: req.id,
+        success: true,
+        payload: {
+          phasesCompleted: result.phasesCompleted,
+          reportPath: result.reportPath
+        }
+      };
+    } catch (err: any) {
+      return {
+        id: req.id,
+        success: false,
+        error: err?.message ?? "Unknown error"
+      };
+    }
+  }
+
+  // Similar handlers for validate, detectInnovation, mapReuse, plan, patch, audit…
+}
+This is the bridge: MCP requests in, SDOA‑MCP engine calls out, MCP responses back.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1. Install assumptions
+bash
+npm install @modelcontextprotocol/sdk
+(Or whatever the actual MCP SDK package name is in your stack.)
+
+2. Engine + adapter imports
+ts
+// src/engine-adapter/index.ts (from previous handoff)
+import { EngineAdapter } from "./engine-adapter";
+import { SdoaMcpEngine } from "../../engine/src";
+import { createEngine } from "../../engine/src/createEngine"; // your factory
+3. MCP server skeleton (src/mcp-server.ts)
+ts
+// src/mcp-server.ts
+
+import {
+  createServer,
+  McpRequest,
+  McpResponse,
+  McpServer,
+} from "@modelcontextprotocol/sdk";
+
+import {
+  SDOA_MCP_CAPABILITIES,
+  SdoaMcpCapability,
+} from "./mcp/capabilities";
+
+import {
+  SdoaMigrateRequest,
+  SdoaMigrateResponse,
+} from "./mcp/protocol";
+
+import { EngineAdapter } from "./engine-adapter";
+import { createEngine } from "../engine/createEngine"; // your engine factory
+
+// 1. Bootstrap engine + adapter
+const engine = createEngine(); // returns SdoaMcpEngine
+const adapter = new EngineAdapter(engine);
+
+// 2. Create MCP server instance
+const server: McpServer = createServer({
+  id: "sdoa-mcp",
+  name: "SDOA Migration & Compliance Pipeline",
+  version: SDOA_MCP_CAPABILITIES.engineVersion,
+  capabilities: SDOA_MCP_CAPABILITIES.capabilities as SdoaMcpCapability[],
+});
+
+// 3. Generic dispatcher
+server.onRequest(async (req: McpRequest): Promise<McpResponse> => {
+  switch (req.capability as SdoaMcpCapability) {
+    case "sdoa.migrate":
+      return handleMigrate(req as SdoaMigrateRequest);
+    // case "sdoa.validate": ...
+    // case "sdoa.detectInnovation": ...
+    default:
+      return {
+        id: req.id,
+        success: false,
+        error: `Unsupported capability: ${req.capability}`,
+      };
+  }
+});
+
+// 4. Capability handler(s)
+
+async function handleMigrate(
+  req: SdoaMigrateRequest
+): Promise<SdoaMigrateResponse> {
+  return adapter.handleMigrate(req);
+}
+
+// 5. Start the server (stdio / socket / http depending on MCP runtime)
+
+async function main() {
+  // For many MCP runtimes, stdio is the default transport:
+  await server.listenStdio();
+}
+
+main().catch((err) => {
+  // Minimal logging; real implementation should use proper logger
+  console.error("SDOA MCP server failed to start:", err);
+  process.exit(1);
+});
+4. Minimal engine factory (engine/src/createEngine.ts)
+ts
+// engine/src/createEngine.ts
+
+import {
+  SdoaMcpEngine,
+  EngineContext,
+  MigrateOptions,
+  MigrateResult,
+  ValidateResult,
+  InnovationResult,
+} from "./index";
+
+export function createEngine(): SdoaMcpEngine {
+  return {
+    async migrate(
+      ctx: EngineContext,
+      options: MigrateOptions
+    ): Promise<MigrateResult> {
+      // TODO: wire in real Migration & Compliance Pipeline
+      return {
+        phasesCompleted: [],
+        reportPath: `${ctx.projectRoot}/.sdoa/migrate-report.json`,
+      };
+    },
+
+    async validate(ctx: EngineContext): PromiseValidateResult> {
+      return { ok: true, violations: [] };
+    },
+
+    async detectInnovation(ctx: EngineContext): Promise<InnovationResult> {
+      return {
+        innovationsPath: `${ctx.projectRoot}/.sdoa/innovation.json`,
+        proposalsCount: 0,
+      };
+    },
+
+    async mapReuse() { /* no-op stub */ },
+    async plan() { /* no-op stub */ },
+    async patch() { /* no-op stub */ },
+    async audit() { /* no-op stub */ },
+  };
+}
+5. Minimal extension entry (src/extension.ts)
+ts
+// src/extension.ts
+
+import * as vscode from "vscode";
+import { spawn } from "child_process";
+import * as path from "path";
+
+export function activate(context: vscode.ExtensionContext) {
+  const disposable = vscode.commands.registerCommand(
+    "sdoa.mcp.start",
+    () => {
+      const serverPath = context.asAbsolutePath(
+        path.join("dist", "mcp-server.js")
+      );
+
+      const child = spawn(process.execPath, [serverPath], {
+        stdio: "pipe",
+      });
+
+      // In a real MCP integration, the host (VSX / client) will connect
+      // to this process via stdio or a socket; this is just the skeleton.
+      console.log("SDOA MCP server started with PID", child.pid);
+    }
+  );
+
+  context.subscriptions.push(disposable);
+}
+
+export function deactivate() {
+  // no-op
+}
+This gives you:
+
+A bootable MCP server using the MCP SDK
+
+A single wired capability (sdoa.migrate) routed through the engine adapter
+
+A stub engine that you can progressively replace with the real Migration & Compliance Pipeline
+
+
+From here, you can:
+
+Add the rest of the capabilities (validate, detectInnovation, mapReuse, plan, patch, audit)
+
+Swap the stub engine methods for the real SDOA‑MCP implementation
+
+Tighten logging, error handling, and transport (stdio vs socket) based on your actual MCP host

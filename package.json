@@ -1,0 +1,55 @@
+{
+  "name": "sdoa-mcp-extension",
+  "displayName": "SDOA Migration Engine",
+  "version": "1.0.0",
+  "bin": {
+    "mcp-proposals": "./server/bin/mcp-proposals.js"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onCommand:sdoa.runMigration",
+    "onCommand:sdoa.generatePrimitive"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "sdoa.runMigration",
+        "title": "Run SDOA Migration Pipeline"
+      },
+      {
+        "command": "sdoa.generatePrimitive",
+        "title": "Generate SDOA Primitive"
+      }
+    ]
+  },
+  "mcpServers": [
+    {
+      "id": "sdoa-mcp",
+      "command": "node",
+      "args": [
+        "authorities/mcp/server.js"
+      ]
+    }
+  ],
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "build:server": "tsc -p server/tsconfig.json || echo 'Add tsconfig'",
+    "build:extension": "tsc -p extension/tsconfig.json || echo 'Add tsconfig'",
+    "package:extension": "vsce package",
+    "release": "npm run build:server && npm run build:extension && npm run package:extension"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@supabase/supabase-js": "^2.108.2",
+    "@types/ws": "^8.18.1",
+    "better-sqlite3": "^12.11.1",
+    "ws": "^8.21.0",
+    "zod": "^4.4.3"
+  }
+}

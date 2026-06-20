@@ -1,0 +1,23 @@
+{
+  "name": "protoai-mcp-server",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "migrate": "node migrations/init-schema.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "better-sqlite3": "12.11.1",
+    "graphology": "0.26.0",
+    "graphology-dag": "0.4.1",
+    "graphology-operators": "1.6.1",
+    "graphology-shortest-path": "2.1.0",
+    "zod": "4.4.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
