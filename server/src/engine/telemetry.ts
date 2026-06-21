@@ -1,0 +1,131 @@
+import fs from "fs";
+import path from "path";
+import { db } from "../fisp/database";
+
+export type EngineState = "idle" | "scanning" | "syncing" | "error";
+
+export interface DetectorHits {
+  uiPrimitive: number;
+  workflow: number;
+  schema: number;
+  token: number;
+  engine: number;
+}
+
+export interface TelemetrySnapshot {
+  engineState: EngineState;
+  lastScan: string | null;
+  queueDepth: number;
+  astCacheSize: number;
+  sqliteSize: number;
+  pendingSync: number;
+  detectorHits: DetectorHits;
+  syncStatus: "ok" | "error" | "pending" | "idle";
+  uptime: number;
+}
+
+export interface TelemetryPoint {
+  ts: number;
+  astCacheSize: number;
+  queueDepth: number;
+  detectorHits: number;
+}
+
+const RING_SIZE = 60;
+const timeSeries: TelemetryPoint[] = [];
+let lastSeriesAt = 0;
+
+const state: TelemetrySnapshot = {
+  engineState: "idle",
+  lastScan: null,
+  queueDepth: 0,
+  astCacheSize: 0,
+  sqliteSize: 0,
+  pendingSync: 0,
+  detectorHits: { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0 },
+  syncStatus: "idle",
+  uptime: 0,
+};
+
+function readSqliteSize(): number {
+  try {
+    const dbPath = process.env.SDOA_DB || path.join(process.cwd(), ".sdoa", "pipeline.db");
+    return fs.existsSync(dbPath) ? fs.statSync(dbPath).size : 0;
+  } catch { return 0; }
+}
+
+function readQueueDepth(): number {
+  try {
+    const row = db.prepare("SELECT COUNT(*) as c FROM offline_queue").get() as { c: number };
+    return row?.c ?? 0;
+  } catch { return 0; }
+}
+
+function pushTimeSeries() {
+  const now = Date.now();
+  if (now - lastSeriesAt < 60_000) return;
+  lastSeriesAt = now;
+  const totalHits = Object.values(state.detectorHits).reduce((a, b) => a + b, 0);
+  timeSeries.push({
+    ts: now,
+    astCacheSize: state.astCacheSize,
+    queueDepth: state.queueDepth,
+    detectorHits: totalHits,
+  });
+  if (timeSeries.length > RING_SIZE) timeSeries.shift();
+}
+
+export const telemetry = {
+  get(): TelemetrySnapshot {
+    state.uptime = Math.round(process.uptime());
+    state.sqliteSize = readSqliteSize();
+    state.queueDepth = readQueueDepth();
+    state.pendingSync = readQueueDepth(); // same source — offline_queue IS the pending sync list
+    pushTimeSeries();
+    return { ...state, detectorHits: { ...state.detectorHits } };
+  },
+
+  getSeries(): TelemetryPoint[] {
+    return [...timeSeries];
+  },
+
+  setState(s: EngineState) {
+    state.engineState = s;
+  },
+
+  recordScan() {
+    state.lastScan = new Date().toISOString();
+    state.engineState = "idle";
+  },
+
+  setAstCacheSize(n: number) {
+    state.astCacheSize = n;
+  },
+
+  setSyncStatus(s: "ok" | "error" | "pending" | "idle") {
+    state.syncStatus = s;
+  },
+
+  hitDetector(name: keyof DetectorHits) {
+    state.detectorHits[name] = (state.detectorHits[name] || 0) + 1;
+  },
+
+  clearCache() {
+    state.astCacheSize = 0;
+    state.engineState = "idle";
+  },
+
+  resetDetectorHits() {
+    state.detectorHits = { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0 };
+  },
+
+  reset() {
+    Object.assign(state, {
+      engineState: "idle" as EngineState,
+      lastScan: null,
+      astCacheSize: 0,
+      detectorHits: { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0 },
+      syncStatus: "idle" as const,
+    });
+  },
+};

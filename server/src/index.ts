@@ -70,3 +70,7 @@ initWebSocket(server);
 
 import { startOfflineSync } from "./workers/offlineSync";
 startOfflineSync();
+
+import { emit } from "./engine/events";
+emit("engine:start", { port: Number(PORT), pid: process.pid });
+

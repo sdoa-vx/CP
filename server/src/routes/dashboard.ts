@@ -6,6 +6,9 @@ import { Router } from "../utils/Router";
 import { tailLogs } from "../utils/logger";
 import { getSystemMetrics } from "./health";
 import { supabase } from "../utils/supabase";
+import { telemetry } from "../engine/telemetry";
+import { emit, attachSseClient, getRecentEvents } from "../engine/events";
+import { flushQueue } from "../workers/offlineSync";
 
 const router = new Router();
 
@@ -158,6 +161,25 @@ router.get("/api/logs", (req, res) => {
   res.end(`<pre style="background: #000; color: #0f0; padding: 1rem; height: 500px; overflow-y: scroll; font-family: monospace;">${formatted}</pre>`);
 });
 
+router.post("/api/scan", (req, res) => {
+  let body = "";
+  req.on("data", chunk => { body += chunk; });
+  req.on("end", () => {
+    try {
+      const payload = JSON.parse(body);
+      console.log(`[SDOA MCP] Manual scan requested via Dashboard: ${payload.type} at ${payload.path}`);
+      
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ message: `Scan initialized for ${payload.type}: ${payload.path}` }));
+    } catch(e) {
+      res.statusCode = 400;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ error: "Invalid JSON payload" }));
+    }
+  });
+});
+
 router.get("/api/health-ui", async (req, res) => {
   const metrics = await getSystemMetrics();
   res.statusCode = 200;
@@ -174,11 +196,166 @@ router.get("/api/health-ui", async (req, res) => {
       <div class="card">
         <h3>Storage & DB</h3>
         <p><strong>Database:</strong> <span class="badge accepted">OK</span></p>
-        <p><strong>Proposal Count:</strong> ${db.prepare('SELECT count(*) as c FROM proposals').get().c}</p>
+        <p><strong>Proposal Count:</strong> ${(db.prepare('SELECT count(*) as c FROM proposals').get() as { c: number }).c}</p>
       </div>
     </div>
   `);
 });
+
+// ── v1.1 Engine Control API ─────────────────────────────────────────────────
+
+/** Full live state snapshot — polled by the VS Code panel every 5s */
+router.get("/api/state", (_req, res) => {
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(telemetry.get()));
+});
+
+/** Time-series data for dashboard telemetry charts */
+router.get("/api/telemetry", (_req, res) => {
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(telemetry.getSeries()));
+});
+
+/** SSE stream — ?stream=true keeps connection open */
+router.get("/api/events", (req, res) => {
+  const url = new URL(req.url!, "http://localhost");
+  if (url.searchParams.get("stream") === "true") {
+    attachSseClient(res);
+  } else {
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify(getRecentEvents(100)));
+  }
+});
+
+/**
+ * Heatmap: walk the workspace, score each TS/JS/CSS file by how many
+ * unique token patterns from the proposals table appear in its text.
+ * Score = matches / total_proposal_patterns, clamped 0..1.
+ */
+router.get("/api/heatmap", (_req, res) => {
+  const workspaceRoot = process.cwd();
+
+  // Build a flat list of all unique pattern strings from accepted proposals
+  const rows = db.prepare(
+    "SELECT data FROM proposals WHERE status IN ('accepted','queued') LIMIT 200"
+  ).all() as any[];
+
+  const patterns: string[] = [];
+  for (const row of rows) {
+    try {
+      const data = JSON.parse(row.data);
+      const content: string = data?.innovations?.[0]?.source?.content || "";
+      // Extract identifier tokens (≥6 chars) as representative patterns
+      const tokens = content.match(/\b[a-zA-Z_][a-zA-Z0-9_]{5,}\b/g) || [];
+      patterns.push(...tokens.slice(0, 20));
+    } catch { /* skip malformed */ }
+  }
+  const uniquePatterns = [...new Set(patterns)];
+
+  // Walk workspace files (exclude node_modules, .git, dist)
+  const scores: Record<string, number> = {};
+  function walk(dir: string, depth = 0) {
+    if (depth > 6) return;
+    let entries: fs.Dirent[];
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      const rel = path.relative(workspaceRoot, full).replace(/\\/g, "/");
+      if (["node_modules", ".git", "dist", ".sdoa"].includes(entry.name)) continue;
+      if (entry.isDirectory()) { walk(full, depth + 1); continue; }
+      if (!/\.(ts|tsx|js|jsx|css)$/.test(entry.name)) continue;
+
+      try {
+        const content = fs.readFileSync(full, "utf-8");
+        if (uniquePatterns.length === 0) {
+          scores[rel] = 0;
+        } else {
+          const hits = uniquePatterns.filter(p => content.includes(p)).length;
+          scores[rel] = Math.min(1, hits / uniquePatterns.length);
+        }
+      } catch { /* unreadable file — skip */ }
+    }
+  }
+  walk(workspaceRoot);
+
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(scores));
+});
+
+// ── Action Endpoints ─────────────────────────────────────────────────────────
+
+function parseBody(req: IncomingMessage): Promise<any> {
+  return new Promise((resolve) => {
+    let body = "";
+    req.on("data", c => { body += c; });
+    req.on("end", () => { try { resolve(JSON.parse(body || "{}")); } catch { resolve({}); } });
+  });
+}
+
+/** Accepts workspace path from the VS Code extension, walks and updates ast cache size */
+router.post("/api/actions/scan-workspace", async (req, res) => {
+  const payload = await parseBody(req);
+  const root: string = payload.workspaceRoot || process.cwd();
+
+  telemetry.setState("scanning");
+  emit("scan:start", { root });
+
+  // Count .ts/.tsx/.js/.jsx/.css files — same set the AST engine caches
+  let count = 0;
+  function countFiles(dir: string, depth = 0) {
+    if (depth > 8) return;
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const e of entries) {
+        if (["node_modules", ".git", "dist"].includes(e.name)) continue;
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) { countFiles(full, depth + 1); continue; }
+        if (/\.(ts|tsx|js|jsx|css)$/.test(e.name)) count++;
+      }
+    } catch { /* skip unreadable dirs */ }
+  }
+  countFiles(root);
+
+  telemetry.setAstCacheSize(count);
+  telemetry.recordScan();
+  emit("scan:complete", { filesScanned: count });
+
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify({ ok: true, filesScanned: count }));
+});
+
+/** Clears in-memory AST cache size counter and emits event */
+router.post("/api/actions/clear-cache", (_req, res) => {
+  telemetry.clearCache();
+  emit("cache:cleared", {});
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify({ ok: true }));
+});
+
+/** Manually triggers the offline sync queue flush */
+router.post("/api/actions/flush-queue", async (_req, res) => {
+  const result = await flushQueue();
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify({ ok: true, ...result }));
+});
+
+/** Resets engine state to idle and clears errors */
+router.post("/api/actions/restart", (_req, res) => {
+  telemetry.reset();
+  emit("engine:restart", {});
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify({ ok: true }));
+});
+
+// ── Views & Static ───────────────────────────────────────────────────────────
 
 router.get("/views/:view", (req, res) => {
   const viewName = req.url!.split("/").pop();

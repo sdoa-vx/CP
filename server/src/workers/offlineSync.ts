@@ -1,6 +1,8 @@
 import { db } from '../fisp/database';
 import { supabase } from '../utils/supabase';
 import { generateSignature } from '../federation/handshake';
+import { telemetry } from '../engine/telemetry';
+import { emit } from '../engine/events';
 
 let syncInterval: NodeJS.Timeout | null = null;
 
@@ -17,10 +19,15 @@ export function stopOfflineSync() {
   }
 }
 
-async function processQueue() {
+export async function flushQueue(): Promise<{ flushed: number; failed: number }> {
+  let flushed = 0;
+  let failed = 0;
   try {
     const items = db.prepare('SELECT * FROM offline_queue ORDER BY id ASC LIMIT 50').all() as any[];
-    if (!items || items.length === 0) return;
+    if (!items || items.length === 0) return { flushed: 0, failed: 0 };
+
+    telemetry.setState('syncing');
+    emit('sync:start', { queued: items.length });
 
     for (const item of items) {
       let success = false;
@@ -40,15 +47,27 @@ async function processQueue() {
           });
           if (res.ok) success = true;
         }
-      } catch (err) {
-        // completely silent
-      }
+      } catch (_) { /* network error — item stays in queue */ }
 
       if (success) {
         db.prepare('DELETE FROM offline_queue WHERE id = ?').run(item.id);
+        flushed++;
+      } else {
+        failed++;
       }
     }
+
+    telemetry.setSyncStatus(failed === 0 ? 'ok' : 'error');
+    telemetry.setState('idle');
+    emit('sync:flush', { flushed, failed });
   } catch (dbErr) {
-    // completely silent
+    telemetry.setSyncStatus('error');
+    telemetry.setState('idle');
+    emit('sync:error', { error: String(dbErr) });
   }
+  return { flushed, failed };
+}
+
+async function processQueue() {
+  await flushQueue();
 }

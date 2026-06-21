@@ -1,4 +1,4 @@
-import { validateLayer, validateType, validateRole } from "../../validators";
+
 import { logger } from "../utils/logger";
 import { planCanonicalPath } from "./planCanonicalPath";
 import { writeCanonicalFile } from "./writeCanonicalFile";
@@ -47,7 +47,7 @@ export async function runCreationPipeline(envelope: any): Promise<PipelineResult
   const prUrls: string[] = [];
 
   for (const proposal of envelope.innovations || []) {
-    const { sdoa, type, name, source } = proposal;
+    const { name, source } = proposal;
 
     if (!source?.content || source.content.trim().length === 0) {
       logger.error(`Empty source content for ${name}`);

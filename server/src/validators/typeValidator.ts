@@ -1,4 +1,4 @@
-import { SdoaType } from "../../shared/types";
+import { SdoaType } from "../shared/types";
 
 const allowed: SdoaType[] = [
   "primitive",

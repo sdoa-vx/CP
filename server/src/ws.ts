@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from "ws";
-import { Server } from "http";
+import { Server } from "node:http";
 import { logger } from "./utils/logger";
 
 let wss: WebSocketServer | null = null;
