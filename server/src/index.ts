@@ -15,7 +15,8 @@ const app = new Router();
 // Auth Middleware wrapper
 app.use("/dashboard", (req, res, next) => {
   const auth = req.headers.authorization;
-  const expected = "Basic " + Buffer.from(dmin:).toString("base64");
+  const adminCreds = (process.env.ADMIN_USER || "admin") + ":" + (process.env.ADMIN_PASS || "admin");
+  const expected = "Basic " + Buffer.from(adminCreds).toString("base64");
   if (auth !== expected) {
     res.setHeader("WWW-Authenticate", 'Basic realm="SDOA Dashboard"');
     res.statusCode = 401;
@@ -25,7 +26,8 @@ app.use("/dashboard", (req, res, next) => {
 });
 app.use("/public", (req, res, next) => {
   const auth = req.headers.authorization;
-  const expected = "Basic " + Buffer.from(dmin:).toString("base64");
+  const adminCreds = (process.env.ADMIN_USER || "admin") + ":" + (process.env.ADMIN_PASS || "admin");
+  const expected = "Basic " + Buffer.from(adminCreds).toString("base64");
   if (auth !== expected) {
     res.setHeader("WWW-Authenticate", 'Basic realm="SDOA Dashboard"');
     res.statusCode = 401;
@@ -38,12 +40,15 @@ app.use("/public", (req, res, next) => {
 app.use("/dashboard", dashboardRouter);
 app.use("/public", staticRouter);
 
+import { handleTelemetryReuse } from "./routes/telemetry";
+
 // Legacy explicit routes
 app.use("/", (req, res, next) => {
   if (req.url?.startsWith("/health") && req.method === "GET") return handleHealth(req, res);
   if (req.url?.startsWith("/federation/")) return handleFederation(req, res);
   if (req.url === "/fisp/v1/proposals" && req.method === "POST") return handleProposals(req, res);
   if (req.url?.startsWith("/fisp/v1/proposals/") && req.method === "POST") return handleDecision(req, res);
+  if (req.url === "/telemetry/reuse" && req.method === "POST") return handleTelemetryReuse(req, res);
   if (next) next();
 });
 
@@ -62,3 +67,6 @@ server.listen(PORT, () => {
 });
 
 initWebSocket(server);
+
+import { startOfflineSync } from "./workers/offlineSync";
+startOfflineSync();

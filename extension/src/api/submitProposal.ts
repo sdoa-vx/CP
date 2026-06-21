@@ -5,6 +5,7 @@ export interface SubmitResult {
   id?: string;
   status: "created" | "merged" | "error";
   error?: string;
+  suggestion?: string;
 }
 
 export async function submitProposal(
@@ -35,6 +36,9 @@ export async function submitProposal(
     const json: any = await response.json();
 
     if (!response.ok) {
+      if (response.status === 409) {
+        return { id: json.id, status: "merged", suggestion: json.suggestion };
+      }
       return { status: "error", error: json.error || "Unknown error" };
     }
 

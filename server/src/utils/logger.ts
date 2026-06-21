@@ -13,8 +13,8 @@ function log(level: string, msg: string, meta: any) {
   const entry = { timestamp: new Date().toISOString(), level, msg, ...meta };
   const line = JSON.stringify(entry) + "\n";
   
-  if (level === "error") console.error([ + level.toUpperCase() + ]  + msg, meta);
-  else console.log([ + level.toUpperCase() + ]  + msg, meta);
+  if (level === "error") console.error(`[${level.toUpperCase()}] ${msg}`, meta);
+  else console.log(`[${level.toUpperCase()}] ${msg}`, meta);
 
   try {
     fs.appendFileSync(LOG_FILE, line);
