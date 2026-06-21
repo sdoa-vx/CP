@@ -2,7 +2,7 @@ import { IncomingMessage, ServerResponse } from "http";
 import { parseJsonBody } from "../utils/parseJsonBody";
 import { loadProposal } from "../fisp/loadProposal";
 import { runCreationPipeline } from "../pipeline/CreationPipeline";
-import { updateProposalStatus } from "../fisp/loadProposal"; // Reused from loadProposal mock
+import { updateProposalStatus } from "../fisp/loadProposal";
 import { broadcastDashboardUpdate } from "../ws";
 
 export async function handleDecision(req: IncomingMessage, res: ServerResponse) {

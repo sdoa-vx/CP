@@ -11,7 +11,8 @@
   "main": "./dist/extension.js",
   "activationEvents": [
     "onCommand:sdoa.runMigration",
-    "onCommand:sdoa.generatePrimitive"
+    "onCommand:sdoa.generatePrimitive",
+    "onCommand:sdoa.scanActiveFile"
   ],
   "contributes": {
     "commands": [
@@ -22,6 +23,10 @@
       {
         "command": "sdoa.generatePrimitive",
         "title": "Generate SDOA Primitive"
+      },
+      {
+        "command": "sdoa.scanActiveFile",
+        "title": "Scan Active File for SDOA Innovation"
       }
     ]
   },

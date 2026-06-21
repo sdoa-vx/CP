@@ -36,25 +36,25 @@ router.get("/api/proposals/:id", (req, res) => {
   
   res.statusCode = 200;
   res.setHeader("Content-Type", "text/html");
-  res.end(
+  res.end(`
     <div style="margin-top: 2rem; border-top: 1px solid #333; padding-top: 1rem;">
-      <h3>Envelope: </h3>
-      <p><strong>Status:</strong> <span class="badge "></span></p>
-      <p><strong>Origin:</strong> </p>
-      <p><strong>Timestamp:</strong> </p>
-      <p><strong>Summary:</strong> </p>
-      <p><strong>Motivation:</strong> </p>
-      <p><strong>Reviewer Notes:</strong> </p>
+      <h3>Envelope: ${proposal.id}</h3>
+      <p><strong>Status:</strong> <span class="badge ${proposal.status}">${proposal.status}</span></p>
+      <p><strong>Origin:</strong> ${data.origin || 'Unknown'}</p>
+      <p><strong>Timestamp:</strong> ${new Date(data.timestamp || proposal.timestamp).toLocaleString()}</p>
+      <p><strong>Summary:</strong> ${data.summary || 'No summary provided.'}</p>
+      <p><strong>Motivation:</strong> ${data.motivation || 'No motivation provided.'}</p>
+      <p><strong>Reviewer Notes:</strong> ${proposal.notes || 'None'}</p>
       <p><strong>Metrics:</strong> 
-        Signature:  | 
-        Innovations: 
+        Signature: ${data.signature ? 'Valid' : 'Missing'} | 
+        Innovations: ${innovations.length}
       </p>
-      <p><strong>PR Status:</strong> OPEN (<a href="https://github.com/dummy/pr/" target="_blank">View PR</a>)</p>
+      <p><strong>PR Status:</strong> OPEN (<a href="https://github.com/dummy/pr/${proposal.id}" target="_blank">View PR</a>)</p>
       
-      <h4>Innovations []</h4>
-      <pre></pre>
+      <h4>Innovations [${innovations.length}]</h4>
+      <pre>${JSON.stringify(innovations, null, 2)}</pre>
     </div>
-  );
+  `);
 });
 
 router.get("/api/proposals", (req, res) => {
@@ -62,13 +62,13 @@ router.get("/api/proposals", (req, res) => {
   res.statusCode = 200;
   res.setHeader("Content-Type", "text/html");
   if (proposals.length === 0) return res.end("<tr><td colspan='3'>No proposals found.</td></tr>");
-  const htmlRows = proposals.map((p: any) => 
-    <tr hx-get="/dashboard/api/proposals/" hx-target="#proposal-detail-pane" style="cursor:pointer">
-      <td> + p.id + </td>
-      <td><span class="badge  + p.status + "> + p.status + </span></td>
-      <td> + new Date(p.timestamp).toLocaleString() + </td>
+  const htmlRows = proposals.map((p: any) => `
+    <tr hx-get="/dashboard/api/proposals/${p.id}" hx-target="#proposal-detail-pane" style="cursor:pointer">
+      <td>${p.id}</td>
+      <td><span class="badge ${p.status}">${p.status}</span></td>
+      <td>${new Date(p.timestamp).toLocaleString()}</td>
     </tr>
-  ).join("");
+  `).join("");
   res.end(htmlRows);
 });
 
@@ -76,9 +76,9 @@ router.get("/api/peers/:id", (req, res) => {
   const peerId = decodeURIComponent(req.url!.split("/").pop()!);
   res.statusCode = 200;
   res.setHeader("Content-Type", "text/html");
-  res.end(
+  res.end(`
     <div style="margin-top: 2rem; border-top: 1px solid #333; padding-top: 1rem;">
-      <h3>Peer Deep Dive: </h3>
+      <h3>Peer Deep Dive: ${peerId}</h3>
       <table class="table">
         <tr><td><strong>Last Sync:</strong></td><td>Just now (0ms ago)</td></tr>
         <tr><td><strong>Protocol Version:</strong></td><td>FISP v1.1</td></tr>
@@ -87,7 +87,7 @@ router.get("/api/peers/:id", (req, res) => {
         <tr><td><strong>Replication Stats:</strong></td><td>14 Envelopes Synced (0 Collisions)</td></tr>
       </table>
     </div>
-  );
+  `);
 });
 
 router.get("/api/peers", (req, res) => {
@@ -95,20 +95,18 @@ router.get("/api/peers", (req, res) => {
   res.statusCode = 200;
   res.setHeader("Content-Type", "text/html");
   if (peers.length === 0) return res.end("<tr><td colspan='3'>No peers configured.</td></tr>");
-  const htmlRows = peers.map((peer) => 
-    <tr hx-get="/dashboard/api/peers/" hx-target="#peer-detail-pane" style="cursor:pointer">
-      <td></td>
+  const htmlRows = peers.map((peer) => `
+    <tr hx-get="/dashboard/api/peers/${encodeURIComponent(peer)}" hx-target="#peer-detail-pane" style="cursor:pointer">
+      <td>${peer}</td>
       <td><span class="badge queued">Connected</span></td>
       <td><span class="badge accepted">In Sync</span></td>
     </tr>
-  ).join("");
+  `).join("");
   res.end(htmlRows);
 });
 
 router.get("/api/pipeline", async (req, res) => {
-  // Fetch from Cloud Governance Layer
   const { data: runs, error } = await supabase.from('pipeline_runs').select('*').order('created_at', { ascending: false }).limit(5);
-  
   res.statusCode = 200;
   res.setHeader("Content-Type", "text/html");
   if (error || !runs || runs.length === 0) return res.end("<p>No cloud pipeline runs found or Supabase unavailable.</p>");
@@ -151,35 +149,35 @@ router.get("/api/logs", (req, res) => {
     try {
       const obj = JSON.parse(l);
       const color = obj.level === 'error' ? '#da3633' : (obj.level === 'warn' ? '#d29922' : '#58a6ff');
-      return <div><span style="color: #8b949e">[]</span> <span style="color: ">[]</span>  </div>;
+      return `<div><span style="color: #8b949e">[${obj.timestamp}]</span> <span style="color: ${color}">[${obj.level.toUpperCase()}]</span> ${obj.msg} ${Object.keys(obj).length > 3 ? JSON.stringify(obj) : ''}</div>`;
     } catch(e) {
-      return <div></div>;
+      return `<div>${l}</div>`;
     }
   }).join("");
   
-  res.end(<pre style="background: #000; color: #0f0; padding: 1rem; height: 500px; overflow-y: scroll; font-family: monospace;"></pre>);
+  res.end(`<pre style="background: #000; color: #0f0; padding: 1rem; height: 500px; overflow-y: scroll; font-family: monospace;">${formatted}</pre>`);
 });
 
 router.get("/api/health-ui", async (req, res) => {
   const metrics = await getSystemMetrics();
   res.statusCode = 200;
   res.setHeader("Content-Type", "text/html");
-  res.end(
+  res.end(`
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
       <div class="card">
         <h3>Core Engine</h3>
-        <p><strong>Status:</strong> <span class="badge "></span></p>
-        <p><strong>Version:</strong> </p>
-        <p><strong>Memory:</strong>  MB /  MB</p>
-        <p><strong>Uptime:</strong> s</p>
+        <p><strong>Status:</strong> <span class="badge ${metrics.status === 'ok' ? 'accepted' : 'rejected'}">${metrics.status.toUpperCase()}</span></p>
+        <p><strong>Version:</strong> ${metrics.version}</p>
+        <p><strong>Memory:</strong> ${Math.round(metrics.memory.heapUsed / 1024 / 1024)} MB / ${Math.round(metrics.memory.heapTotal / 1024 / 1024)} MB</p>
+        <p><strong>Uptime:</strong> ${Math.round(metrics.uptime)}s</p>
       </div>
       <div class="card">
         <h3>Storage & DB</h3>
         <p><strong>Database:</strong> <span class="badge accepted">OK</span></p>
-        <p><strong>Proposal Count:</strong> </p>
+        <p><strong>Proposal Count:</strong> ${db.prepare('SELECT count(*) as c FROM proposals').get().c}</p>
       </div>
     </div>
-  );
+  `);
 });
 
 router.get("/views/:view", (req, res) => {

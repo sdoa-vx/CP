@@ -75,7 +75,6 @@ export async function runCreationPipeline(envelope: any): Promise<PipelineResult
     }
     
     await recordPipelineStep(envelope.proposalId, "Probation Officer", "passed", { checks: compliance.errors?.length === 0 });
-    await recordPipelineStep(envelope.proposalId, "Semantic Similarity", "passed", { score: 0.95 }); // Mocked for now
     await recordPipelineStep(envelope.proposalId, "Canonical Path Routing", "passed", { path: plannedPath });
 
     const prUrl = await openPrForProposal(proposal, plannedPath);
