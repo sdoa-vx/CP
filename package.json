@@ -8,7 +8,11 @@
   "engines": {
     "vscode": "^1.90.0"
   },
-  "main": "./dist/extension.js",
+  "main": "./dist/extension/extension.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sdoa-vx/CP"
+  },
   "activationEvents": [
     "onCommand:sdoa.runMigration",
     "onCommand:sdoa.generatePrimitive",
@@ -46,7 +50,7 @@
   "scripts": {
     "build:server": "tsc -p server/tsconfig.json || echo 'Add tsconfig'",
     "build:extension": "tsc -p extension/tsconfig.json || echo 'Add tsconfig'",
-    "package:extension": "vsce package",
+    "package:extension": "npx vsce package --no-dependencies",
     "release": "npm run build:server && npm run build:extension && npm run package:extension"
   },
   "dependencies": {
