@@ -1,6 +1,6 @@
-import { IncomingMessage, ServerResponse } from "http";
+import { IncomingMessage, ServerResponse } from "node:http";
 import { parseJsonBody } from "../utils/parseJsonBody";
-import { runProbationOfficer } from "../../validators/probationOfficer";
+import { runProbationOfficer } from "../validators/probationOfficer";
 import { checkSemanticSimilarity } from "../fisp/semanticSimilarity";
 import { storeProposal } from "../fisp/storeProposal";
 

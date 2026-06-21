@@ -1,24 +1,236 @@
 <!DOCTYPE html>
-<html lang="en" x-data>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>SDOA MCP � Dashboard</title>
-  <link rel="stylesheet" href="/public/styles.css">
-  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-  <script src="https://unpkg.com/alpinejs@3.x.x" defer></script>
-  <script src="/public/app.js" defer></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SDOA Engine — Control Center</title>
+  <meta name="description" content="SDOA Engine v1.1 real-time architectural control system dashboard." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/public/styles.css" />
 </head>
-<body class="dark">
-  <header>
-    <h1>SDOA MCP Dashboard</h1>
-    <nav>
-      <button hx-get="/dashboard/views/proposals" hx-target="#view">Proposals</button>
-      <button hx-get="/dashboard/views/peers" hx-target="#view">Federation</button>
-      <button hx-get="/dashboard/views/pipeline" hx-target="#view">Pipeline</button>
-      <button hx-get="/dashboard/views/health" hx-target="#view">Health</button>
-      <button hx-get="/dashboard/views/logs" hx-target="#view">Logs</button>
-    </nav>
+
+<body>
+
+  <!-- ── Top Bar ────────────────────────────────────────────────────────── -->
+  <header class="topbar" id="topbar">
+    <div class="brand">
+      <img src="/public/crest.svg" class="crest" onerror="this.style.display='none'" alt="SDOA" />
+      <div class="brand-text">
+        <span class="brand-title">SDOA Engine</span>
+        <span class="brand-sub">Control Center v1.1</span>
+      </div>
+    </div>
+
+    <div class="topbar-center">
+      <div class="engine-state-pill" id="engineStatePill">
+        <span class="state-dot" id="stateDot"></span>
+        <span id="engineStateLabel">CONNECTING</span>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <button class="btn btn-secondary" id="btnScanFile" onclick="triggerScan('file')">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M9.293 1.5a1 1 0 0 0-.707-.293H2a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6.707a1 1 0 0 0-.293-.707L9.293 1.5zM9.5 3.914V6H12.086L9.5 3.914zM4 8h8v1H4V8zm0 2h8v1H4v-1zm0 2h5v1H4v-1z"/></svg>
+        Scan File
+      </button>
+      <button class="btn btn-secondary" id="btnScanFolder" onclick="triggerScan('folder')">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M.54 3.87L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181L15.546 9.9a2 2 0 0 1-1.99 1.8H4.544a2 2 0 0 1-1.994-1.84l-.582-7a2 2 0 0 1 .572-1.39z"/></svg>
+        Scan Workspace
+      </button>
+      <button class="btn btn-danger" id="btnRestart" onclick="restartEngine()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+        Restart
+      </button>
+    </div>
   </header>
-  <main id="view" hx-get="/dashboard/views/proposals" hx-trigger="load"></main>
+
+  <!-- ── Layout ─────────────────────────────────────────────────────────── -->
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <nav class="sidenav">
+        <a class="sidenav-item active" data-panel="overview" onclick="showPanel('overview', this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.5.5 0 0 1 .5.5V6H10a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V7H6a.5.5 0 0 1 0-1h1.5V4.5A.5.5 0 0 1 8 4zM.5 1h15a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-.5.5H.5a.5.5 0 0 1-.5-.5v-13A.5.5 0 0 1 .5 1zm1 1v12h13V2H1.5z"/></svg>
+          Overview
+        </a>
+        <a class="sidenav-item" data-panel="detectors" onclick="showPanel('detectors', this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+          Detectors
+        </a>
+        <a class="sidenav-item" data-panel="telemetry" onclick="showPanel('telemetry', this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5h-2v12h2V2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/></svg>
+          Telemetry
+        </a>
+        <a class="sidenav-item" data-panel="events" onclick="showPanel('events', this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2zm13 2.383l-4.758 2.855L15 11.114v-5.73zm-.034 6.878L9.271 8.82 8 9.583 6.728 8.82l-5.694 3.44A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.739zM1 11.114l4.758-2.876L1 5.383v5.73z"/></svg>
+          Events
+          <span class="badge-count" id="eventCount">0</span>
+        </a>
+        <a class="sidenav-item" data-panel="heatmap" onclick="showPanel('heatmap', this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1a.5.5 0 0 0-.5.5v3a.5.5 0 0 1-1 0v-3A1.5 1.5 0 0 1 1.5 0h3a.5.5 0 0 1 0 1h-3zM11 .5a.5.5 0 0 1 .5-.5h3A1.5 1.5 0 0 1 16 1.5v3a.5.5 0 0 1-1 0v-3a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 1-.5-.5zM.5 11a.5.5 0 0 1 .5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 1 0 1h-3A1.5 1.5 0 0 1 0 14.5v-3a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v3a1.5 1.5 0 0 1-1.5 1.5h-3a.5.5 0 0 1 0-1h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 1 .5-.5z"/><path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+          Heatmap
+        </a>
+        <a class="sidenav-item" data-panel="settings" onclick="showPanel('settings', this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.892 3.434-.901 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.474l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/></svg>
+          Settings
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="uptime-display">
+          <span class="uptime-label">UPTIME</span>
+          <span class="uptime-value" id="sidebarUptime">—</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Panels ──────────────────────────────────────────────────────── -->
+    <main class="panel-container">
+
+      <!-- Overview -->
+      <section id="panel-overview" class="panel active">
+        <div class="panel-header">
+          <h2>Overview</h2>
+          <span class="refresh-indicator" id="overviewRefresh"></span>
+        </div>
+        <div class="stat-grid" id="statGrid">
+          <div class="stat-card" id="sc-state">
+            <div class="stat-label">Engine State</div>
+            <div class="stat-value" id="ov-engineState">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Last Scan</div>
+            <div class="stat-value small" id="ov-lastScan">Never</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Queue Depth</div>
+            <div class="stat-value" id="ov-queueDepth">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Pending Sync</div>
+            <div class="stat-value" id="ov-pendingSync">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">AST Cache</div>
+            <div class="stat-value" id="ov-astCacheSize">—</div>
+            <div class="stat-sub">files</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">SQLite DB</div>
+            <div class="stat-value" id="ov-sqliteSize">—</div>
+            <div class="stat-sub">bytes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Sync Status</div>
+            <div class="stat-value" id="ov-syncStatus">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Uptime</div>
+            <div class="stat-value" id="ov-uptime">—</div>
+            <div class="stat-sub">seconds</div>
+          </div>
+        </div>
+
+        <div class="actions-bar">
+          <button class="btn btn-primary" onclick="runAction('scan-workspace')">Run Full Workspace Scan</button>
+          <button class="btn btn-secondary" onclick="runAction('clear-cache')">Clear Cache</button>
+          <button class="btn btn-secondary" onclick="runAction('flush-queue')">Flush Offline Queue</button>
+        </div>
+
+        <!-- Proposals summary -->
+        <div class="section-block">
+          <h3>Recent Proposals</h3>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>ID</th><th>Status</th><th>Timestamp</th></tr></thead>
+              <tbody id="proposalTableBody" hx-get="/dashboard/api/proposals" hx-trigger="load, every 10s" hx-swap="innerHTML"></tbody>
+            </table>
+          </div>
+          <div id="proposal-detail-pane"></div>
+        </div>
+      </section>
+
+      <!-- Detectors -->
+      <section id="panel-detectors" class="panel">
+        <div class="panel-header"><h2>Active Detectors</h2></div>
+        <div class="detector-grid" id="detectorGrid"></div>
+      </section>
+
+      <!-- Telemetry -->
+      <section id="panel-telemetry" class="panel">
+        <div class="panel-header"><h2>Telemetry</h2></div>
+        <div class="chart-grid">
+          <div class="chart-card">
+            <div class="chart-title">AST Cache Size (files)</div>
+            <canvas id="chartAstCache" width="400" height="160"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Queue Depth</div>
+            <canvas id="chartQueueDepth" width="400" height="160"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Detector Hits / Interval</div>
+            <canvas id="chartDetectorHits" width="400" height="160"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Events -->
+      <section id="panel-events" class="panel">
+        <div class="panel-header">
+          <h2>Event Stream</h2>
+          <span class="sse-status" id="sseStatus">● Connecting</span>
+        </div>
+        <div class="event-stream" id="eventStream"></div>
+      </section>
+
+      <!-- Heatmap -->
+      <section id="panel-heatmap" class="panel">
+        <div class="panel-header">
+          <h2>Workspace Heatmap</h2>
+          <button class="btn btn-secondary" onclick="loadHeatmap()">Refresh</button>
+        </div>
+        <div class="heatmap-legend">
+          <span class="legend-item heat-low">Low duplication</span>
+          <span class="legend-item heat-mid">Moderate</span>
+          <span class="legend-item heat-high">High — candidate for extraction</span>
+        </div>
+        <div class="heatmap-tree" id="heatmapTree">
+          <div class="loading-msg">Click Refresh to scan workspace…</div>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section id="panel-settings" class="panel">
+        <div class="panel-header"><h2>Settings</h2></div>
+        <div class="settings-grid">
+          <div class="settings-group">
+            <h3>Detectors</h3>
+            <label class="toggle-row"><span>UI Primitive Detector</span><input type="checkbox" id="tog-uiPrimitive" checked onchange="saveSettings()" /></label>
+            <label class="toggle-row"><span>Workflow Detector</span><input type="checkbox" id="tog-workflow" checked onchange="saveSettings()" /></label>
+            <label class="toggle-row"><span>Schema Detector</span><input type="checkbox" id="tog-schema" checked onchange="saveSettings()" /></label>
+            <label class="toggle-row"><span>Token Detector</span><input type="checkbox" id="tog-token" checked onchange="saveSettings()" /></label>
+            <label class="toggle-row"><span>Engine Detector</span><input type="checkbox" id="tog-engine" checked onchange="saveSettings()" /></label>
+          </div>
+          <div class="settings-group">
+            <h3>Sync</h3>
+            <label class="toggle-row"><span>Supabase Sync</span><input type="checkbox" id="tog-supabaseSync" checked onchange="saveSettings()" /></label>
+            <label class="toggle-row"><span>Federation Sync</span><input type="checkbox" id="tog-federationSync" checked onchange="saveSettings()" /></label>
+          </div>
+          <div class="settings-group">
+            <h3>Engine Actions</h3>
+            <button class="btn btn-secondary" onclick="runAction('clear-cache')">Clear AST Cache</button>
+            <button class="btn btn-secondary" onclick="runAction('flush-queue')">Flush Queue Now</button>
+            <button class="btn btn-danger" onclick="restartEngine()">Restart Engine</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="/public/dashboard.js"></script>
 </body>
 </html>

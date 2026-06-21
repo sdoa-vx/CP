@@ -1,5 +1,19 @@
 import * as vscode from "vscode";
-import { InnovationPayload, FispProposalEnvelope } from "../../shared/types";
+export interface InnovationPayload {
+  componentName?: string;
+  astSignature?: string;
+  detectedLayer?: string;
+  proposedPath?: string;
+  codeSnippet?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface FispProposalEnvelope {
+  proposalId: string;
+  origin: "vsx-extension" | "cli" | "dashboard" | "github-action";
+  timestamp: string;
+  innovations: InnovationPayload[];
+}
 
 export interface SubmitResult {
   id?: string;

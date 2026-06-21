@@ -1,7 +1,7 @@
 {
   "name": "sdoa-mcp-extension",
   "displayName": "SDOA Migration Engine",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "bin": {
     "mcp-proposals": "./server/bin/mcp-proposals.js"
   },
@@ -13,12 +13,30 @@
     "type": "git",
     "url": "https://github.com/sdoa-vx/CP"
   },
+  "publisher": "sdoa-vx",
   "activationEvents": [
-    "onCommand:sdoa.runMigration",
-    "onCommand:sdoa.generatePrimitive",
-    "onCommand:sdoa.scanActiveFile"
+    "onStartupFinished"
   ],
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "sdoa-explorer",
+          "title": "SDOA Engine",
+          "icon": "$(plug)"
+        }
+      ]
+    },
+    "views": {
+      "sdoa-explorer": [
+        {
+          "id": "sdoa-control-panel",
+          "name": "SDOA Control Panel",
+          "type": "tree",
+          "icon": "$(settings-gear)"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "sdoa.runMigration",
@@ -31,8 +49,67 @@
       {
         "command": "sdoa.scanActiveFile",
         "title": "Scan Active File for SDOA Innovation"
+      },
+      {
+        "command": "sdoa.scanFile",
+        "title": "Scan File",
+        "icon": "$(file)"
+      },
+      {
+        "command": "sdoa.scanFolder",
+        "title": "Scan Folder",
+        "icon": "$(folder)"
+      },
+      {
+        "command": "sdoa.openReleases",
+        "title": "View GitHub Releases",
+        "icon": "$(github)"
+      },
+      {
+        "command": "sdoa.openPages",
+        "title": "Open GitHub Pages",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "sdoa.openDashboardLocal",
+        "title": "Open Local Dashboard",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "sdoa.scanWorkspace",
+        "title": "Run Full Workspace Scan",
+        "icon": "$(search-view-icon)"
+      },
+      {
+        "command": "sdoa.clearCache",
+        "title": "Clear Engine Cache",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "sdoa.flushQueue",
+        "title": "Flush Offline Queue",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "sdoa.restartEngine",
+        "title": "Restart Engine",
+        "icon": "$(refresh)"
       }
-    ]
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "sdoa.scanWorkspace",
+          "when": "view == sdoa-control-panel",
+          "group": "navigation"
+        },
+        {
+          "command": "sdoa.restartEngine",
+          "when": "view == sdoa-control-panel",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "mcpServers": [
     {
@@ -44,13 +121,15 @@
     }
   ],
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/vscode": "^1.90.0",
-    "typescript": "^5.0.0"
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.3"
   },
   "scripts": {
     "build:server": "tsc -p server/tsconfig.json || echo 'Add tsconfig'",
-    "build:extension": "tsc -p extension/tsconfig.json || echo 'Add tsconfig'",
-    "package:extension": "npx vsce package --no-dependencies",
+    "build:extension": "node esbuild.extension.js",
+    "package:extension": "npx vsce package",
     "release": "npm run build:server && npm run build:extension && npm run package:extension"
   },
   "dependencies": {
