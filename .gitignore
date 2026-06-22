@@ -31,9 +31,13 @@ cli/dist/
 cli/build/
 
 # VS Code extension build output
+*.vsix
 extension/*.vsix
 extension/out/
 extension/dist/
+
+# Release binaries
+release-binaries/
 
 # ---------------------------------------------------------
 # OS junk

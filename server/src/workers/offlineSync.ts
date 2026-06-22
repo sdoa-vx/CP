@@ -19,6 +19,31 @@ export function stopOfflineSync() {
   }
 }
 
+async function processItem(item: any): Promise<boolean> {
+  let success = false;
+  const payload = JSON.parse(item.payload);
+
+  try {
+    if (item.type === 'SUPABASE') {
+      const { error } = await supabase.from(item.target).insert(payload);
+      if (!error) success = true;
+    } else if (item.type === 'FEDERATION') {
+      const body = JSON.stringify(payload);
+      const signature = generateSignature(body);
+      const res = await fetch(`${item.target}/federation/v1/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-mcp-signature': signature },
+        body
+      });
+      if (res.ok) success = true;
+    }
+  } catch (err) { 
+    console.error(err); 
+  }
+
+  return success;
+}
+
 export async function flushQueue(): Promise<{ flushed: number; failed: number }> {
   let flushed = 0;
   let failed = 0;
@@ -30,24 +55,7 @@ export async function flushQueue(): Promise<{ flushed: number; failed: number }>
     emit('sync:start', { queued: items.length });
 
     for (const item of items) {
-      let success = false;
-      const payload = JSON.parse(item.payload);
-
-      try {
-        if (item.type === 'SUPABASE') {
-          const { error } = await supabase.from(item.target).insert(payload);
-          if (!error) success = true;
-        } else if (item.type === 'FEDERATION') {
-          const body = JSON.stringify(payload);
-          const signature = generateSignature(body);
-          const res = await fetch(`${item.target}/federation/v1/sync`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-mcp-signature': signature },
-            body
-          });
-          if (res.ok) success = true;
-        }
-      } catch (_) { /* network error — item stays in queue */ }
+      const success = await processItem(item);
 
       if (success) {
         db.prepare('DELETE FROM offline_queue WHERE id = ?').run(item.id);

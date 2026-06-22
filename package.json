@@ -3,7 +3,7 @@
   "displayName": "SDOA Migration Engine",
   "version": "1.1.0",
   "bin": {
-    "mcp-proposals": "./server/bin/mcp-proposals.js"
+    "sdoa-mcp-extension": "./dist/server/index.js"
   },
   "engines": {
     "vscode": "^1.90.0"
@@ -23,7 +23,7 @@
         {
           "id": "sdoa-explorer",
           "title": "SDOA Engine",
-          "icon": "$(plug)"
+          "icon": "SDOA.seal.svg"
         }
       ]
     },
@@ -32,7 +32,6 @@
         {
           "id": "sdoa-control-panel",
           "name": "SDOA Control Panel",
-          "type": "tree",
           "icon": "$(settings-gear)"
         }
       ]
@@ -49,6 +48,11 @@
       {
         "command": "sdoa.scanActiveFile",
         "title": "Scan Active File for SDOA Innovation"
+      },
+      {
+        "command": "sdoa.scanProject",
+        "title": "Scan Project for Innovations",
+        "icon": "$(search-view-icon)"
       },
       {
         "command": "sdoa.scanFile",
@@ -99,7 +103,7 @@
     "menus": {
       "view/title": [
         {
-          "command": "sdoa.scanWorkspace",
+          "command": "sdoa.scanProject",
           "when": "view == sdoa-control-panel",
           "group": "navigation"
         },
@@ -135,9 +139,17 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@supabase/supabase-js": "^2.108.2",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/ws": "^8.18.1",
     "better-sqlite3": "^12.11.1",
+    "dotenv": "^17.4.2",
+    "jsonwebtoken": "^9.0.3",
     "ws": "^8.21.0",
     "zod": "^4.4.3"
+  },
+  "pkg": {
+    "assets": [
+      "server/public/**/*"
+    ]
   }
 }

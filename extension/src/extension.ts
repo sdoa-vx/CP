@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
-import * as cp from "child_process";
-import * as path from "path";
-import * as fs from "fs";
+import * as cp from "node:child_process";
+import * as path from "node:path";
+import * as fs from "node:fs";
 import { detectInnovation } from "./detectors/innovationDetector";
 import { showInnovationPrompt } from "./ui/prompt";
 import { submitProposal } from "./api/submitProposal";
@@ -29,7 +29,6 @@ async function offerExtraction(
   const type: string = innovation.type || "primitive";
   const name: string = (innovation.name || "Extracted").replace(/\s+/g, "");
   const content: string = innovation.source?.content || "";
-  const language: string = innovation.source?.language || "ts";
 
   const extMap: Record<string, string> = {
     primitive: "tsx", workflow: "ts", schema: "ts", token: "css", engine: "ts",
@@ -116,8 +115,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   const scanWidget = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 101);
   scanWidget.text = "$(search-view-icon) Scan SDOA";
-  scanWidget.command = "sdoa.scanActiveFile";
-  scanWidget.tooltip = "Scan current file for architectural innovations";
+  scanWidget.command = "sdoa.scanProject";
+  scanWidget.tooltip = "Scan project for architectural innovations";
   scanWidget.show();
   context.subscriptions.push(scanWidget);
 
@@ -134,8 +133,65 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.workspace.getConfiguration("sdoaMcp").get<string>("fispEndpoint") || "http://localhost:8080";
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("sdoa.viewLastSubmission", () => {
-      vscode.window.showInformationMessage("Viewing last submission...");
+    vscode.commands.registerCommand("sdoa.viewLastSubmission", async () => {
+      try {
+        const res = await fetch(`${endpoint()}/fisp/v1/proposals/latest`);
+        if (!res.ok) {
+          vscode.window.showErrorMessage("Failed to fetch latest proposal.");
+          return;
+        }
+        const data = await res.json();
+        
+        const panel = vscode.window.createWebviewPanel("sdoaProposal", "Latest Proposal", vscode.ViewColumn.One, { enableScripts: true });
+        panel.webview.html = `
+          <html><body style="font-family:sans-serif;padding:20px;">
+            <h2>Proposal: ${data.id || data.proposalId}</h2>
+            <p><strong>Status:</strong> ${data.status}</p>
+            <p><strong>Type:</strong> ${data.type || 'unknown'}</p>
+            <p><strong>PR Link:</strong> ${data.prUrl ? `<a href="${data.prUrl}">${data.prUrl}</a>` : 'PR not created'}</p>
+            <h3>Innovations</h3>
+            <pre style="background:#1e1e1e;color:#d4d4d4;padding:10px;overflow:auto">${JSON.stringify(data.innovations, null, 2)}</pre>
+          </body></html>
+        `;
+      } catch (err: any) {
+        vscode.window.showErrorMessage("Error: " + err.message);
+      }
+    }),
+    vscode.commands.registerCommand("sdoa.generatePrimitive", async () => {
+      const name = await vscode.window.showInputBox({ prompt: "Enter primitive name (e.g., DataGrid)" });
+      if (!name) return;
+      
+      try {
+        const payload = {
+          proposalId: "prop_" + Date.now(),
+          type: "primitive",
+          name: name,
+          innovations: [{ name, type: "primitive", source: { content: "export const " + name + " = () => {};", language: "tsx" } }]
+        };
+        const res = await fetch(`${endpoint()}/fisp/v1/proposals`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          vscode.window.showInformationMessage(`Primitive submitted (ID: ${data.id}). Awaiting pipeline...`);
+          setTimeout(async () => {
+            try {
+              const latestRes = await fetch(`${endpoint()}/fisp/v1/proposals/latest`);
+              const latest = await latestRes.json();
+              if (latest.id === data.id || latest.proposalId === data.id) {
+                if (latest.prUrl) vscode.window.showInformationMessage(`PR created: ${latest.prUrl}`);
+                else vscode.window.showInformationMessage(`PR not created`);
+              }
+            } catch (e) {}
+          }, 4000);
+        } else {
+          vscode.window.showErrorMessage("Failed to generate primitive: " + data.error);
+        }
+      } catch (err: any) {
+        vscode.window.showErrorMessage("Error: " + err.message);
+      }
     }),
     vscode.commands.registerCommand("sdoa.openDashboard", () => {
       vscode.env.openExternal(vscode.Uri.parse(`${endpoint()}/dashboard`));
@@ -144,8 +200,17 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage("SDOA Migration Pipeline started. Check your dashboard for progress.");
       vscode.env.openExternal(vscode.Uri.parse(`${endpoint()}/dashboard`));
     }),
-    vscode.commands.registerCommand("sdoa.generatePrimitive", () => {
-      vscode.window.showInformationMessage("SDOA Primitive generated successfully.");
+    vscode.commands.registerCommand("sdoa.scanProject", async () => {
+      const choice = await vscode.window.showQuickPick([
+        { label: "$(search-view-icon) Scan Full Workspace", description: "Scan the entire project workspace", target: "sdoa.scanWorkspace" },
+        { label: "$(file) Scan Active File", description: "Scan the currently open document", target: "sdoa.scanActiveFile" },
+        { label: "$(folder) Scan Specific Folder...", description: "Select a directory to scan", target: "sdoa.scanFolder" },
+        { label: "$(file-code) Scan Specific File...", description: "Select a specific file to scan", target: "sdoa.scanFile" }
+      ], { placeHolder: "Select what to scan for architectural innovations" });
+      
+      if (choice) {
+        vscode.commands.executeCommand(choice.target);
+      }
     }),
     vscode.commands.registerCommand("sdoa.scanActiveFile", async () => {
       const editor = vscode.window.activeTextEditor;
@@ -190,8 +255,6 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage("Running full workspace scan...");
 
       // Update local AST cache and report size to server
-      const cache = globalAstEngine.getCache();
-      const cacheSize = cache.size;
 
       fetch(`${endpoint()}/dashboard/api/actions/scan-workspace`, {
         method: "POST",
@@ -231,11 +294,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage("Engine restarted.");
         controlPanelProvider.refresh();
       }).catch(() => {});
-    })
-  );
-
-  // 5. Passive monitoring on save
-  context.subscriptions.push(
+    }),
     vscode.workspace.onDidSaveTextDocument(async (doc) => {
       globalAstEngine.cacheFile(doc.uri.fsPath);
       await processDocument(doc, outputChannel, context);
@@ -244,6 +303,56 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // ── Document processing + Fix-It ─────────────────────────────────────────────
+async function handleSubmission(
+  innovation: any,
+  doc: vscode.TextDocument,
+  outputChannel: vscode.OutputChannel
+) {
+  const result = await submitProposal(innovation);
+
+  if (result.status === "merged" && result.suggestion) {
+    const replaceChoice = await vscode.window.showInformationMessage(
+      "An existing SDOA module already performs this function. Replace your code with the standard module?",
+      "Yes, Replace", "No, Keep Mine", "Extract Instead"
+    );
+
+    if (replaceChoice === "Yes, Replace") {
+      const edit = new vscode.WorkspaceEdit();
+      const fullRange = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
+      edit.replace(doc.uri, fullRange, result.suggestion);
+      await vscode.workspace.applyEdit(edit);
+
+      const ep = vscode.workspace.getConfiguration("sdoaMcp").get<string>("fispEndpoint") || "http://localhost:8080";
+      await fetch(`${ep}/telemetry/reuse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ component_id: result.id, proposalId: result.id }),
+      }).catch(() => {});
+
+      vscode.window.showInformationMessage("Replaced with standard SDOA component.");
+    } else if (replaceChoice === "Extract Instead") {
+      const roots = vscode.workspace.workspaceFolders;
+      if (roots?.[0]) {
+        await offerExtraction(innovation, roots[0].uri.fsPath, outputChannel);
+      }
+    } else {
+      vscode.window.showInformationMessage("Kept custom implementation.");
+    }
+  } else {
+    // Offer Fix-It extraction for new proposals too
+    const extractChoice = await vscode.window.showInformationMessage(
+      `Submitted (proposal id: ${result.id || "pending"}). Extract this pattern to an SDOA module?`,
+      "Extract", "Done"
+    );
+    if (extractChoice === "Extract") {
+      const roots = vscode.workspace.workspaceFolders;
+      if (roots?.[0]) {
+        await offerExtraction(innovation, roots[0].uri.fsPath, outputChannel);
+      }
+    }
+  }
+}
+
 async function processDocument(
   doc: vscode.TextDocument,
   outputChannel: vscode.OutputChannel,
@@ -258,55 +367,9 @@ async function processDocument(
     if (choice === "local") {
       await saveLocalInnovation(innovation);
       vscode.window.showInformationMessage("Saved innovation locally.");
-    }
-
-    if (choice === "submit") {
-      const result = await submitProposal(innovation as any);
-
-      if (result.status === "merged" && result.suggestion) {
-        const replaceChoice = await vscode.window.showInformationMessage(
-          "An existing SDOA module already performs this function. Replace your code with the standard module?",
-          "Yes, Replace", "No, Keep Mine", "Extract Instead"
-        );
-
-        if (replaceChoice === "Yes, Replace") {
-          const edit = new vscode.WorkspaceEdit();
-          const fullRange = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
-          edit.replace(doc.uri, fullRange, result.suggestion);
-          await vscode.workspace.applyEdit(edit);
-
-          const ep = vscode.workspace.getConfiguration("sdoaMcp").get<string>("fispEndpoint") || "http://localhost:8080";
-          await fetch(`${ep}/telemetry/reuse`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ component_id: result.id, proposalId: result.id }),
-          }).catch(() => {});
-
-          vscode.window.showInformationMessage("Replaced with standard SDOA component.");
-        } else if (replaceChoice === "Extract Instead") {
-          const roots = vscode.workspace.workspaceFolders;
-          if (roots?.[0]) {
-            await offerExtraction(innovation, roots[0].uri.fsPath, outputChannel);
-          }
-        } else {
-          vscode.window.showInformationMessage("Kept custom implementation.");
-        }
-      } else {
-        // Offer Fix-It extraction for new proposals too
-        const extractChoice = await vscode.window.showInformationMessage(
-          `Submitted (proposal id: ${result.id || "pending"}). Extract this pattern to an SDOA module?`,
-          "Extract", "Done"
-        );
-        if (extractChoice === "Extract") {
-          const roots = vscode.workspace.workspaceFolders;
-          if (roots?.[0]) {
-            await offerExtraction(innovation, roots[0].uri.fsPath, outputChannel);
-          }
-        }
-      }
-    }
-
-    if (choice === "exclude") {
+    } else if (choice === "submit") {
+      await handleSubmission(innovation, doc, outputChannel);
+    } else if (choice === "exclude") {
       await excludeFromFutureChecks(innovation);
       outputChannel.appendLine("Module excluded from future portfolio checks.");
       vscode.window.showInformationMessage("Module excluded from future portfolio checks.");
@@ -331,12 +394,12 @@ interface StateSnapshot {
 }
 
 class ControlPanelProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
-  private _onDidChangeTreeData = new vscode.EventEmitter<void>();
+  private readonly _onDidChangeTreeData = new vscode.EventEmitter<void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   private state: StateSnapshot | null = null;
   private pollInterval: ReturnType<typeof setInterval> | null = null;
-  private outputChannel: vscode.OutputChannel;
+  private readonly outputChannel: vscode.OutputChannel;
 
   constructor(outputChannel: vscode.OutputChannel) {
     this.outputChannel = outputChannel;
@@ -448,9 +511,7 @@ class ControlPanelProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 
   private getActionItems(): vscode.TreeItem[] {
     return [
-      this.leaf("Run Full Workspace Scan", "search-view-icon", "sdoa.scanWorkspace"),
-      this.leaf("Scan File...", "file", "sdoa.scanFile"),
-      this.leaf("Scan Folder...", "folder", "sdoa.scanFolder"),
+      this.leaf("Scan Project...", "search-view-icon", "sdoa.scanProject"),
       this.leaf("Clear Engine Cache", "trash", "sdoa.clearCache"),
       this.leaf("Flush Offline Queue", "cloud-upload", "sdoa.flushQueue"),
       this.leaf("Restart Engine", "refresh", "sdoa.restartEngine"),

@@ -1,7 +1,7 @@
-import { IncomingMessage, ServerResponse } from "http";
+import { IncomingMessage } from "node:http";
 import { db } from "../fisp/database";
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import { Router } from "../utils/Router";
 import { tailLogs } from "../utils/logger";
 import { getSystemMetrics } from "./health";
@@ -37,6 +37,18 @@ router.get("/api/proposals/:id", (req, res) => {
   const data = JSON.parse(proposal.data);
   const innovations = data.innovations || [];
   
+  const prMeta = db.prepare('SELECT * FROM pr_metadata WHERE proposalId = ?').get(id) as any;
+  const prHtml = prMeta?.prUrl 
+    ? `<p><strong>PR Status:</strong> OPEN (<a href="${prMeta.prUrl}" target="_blank">View PR</a>)</p>` 
+    : `<p><strong>PR Status:</strong> <span class="badge rejected">PR not created</span></p>`;
+  
+  let ciHtml = `<p><strong>CI Checks:</strong> <span class="badge queued">Pending/Unknown</span></p>`;
+  if (prMeta?.ci_status) {
+    const badgeClass = prMeta.ci_status === 'success' ? 'accepted' : 'rejected';
+    const logsLink = prMeta.ci_log_url ? ` (<a href="${prMeta.ci_log_url}" target="_blank">View Logs</a>)` : '';
+    ciHtml = `<p><strong>CI Checks:</strong> <span class="badge ${badgeClass}">${prMeta.ci_status}</span>${logsLink}</p>`;
+  }
+  
   res.statusCode = 200;
   res.setHeader("Content-Type", "text/html");
   res.end(`
@@ -52,7 +64,8 @@ router.get("/api/proposals/:id", (req, res) => {
         Signature: ${data.signature ? 'Valid' : 'Missing'} | 
         Innovations: ${innovations.length}
       </p>
-      <p><strong>PR Status:</strong> OPEN (<a href="https://github.com/dummy/pr/${proposal.id}" target="_blank">View PR</a>)</p>
+      ${prHtml}
+      ${ciHtml}
       
       <h4>Innovations [${innovations.length}]</h4>
       <pre>${JSON.stringify(innovations, null, 2)}</pre>
@@ -118,14 +131,20 @@ router.get("/api/pipeline", async (req, res) => {
     const isAccepted = run.status === 'success';
     const isRejected = run.status === 'failed';
     const s1 = 'accepted';
-    const s2 = isRejected ? 'rejected' : 'accepted';
+    let s2 = 'accepted';
+    if (isRejected) { s2 = 'rejected'; }
     const s3 = isRejected ? 'queued' : 'accepted';
     const s4 = isRejected ? 'queued' : 'accepted';
-    const s5 = isRejected ? 'queued' : (isAccepted ? 'accepted' : 'queued');
-    const s6 = isRejected ? 'queued' : (isAccepted ? 'queued' : 'queued');
+    let s5 = 'queued';
+    if (!isRejected && isAccepted) { s5 = 'accepted'; }
+    const s6 = 'queued';
+
+    let cardColor = '#d29922';
+    if (isAccepted) { cardColor = '#238636'; }
+    else if (isRejected) { cardColor = '#da3633'; }
 
     return `
-      <div class="card" style="margin-bottom: 1rem; border-left: 4px solid ${isAccepted ? '#238636' : (isRejected ? '#da3633' : '#d29922')}">
+      <div class="card" style="margin-bottom: 1rem; border-left: 4px solid ${cardColor}">
         <h4>Run for ${run.proposal_id}</h4>
         <p style="font-size: 0.8rem; color: #8b949e;">Duration: ${run.duration_ms}ms | Synced to Cloud</p>
         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
@@ -151,9 +170,12 @@ router.get("/api/logs", (req, res) => {
   const formatted = lines.map(l => {
     try {
       const obj = JSON.parse(l);
-      const color = obj.level === 'error' ? '#da3633' : (obj.level === 'warn' ? '#d29922' : '#58a6ff');
+      let color = '#58a6ff';
+      if (obj.level === 'error') { color = '#da3633'; }
+      else if (obj.level === 'warn') { color = '#d29922'; }
       return `<div><span style="color: #8b949e">[${obj.timestamp}]</span> <span style="color: ${color}">[${obj.level.toUpperCase()}]</span> ${obj.msg} ${Object.keys(obj).length > 3 ? JSON.stringify(obj) : ''}</div>`;
     } catch(e) {
+      console.error(e);
       return `<div>${l}</div>`;
     }
   }).join("");
@@ -173,6 +195,7 @@ router.post("/api/scan", (req, res) => {
       res.setHeader("Content-Type", "application/json");
       res.end(JSON.stringify({ message: `Scan initialized for ${payload.type}: ${payload.path}` }));
     } catch(e) {
+      console.error(e);
       res.statusCode = 400;
       res.setHeader("Content-Type", "application/json");
       res.end(JSON.stringify({ error: "Invalid JSON payload" }));
@@ -181,7 +204,7 @@ router.post("/api/scan", (req, res) => {
 });
 
 router.get("/api/health-ui", async (req, res) => {
-  const metrics = await getSystemMetrics();
+  const metrics = getSystemMetrics();
   res.statusCode = 200;
   res.setHeader("Content-Type", "text/html");
   res.end(`
@@ -249,7 +272,7 @@ router.get("/api/heatmap", (_req, res) => {
       const data = JSON.parse(row.data);
       const content: string = data?.innovations?.[0]?.source?.content || "";
       // Extract identifier tokens (≥6 chars) as representative patterns
-      const tokens = content.match(/\b[a-zA-Z_][a-zA-Z0-9_]{5,}\b/g) || [];
+      const tokens = content.match(/\b[a-zA-Z_]\w{5,}\b/g) || [];
       patterns.push(...tokens.slice(0, 20));
     } catch { /* skip malformed */ }
   }
@@ -263,7 +286,7 @@ router.get("/api/heatmap", (_req, res) => {
     try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
     for (const entry of entries) {
       const full = path.join(dir, entry.name);
-      const rel = path.relative(workspaceRoot, full).replace(/\\/g, "/");
+      const rel = path.relative(workspaceRoot, full).replaceAll("\\", "/");
       if (["node_modules", ".git", "dist", ".sdoa"].includes(entry.name)) continue;
       if (entry.isDirectory()) { walk(full, depth + 1); continue; }
       if (!/\.(ts|tsx|js|jsx|css)$/.test(entry.name)) continue;
@@ -373,9 +396,17 @@ router.get("/views/:view", (req, res) => {
 router.get("/api/pr-status", (req, res) => {
   const urlParams = new URL(req.url!, "http://localhost");
   const id = urlParams.searchParams.get("id");
+  const prMeta = db.prepare('SELECT * FROM pr_metadata WHERE proposalId = ?').get(id) as any;
+  
+  if (!prMeta) {
+    res.statusCode = 404;
+    res.setHeader("Content-Type", "application/json");
+    return res.end(JSON.stringify({ error: "Not found" }));
+  }
+
   res.statusCode = 200;
   res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify({ status: "OPEN", url: "https://github.com/dummy/pr/" + id }));
+  res.end(JSON.stringify({ status: prMeta.status, url: prMeta.prUrl }));
 });
 
 router.get("/", (req, res) => {
