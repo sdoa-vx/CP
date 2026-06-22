@@ -1,4 +1,4 @@
-import { ServerResponse } from "http";
+import { ServerResponse } from "node:http";
 
 // ── Event shape ───────────────────────────────────────────────────────────────
 export interface EngineEvent {

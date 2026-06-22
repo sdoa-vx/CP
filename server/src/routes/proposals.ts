@@ -3,6 +3,24 @@ import { parseJsonBody } from "../utils/parseJsonBody";
 import { runProbationOfficer } from "../validators/probationOfficer";
 import { checkSemanticSimilarity } from "../fisp/semanticSimilarity";
 import { storeProposal } from "../fisp/storeProposal";
+import { db } from "../fisp/database";
+import { getPRMetadataLocal } from "../fisp/storeProposal";
+
+export async function handleLatestProposal(req: IncomingMessage, res: ServerResponse) {
+  const proposalRow = db.prepare('SELECT * FROM proposals ORDER BY timestamp DESC LIMIT 1').get() as any;
+  if (!proposalRow) {
+    res.statusCode = 404;
+    return res.end(JSON.stringify({ error: "No proposals found." }));
+  }
+  const prMeta = getPRMetadataLocal(proposalRow.id);
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify({
+    ...JSON.parse(proposalRow.data),
+    status: proposalRow.status,
+    prUrl: prMeta?.prUrl || null
+  }));
+}
 
 export async function handleProposals(req: IncomingMessage, res: ServerResponse) {
   const body = await parseJsonBody(req);

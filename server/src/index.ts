@@ -1,5 +1,6 @@
-import http from "http";
-import { handleProposals } from "./routes/proposals";
+import "dotenv/config";
+import http from "node:http";
+import { handleProposals, handleLatestProposal } from "./routes/proposals";
 import { handleDecision } from "./routes/decision";
 import { handleHealth } from "./routes/health";
 import { handleFederation } from "./routes/federation";
@@ -7,6 +8,7 @@ import dashboardRouter, { staticRouter } from "./routes/dashboard";
 import { initWebSocket } from "./ws";
 import { Router } from "./utils/Router";
 import { logger } from "./utils/logger";
+import { githubWebhook } from "./webhooks/webhooks";
 
 const PORT = process.env.PORT || 8080;
 
@@ -39,6 +41,7 @@ app.use("/public", (req, res, next) => {
 // Mount modular routers
 app.use("/dashboard", dashboardRouter);
 app.use("/public", staticRouter);
+app.post("/github/webhook", githubWebhook);
 
 import { handleTelemetryReuse } from "./routes/telemetry";
 
@@ -47,6 +50,7 @@ app.use("/", (req, res, next) => {
   if (req.url?.startsWith("/health") && req.method === "GET") return handleHealth(req, res);
   if (req.url?.startsWith("/federation/")) return handleFederation(req, res);
   if (req.url === "/fisp/v1/proposals" && req.method === "POST") return handleProposals(req, res);
+  if (req.url === "/fisp/v1/proposals/latest" && req.method === "GET") return handleLatestProposal(req, res);
   if (req.url?.startsWith("/fisp/v1/proposals/") && req.method === "POST") return handleDecision(req, res);
   if (req.url === "/telemetry/reuse" && req.method === "POST") return handleTelemetryReuse(req, res);
   if (next) next();

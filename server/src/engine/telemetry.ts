@@ -1,5 +1,5 @@
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import { db } from "../fisp/database";
 
 export type EngineState = "idle" | "scanning" | "syncing" | "error";
@@ -121,7 +121,7 @@ export const telemetry = {
 
   reset() {
     Object.assign(state, {
-      engineState: "idle" as EngineState,
+      engineState: "idle",
       lastScan: null,
       astCacheSize: 0,
       detectorHits: { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0 },
