@@ -236,7 +236,11 @@ export async function activate(context: vscode.ExtensionContext) {
       }, async () => {
         return new Promise<void>((resolve) => {
           const npmCmd = execPathNpm === "npm" ? "npm" : `"${execPathNpm}"`;
-          cp.exec(`${npmCmd} install --production`, { cwd: context.extensionPath }, (err, stdout, stderr) => {
+          const env = { ...process.env };
+          if (execPathNode !== "node") {
+            env.PATH = `${path.dirname(execPathNode)}${path.delimiter}${env.PATH || ""}`;
+          }
+          cp.exec(`${npmCmd} install --production`, { cwd: context.extensionPath, env }, (err, stdout, stderr) => {
             if (err) {
               outputChannel.appendLine(`npm install failed: ${stderr}`);
               vscode.window.showErrorMessage("SDOA Engine failed to install native dependencies. Check SDOA MCP output.");
@@ -251,6 +255,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
     outputChannel.appendLine(`Spawning Node.js backend using node executable: ${execPathNode}...`);
     const serverPath = context.asAbsolutePath(path.join("dist", "server", "index.js"));
+    
+    if (execPathNode !== "node") {
+      envVars.PATH = `${path.dirname(execPathNode)}${path.delimiter}${envVars.PATH || ""}`;
+    }
+
     serverProcess = cp.fork(serverPath, [], {
       cwd: workspaceRoot,
       env: envVars,
