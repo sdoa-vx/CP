@@ -1,5 +1,25 @@
 import { db } from './database';
 
+export const MANIFEST = {
+  id: "loadProposal.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "loadProposal",
+    "updateProposalStatus"
+  ],
+  dependencies: [
+    "./database"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export async function loadProposal(id: string) {
   try {
     const row = db.prepare('SELECT * FROM proposals WHERE id = ?').get(id) as any;

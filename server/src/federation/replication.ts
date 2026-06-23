@@ -2,6 +2,27 @@ import { generateSignature } from './handshake';
 import { logger } from '../utils/logger';
 import { db } from '../fisp/database';
 
+export const MANIFEST = {
+  id: "replication.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "replicateProposalToPeers"
+  ],
+  dependencies: [
+    "./handshake",
+    "../utils/logger",
+    "../fisp/database"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export async function replicateProposalToPeers(envelope: any) {
   const peers = (process.env.FEDERATION_PEERS || '').split(',').filter(Boolean);
   for (const peer of peers) {

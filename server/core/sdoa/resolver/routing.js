@@ -1,3 +1,26 @@
+
+const MANIFEST = {
+  id: "routing.js",
+  type: "module",
+  layer: 4,
+  runtime: "JavaScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "_toWorkflowId",
+    "addMiddleware",
+    "registry.get"
+  ],
+  dependencies: [
+    " authorities/router/Router.service.js",
+    "SDOA-Whitepaper-Technical.txt",
+    "SDOA-Governance-Outline.txt",
+    "routes.jsn"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
 "use strict";
 
 /**

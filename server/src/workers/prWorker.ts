@@ -2,6 +2,27 @@ import { logger } from "../utils/logger";
 import { db } from "../fisp/database";
 import { createInstallationToken } from "../github/tokens";
 
+export const MANIFEST = {
+  id: "prWorker.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "openPrForProposal"
+  ],
+  dependencies: [
+    "../utils/logger",
+    "../fisp/database",
+    "../github/tokens"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export async function openPrForProposal(proposal: any, path: string, content: string) {
   let token = process.env.GITHUB_TOKEN;
   const owner = proposal.targetRepo ? proposal.targetRepo.split('/')[0] : process.env.GITHUB_OWNER;

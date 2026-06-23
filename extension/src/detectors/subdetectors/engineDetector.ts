@@ -1,5 +1,24 @@
 import * as ts from 'typescript';
 
+export const MANIFEST = {
+  id: "engineDetector.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "EngineDetector"
+  ],
+  dependencies: [
+    "typescript"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export class EngineDetector {
   public run(cache: Map<string, any>) {
     const execSignatures = new Map<string, string[]>();

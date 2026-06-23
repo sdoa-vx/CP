@@ -5,6 +5,30 @@ import { db } from "../fisp/database";
 import { logger } from "../utils/logger";
 import { supabase } from "../utils/supabase";
 
+export const MANIFEST = {
+  id: "webhooks.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "githubWebhook"
+  ],
+  dependencies: [
+    "node:crypto",
+    "node:http",
+    "../fisp/storeProposal",
+    "../fisp/database",
+    "../utils/logger",
+    "../utils/supabase"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 const WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET;
 
 export async function githubWebhook(req: IncomingMessage, res: ServerResponse) {

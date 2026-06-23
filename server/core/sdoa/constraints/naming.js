@@ -1,3 +1,34 @@
+
+const MANIFEST = {
+  id: "naming.js",
+  type: "module",
+  layer: 4,
+  runtime: "JavaScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "Naming Rules",
+    "SDOA-Whitepaper-Technical.txt Sections 5, 6, 8",
+    "sdoa-linter.js (layer detection patterns)",
+    "Router.service.js (_toWorkflowId)",
+    "Registrar.service.js (ID conflict resolution)",
+    "blueprint.schema.json (module names)"
+  ],
+  dependencies: [
+    "JavaScript",
+    "PascalCase",
+    "snake_case",
+    "camelCase",
+    "kebab-case",
+    "all-lowercase",
+    "var",
+    "ts",
+    "json"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
 "use strict";
 
 /**

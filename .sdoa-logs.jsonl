@@ -1,1 +1,5 @@
 {"timestamp":"2026-06-21T08:21:23.826Z","level":"info","msg":"[MCP] Server listening on port 8080"}
+{"timestamp":"2026-06-22T07:24:17.600Z","level":"info","msg":"[MCP] Server listening on port 8080"}
+{"timestamp":"2026-06-22T15:54:58.246Z","level":"info","msg":"[MCP] Server listening on port 8080"}
+{"timestamp":"2026-06-22T18:44:13.606Z","level":"error","msg":"Failed to process webhook:"}
+{"timestamp":"2026-06-22T18:51:22.009Z","level":"error","msg":"Failed to process webhook:"}

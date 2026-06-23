@@ -1,3 +1,20 @@
+
+export const MANIFEST = {
+  id: "tokenDetector.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "TokenDetector"
+  ],
+  dependencies: [],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
 export class TokenDetector {
   public run(cache: Map<string, any>) {
     const hexRegex = /#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})\b/g;

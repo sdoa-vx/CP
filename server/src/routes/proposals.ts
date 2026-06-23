@@ -6,13 +6,38 @@ import { storeProposal } from "../fisp/storeProposal";
 import { db } from "../fisp/database";
 import { getPRMetadataLocal } from "../fisp/storeProposal";
 
+export const MANIFEST = {
+  id: "proposals.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "handleLatestProposal",
+    "handleProposals"
+  ],
+  dependencies: [
+    "node:http",
+    "../utils/parseJsonBody",
+    "../validators/probationOfficer",
+    "../fisp/semanticSimilarity",
+    "../fisp/storeProposal",
+    "../fisp/database"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export async function handleLatestProposal(req: IncomingMessage, res: ServerResponse) {
   const proposalRow = db.prepare('SELECT * FROM proposals ORDER BY timestamp DESC LIMIT 1').get() as any;
   if (!proposalRow) {
     res.statusCode = 404;
     return res.end(JSON.stringify({ error: "No proposals found." }));
   }
-  const prMeta = getPRMetadataLocal(proposalRow.id);
+  const prMeta = getPRMetadataLocal(proposalRow.id) as any;
   res.statusCode = 200;
   res.setHeader("Content-Type", "application/json");
   res.end(JSON.stringify({

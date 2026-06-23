@@ -76,5 +76,39 @@ import { startOfflineSync } from "./workers/offlineSync";
 startOfflineSync();
 
 import { emit } from "./engine/events";
+
+export const MANIFEST = {
+  id: "index.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "node:http",
+    "/dashboard",
+    "/public",
+    "/github/webhook"
+  ],
+  dependencies: [
+    "node:http",
+    "./routes/proposals",
+    "./routes/decision",
+    "./routes/health",
+    "./routes/federation",
+    "./routes/dashboard",
+    "./ws",
+    "./utils/Router",
+    "./utils/logger",
+    "./webhooks/webhooks",
+    "./routes/telemetry",
+    "./workers/offlineSync",
+    "./engine/events"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
 emit("engine:start", { port: Number(PORT), pid: process.pid });
 

@@ -2,6 +2,7 @@ import { IncomingMessage } from "node:http";
 import { db } from "../fisp/database";
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "crypto";
 import { Router } from "../utils/Router";
 import { tailLogs } from "../utils/logger";
 import { getSystemMetrics } from "./health";
@@ -11,6 +12,83 @@ import { emit, attachSseClient, getRecentEvents } from "../engine/events";
 import { flushQueue } from "../workers/offlineSync";
 
 const router = new Router();
+const syncedFiles = new Map<string, string>();
+
+function runScanHeuristics(root: string) {
+  const workspaceHash = crypto.createHash('sha256').update(root).digest('hex').slice(0, 16);
+  let count = 0;
+
+  function walk(target: string, depth = 0) {
+    if (depth > 8) return;
+    try {
+      const stat = fs.statSync(target);
+      if (stat.isDirectory()) {
+        const entries = fs.readdirSync(target, { withFileTypes: true });
+        for (const e of entries) {
+          if (["node_modules", ".git", "dist"].includes(e.name)) continue;
+          walk(path.join(target, e.name), depth + 1);
+        }
+      } else if (stat.isFile() && /\.(ts|tsx|js|jsx|css)$/.test(target)) {
+        count++;
+        try {
+          const content = fs.readFileSync(target, "utf-8");
+          const fileHash = crypto.createHash('sha256').update(content).digest('hex');
+          
+          if (content.includes("export const MANIFEST") || content.includes("const MANIFEST =")) {
+             const typeMatch = content.match(/type:\s*["']([^"']+)["']/);
+             const idMatch = content.match(/id:\s*["']([^"']+)["']/);
+             const versionMatch = content.match(/version:\s*["']([^"']+)["']/);
+             
+             if (typeMatch && typeMatch[1]) {
+                const modType = typeMatch[1].charAt(0).toUpperCase() + typeMatch[1].slice(1);
+                telemetry.hitDetector(`sdoa${modType}` as any);
+             }
+             
+             if (syncedFiles.get(target) !== fileHash) {
+                syncedFiles.set(target, fileHash);
+                const payload = {
+                  module_id: idMatch ? idMatch[1] : "unknown",
+                  type: typeMatch ? typeMatch[1] : "unknown",
+                  file_path: target,
+                  source_code: content,
+                  workspace_hash: workspaceHash,
+                  file_hash: fileHash,
+                  version: versionMatch ? versionMatch[1] : "1.0.0",
+                  timestamp: new Date().toISOString()
+                };
+                db.prepare('INSERT INTO offline_queue (type, target, payload, created_at) VALUES (?, ?, ?, ?)').run(
+                  'SUPABASE', 'sdoa_portfolio', JSON.stringify(payload), new Date().toISOString()
+                );
+             }
+          }
+
+          const hit = (detector: string) => {
+            telemetry.hitDetector(detector as any);
+            db.prepare('INSERT INTO offline_queue (type, target, payload, created_at) VALUES (?, ?, ?, ?)').run(
+              'SUPABASE', 'innovation_events', JSON.stringify({
+                workspace_hash: workspaceHash,
+                detector,
+                file_path: target,
+                matches: 1,
+                ast_signature: null,
+                created_at: new Date().toISOString()
+              }), new Date().toISOString()
+            );
+          };
+
+          if (content.includes("fetch(") || content.includes("axios.")) hit("workflow");
+          if (content.includes("child_process") || content.includes("exec(")) hit("engine");
+          if (/\b(interface|type)\s+[A-Z]/.test(content)) hit("schema");
+          if (content.includes("var(--") || content.includes("#") || content.includes("px")) hit("token");
+          if (content.includes("<") && content.includes("/>") && content.includes("className=")) hit("uiPrimitive");
+        } catch { /* skip */ }
+      }
+    } catch { /* skip */ }
+  }
+
+  walk(root);
+  return { count, workspaceHash };
+}
 
 router.get("/api/status", (req, res) => {
   const proposals = db.prepare('SELECT id, status, timestamp FROM proposals ORDER BY timestamp DESC').all();
@@ -122,6 +200,11 @@ router.get("/api/peers", (req, res) => {
 });
 
 router.get("/api/pipeline", async (req, res) => {
+  if (!supabase) {
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "text/html");
+    return res.end("<p>Supabase unconfigured - using local mode.</p>");
+  }
   const { data: runs, error } = await supabase.from('pipeline_runs').select('*').order('created_at', { ascending: false }).limit(5);
   res.statusCode = 200;
   res.setHeader("Content-Type", "text/html");
@@ -191,9 +274,19 @@ router.post("/api/scan", (req, res) => {
       const payload = JSON.parse(body);
       console.log(`[SDOA MCP] Manual scan requested via Dashboard: ${payload.type} at ${payload.path}`);
       
+      telemetry.setState("scanning");
+      emit("scan:start", { root: payload.path });
+      
+      telemetry.resetDetectorHits();
+      const { count } = runScanHeuristics(payload.path);
+      
+      telemetry.setAstCacheSize(count);
+      telemetry.recordScan();
+      emit("scan:complete", { filesScanned: count });
+
       res.statusCode = 200;
       res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ message: `Scan initialized for ${payload.type}: ${payload.path}` }));
+      res.end(JSON.stringify({ message: `Scan completed for ${payload.type}: ${payload.path}` }));
     } catch(e) {
       console.error(e);
       res.statusCode = 400;
@@ -253,60 +346,24 @@ router.get("/api/events", (req, res) => {
   }
 });
 
-/**
- * Heatmap: walk the workspace, score each TS/JS/CSS file by how many
- * unique token patterns from the proposals table appear in its text.
- * Score = matches / total_proposal_patterns, clamped 0..1.
- */
-router.get("/api/heatmap", (_req, res) => {
-  const workspaceRoot = process.cwd();
+let cachedAstHeatmap: Record<string, number> = {};
 
-  // Build a flat list of all unique pattern strings from accepted proposals
-  const rows = db.prepare(
-    "SELECT data FROM proposals WHERE status IN ('accepted','queued') LIMIT 200"
-  ).all() as any[];
-
-  const patterns: string[] = [];
-  for (const row of rows) {
-    try {
-      const data = JSON.parse(row.data);
-      const content: string = data?.innovations?.[0]?.source?.content || "";
-      // Extract identifier tokens (≥6 chars) as representative patterns
-      const tokens = content.match(/\b[a-zA-Z_]\w{5,}\b/g) || [];
-      patterns.push(...tokens.slice(0, 20));
-    } catch { /* skip malformed */ }
-  }
-  const uniquePatterns = [...new Set(patterns)];
-
-  // Walk workspace files (exclude node_modules, .git, dist)
-  const scores: Record<string, number> = {};
-  function walk(dir: string, depth = 0) {
-    if (depth > 6) return;
-    let entries: fs.Dirent[];
-    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
-    for (const entry of entries) {
-      const full = path.join(dir, entry.name);
-      const rel = path.relative(workspaceRoot, full).replaceAll("\\", "/");
-      if (["node_modules", ".git", "dist", ".sdoa"].includes(entry.name)) continue;
-      if (entry.isDirectory()) { walk(full, depth + 1); continue; }
-      if (!/\.(ts|tsx|js|jsx|css)$/.test(entry.name)) continue;
-
-      try {
-        const content = fs.readFileSync(full, "utf-8");
-        if (uniquePatterns.length === 0) {
-          scores[rel] = 0;
-        } else {
-          const hits = uniquePatterns.filter(p => content.includes(p)).length;
-          scores[rel] = Math.min(1, hits / uniquePatterns.length);
-        }
-      } catch { /* unreadable file — skip */ }
-    }
-  }
-  walk(workspaceRoot);
-
+/** Receives AST scores from the globalAstEngine extension worker */
+router.post("/api/actions/ast-heatmap", async (req, res) => {
+  const payload = await parseBody(req);
+  cachedAstHeatmap = payload;
   res.statusCode = 200;
   res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(scores));
+  res.end(JSON.stringify({ ok: true, count: Object.keys(payload).length }));
+});
+
+/**
+ * Heatmap: serves the AST density/complexity scores synced from the VS Code extension.
+ */
+router.get("/api/heatmap", (_req, res) => {
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(cachedAstHeatmap));
 });
 
 // ── Action Endpoints ─────────────────────────────────────────────────────────
@@ -327,21 +384,21 @@ router.post("/api/actions/scan-workspace", async (req, res) => {
   telemetry.setState("scanning");
   emit("scan:start", { root });
 
-  // Count .ts/.tsx/.js/.jsx/.css files — same set the AST engine caches
-  let count = 0;
-  function countFiles(dir: string, depth = 0) {
-    if (depth > 8) return;
-    try {
-      const entries = fs.readdirSync(dir, { withFileTypes: true });
-      for (const e of entries) {
-        if (["node_modules", ".git", "dist"].includes(e.name)) continue;
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) { countFiles(full, depth + 1); continue; }
-        if (/\.(ts|tsx|js|jsx|css)$/.test(e.name)) count++;
-      }
-    } catch { /* skip unreadable dirs */ }
-  }
-  countFiles(root);
+  telemetry.resetDetectorHits();
+  const { count, workspaceHash } = runScanHeuristics(root);
+
+  const currentTelemetry = telemetry.get();
+  db.prepare('INSERT INTO offline_queue (type, target, payload, created_at) VALUES (?, ?, ?, ?)').run(
+    'SUPABASE', 'portfolio_usage', JSON.stringify({
+      workspace_hash: workspaceHash,
+      primitive_count: currentTelemetry.detectorHits.sdoaPrimitive,
+      workflow_count: currentTelemetry.detectorHits.sdoaWorkflow,
+      schema_count: currentTelemetry.detectorHits.sdoaSchema,
+      token_count: currentTelemetry.detectorHits.sdoaToken,
+      engine_count: currentTelemetry.detectorHits.sdoaEngine,
+      updated_at: new Date().toISOString()
+    }), new Date().toISOString()
+  );
 
   telemetry.setAstCacheSize(count);
   telemetry.recordScan();
