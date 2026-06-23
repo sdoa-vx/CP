@@ -6,7 +6,6 @@ extension/src/**
 release-binaries/**
 *.vsix
 *.log
-node_modules/**
 esbuild.extension.js
 extension/tsconfig.json
 server/tsconfig.json

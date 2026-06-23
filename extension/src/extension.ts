@@ -155,24 +155,24 @@ export async function activate(context: vscode.ExtensionContext) {
       let extractFolder = "";
       
       if (platform === "win32") {
-        nodeUrl = "https://nodejs.org/dist/v20.14.0/node-v20.14.0-win-x64.zip";
-        extractFolder = "node-v20.14.0-win-x64";
+        nodeUrl = "https://nodejs.org/dist/v22.17.1/node-v22.17.1-win-x64.zip";
+        extractFolder = "node-v22.17.1-win-x64";
         execPathNode = path.join(sdoaNodeDir, extractFolder, "node.exe");
         execPathNpm = path.join(sdoaNodeDir, extractFolder, "npm.cmd");
       } else if (platform === "darwin") {
         const arch = process.arch;
         if (arch === "arm64") {
-          nodeUrl = "https://nodejs.org/dist/v20.14.0/node-v20.14.0-darwin-arm64.tar.gz";
-          extractFolder = "node-v20.14.0-darwin-arm64";
+          nodeUrl = "https://nodejs.org/dist/v22.17.1/node-v22.17.1-darwin-arm64.tar.gz";
+          extractFolder = "node-v22.17.1-darwin-arm64";
         } else {
-          nodeUrl = "https://nodejs.org/dist/v20.14.0/node-v20.14.0-darwin-x64.tar.gz";
-          extractFolder = "node-v20.14.0-darwin-x64";
+          nodeUrl = "https://nodejs.org/dist/v22.17.1/node-v22.17.1-darwin-x64.tar.gz";
+          extractFolder = "node-v22.17.1-darwin-x64";
         }
         execPathNode = path.join(sdoaNodeDir, extractFolder, "bin", "node");
         execPathNpm = path.join(sdoaNodeDir, extractFolder, "bin", "npm");
       } else {
-        nodeUrl = "https://nodejs.org/dist/v20.14.0/node-v20.14.0-linux-x64.tar.gz";
-        extractFolder = "node-v20.14.0-linux-x64";
+        nodeUrl = "https://nodejs.org/dist/v22.17.1/node-v22.17.1-linux-x64.tar.gz";
+        extractFolder = "node-v22.17.1-linux-x64";
         execPathNode = path.join(sdoaNodeDir, extractFolder, "bin", "node");
         execPathNpm = path.join(sdoaNodeDir, extractFolder, "bin", "npm");
       }
@@ -224,33 +224,6 @@ export async function activate(context: vscode.ExtensionContext) {
           });
         });
       }
-    }
-
-    const nodeModulesPath = context.asAbsolutePath("node_modules");
-    if (!fs.existsSync(nodeModulesPath)) {
-      outputChannel.appendLine(`node_modules missing. Running npm install --production using ${execPathNpm}...`);
-      await vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: "Finalizing SDOA infrastructure setup (this only happens once)...",
-        cancellable: false
-      }, async () => {
-        return new Promise<void>((resolve) => {
-          const npmCmd = execPathNpm === "npm" ? "npm" : `"${execPathNpm}"`;
-          const env = { ...process.env };
-          if (execPathNode !== "node") {
-            env.PATH = `${path.dirname(execPathNode)}${path.delimiter}${env.PATH || ""}`;
-          }
-          cp.exec(`${npmCmd} install --production`, { cwd: context.extensionPath, env }, (err, stdout, stderr) => {
-            if (err) {
-              outputChannel.appendLine(`npm install failed: ${stderr}`);
-              vscode.window.showErrorMessage("SDOA Engine failed to install native dependencies. Check SDOA MCP output.");
-            } else {
-              outputChannel.appendLine(`npm install successful.\n${stdout}`);
-            }
-            resolve();
-          });
-        });
-      });
     }
 
     outputChannel.appendLine(`Spawning Node.js backend using node executable: ${execPathNode}...`);
