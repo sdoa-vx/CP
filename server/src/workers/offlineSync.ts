@@ -1,3 +1,27 @@
+
+export const MANIFEST = {
+  id: "offlineSync.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "startOfflineSync",
+    "stopOfflineSync",
+    "flushQueue"
+  ],
+  dependencies: [
+    "../fisp/database",
+    "../utils/supabase",
+    "../federation/handshake",
+    "../engine/telemetry",
+    "../engine/events"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
 import { db } from '../fisp/database';
 import { supabase } from '../utils/supabase';
 import { generateSignature } from '../federation/handshake';
@@ -25,8 +49,12 @@ async function processItem(item: any): Promise<boolean> {
 
   try {
     if (item.type === 'SUPABASE') {
-      const { error } = await supabase.from(item.target).insert(payload);
-      if (!error) success = true;
+      if (supabase) {
+        const { error } = await supabase.from(item.target).insert(payload);
+        if (!error) success = true;
+      } else {
+        success = true; // Supabase not configured, ignore queue item
+      }
     } else if (item.type === 'FEDERATION') {
       const body = JSON.stringify(payload);
       const signature = generateSignature(body);
@@ -76,6 +104,43 @@ export async function flushQueue(): Promise<{ flushed: number; failed: number }>
   return { flushed, failed };
 }
 
+async function pullCanonicalLibrary() {
+  if (!supabase) return;
+  try {
+    const lastSyncRow = db.prepare("SELECT value FROM metadata_store WHERE key = 'last_sync_time'").get() as { value: string } | undefined;
+    const lastSyncTime = lastSyncRow ? lastSyncRow.value : '1970-01-01T00:00:00.000Z';
+
+    const { data, error } = await supabase
+      .from('sdoa_portfolio')
+      .select('*')
+      .gt('created_at', lastSyncTime)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error("[OfflineSync] Pull sync error:", error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const insert = db.prepare('INSERT OR REPLACE INTO canonical_library (id, module_id, version, payload, timestamp) VALUES (?, ?, ?, ?, ?)');
+      const updateSync = db.prepare("INSERT OR REPLACE INTO metadata_store (key, value) VALUES ('last_sync_time', ?)");
+
+      db.transaction(() => {
+        let latestTime = lastSyncTime;
+        for (const row of data) {
+          insert.run(row.id, row.module_id, row.version, JSON.stringify(row), row.created_at);
+          if (row.created_at > latestTime) latestTime = row.created_at;
+        }
+        updateSync.run(latestTime);
+      })();
+      emit('sync:pull', { pulled: data.length });
+    }
+  } catch (err) {
+    console.error("[OfflineSync] Error pulling canonical library:", err);
+  }
+}
+
 async function processQueue() {
   await flushQueue();
+  await pullCanonicalLibrary();
 }

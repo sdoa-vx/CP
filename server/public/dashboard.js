@@ -18,6 +18,27 @@ function showPanel(id, el) {
   if (id === 'detectors') renderDetectors();
 }
 
+// ── Topology Animation ────────────────────────────────────────────────────────
+const activeAnimations = new Map();
+
+function pulseTopologyPath(pathId, durationMs = 1200) {
+  const path = document.getElementById(pathId);
+  if (!path) return;
+  
+  if (activeAnimations.has(pathId)) {
+    clearTimeout(activeAnimations.get(pathId));
+  }
+  
+  path.classList.add('active');
+  
+  const timeoutId = setTimeout(() => {
+    path.classList.remove('active');
+    activeAnimations.delete(pathId);
+  }, durationMs);
+  
+  activeAnimations.set(pathId, timeoutId);
+}
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let latestState = null;
 let eventCount = 0;
@@ -291,6 +312,19 @@ function connectEventStream() {
         [...data.payload.events].reverse().forEach(appendEvent);
       } else {
         appendEvent(data);
+        
+        // Trigger topology animations
+        if (data.type.startsWith('scan:')) {
+          pulseTopologyPath('path-vscode-mcp');
+          if (data.type === 'scan:complete') pulseTopologyPath('path-mcp-sqlite');
+        } else if (data.type.startsWith('detector:')) {
+          pulseTopologyPath('path-mcp-ast', 800);
+        } else if (data.type.startsWith('sync:')) {
+          pulseTopologyPath('path-mcp-supabase', 2000);
+        } else if (data.type === 'cache:cleared' || data.type === 'engine:restart') {
+          pulseTopologyPath('path-mcp-sqlite');
+          pulseTopologyPath('path-mcp-ast');
+        }
       }
     } catch (e) { console.warn("SSE parse error:", e); }
   };

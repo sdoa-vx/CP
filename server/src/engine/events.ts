@@ -1,5 +1,27 @@
 import { ServerResponse } from "node:http";
 
+export const MANIFEST = {
+  id: "events.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "emit",
+    "getRecentEvents",
+    "attachSseClient",
+    "eventBus"
+  ],
+  dependencies: [
+    "node:http"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 // ── Event shape ───────────────────────────────────────────────────────────────
 export interface EngineEvent {
   id: number;

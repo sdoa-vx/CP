@@ -1,5 +1,24 @@
 import * as ts from 'typescript';
 
+export const MANIFEST = {
+  id: "schemaDetector.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "SchemaDetector"
+  ],
+  dependencies: [
+    "typescript"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export class SchemaDetector {
   public run(cache: Map<string, any>) {
     const interfaceSignatures = new Map<string, string[]>();

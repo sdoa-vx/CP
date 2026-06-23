@@ -1,3 +1,29 @@
+
+const MANIFEST = {
+  id: "index.js",
+  type: "module",
+  layer: 4,
+  runtime: "JavaScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "./layerValidator",
+    "./typeValidator",
+    "./roleValidator",
+    "./probationOfficer",
+    "./structureValidator"
+  ],
+  dependencies: [
+    "./layerValidator",
+    "./typeValidator",
+    "./roleValidator",
+    "./probationOfficer",
+    "./structureValidator"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;

@@ -2,6 +2,31 @@ import { db } from './database';
 import { broadcastDashboardUpdate } from '../ws';
 import { recordPipelineStep } from '../utils/telemetry';
 
+export const MANIFEST = {
+  id: "storeProposal.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "storeProposal",
+    "savePRMetadataLocal",
+    "getPRMetadataLocal",
+    "updatePRStatusByUrl",
+    "updatePRCIStatusByUrl"
+  ],
+  dependencies: [
+    "./database",
+    "../ws",
+    "../utils/telemetry"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export async function storeProposal(envelope: any) {
   db.prepare('INSERT INTO proposals (id, status, data, timestamp) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data')
     .run(envelope.proposalId, 'queued', JSON.stringify(envelope), new Date().toISOString());

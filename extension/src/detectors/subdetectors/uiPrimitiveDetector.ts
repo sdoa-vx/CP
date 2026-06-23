@@ -1,5 +1,24 @@
 import * as ts from 'typescript';
 
+export const MANIFEST = {
+  id: "uiPrimitiveDetector.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "UIPrimitiveDetector"
+  ],
+  dependencies: [
+    "typescript"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export class UIPrimitiveDetector {
   public run(cache: Map<string, any>) {
     const componentHashes = new Map<string, string[]>();

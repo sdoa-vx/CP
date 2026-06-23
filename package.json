@@ -1,7 +1,9 @@
 {
   "name": "sdoa-mcp-extension",
   "displayName": "SDOA Migration Engine",
-  "version": "1.1.0",
+  "version": "1.1.1",
+  "description": "SDOA Architecture AI Companion",
+  "icon": "extension/assets/seal.png",
   "bin": {
     "sdoa-mcp-extension": "./dist/server/index.js"
   },
@@ -23,7 +25,7 @@
         {
           "id": "sdoa-explorer",
           "title": "SDOA Engine",
-          "icon": "SDOA.seal.svg"
+          "icon": "SDOA.seal.outline.svg"
         }
       ]
     },
@@ -47,7 +49,8 @@
       },
       {
         "command": "sdoa.scanActiveFile",
-        "title": "Scan Active File for SDOA Innovation"
+        "title": "Scan Active File for SDOA Innovation",
+        "icon": "$(file-code)"
       },
       {
         "command": "sdoa.scanProject",
@@ -103,16 +106,61 @@
     "menus": {
       "view/title": [
         {
-          "command": "sdoa.scanProject",
+          "command": "sdoa.scanFolder",
           "when": "view == sdoa-control-panel",
-          "group": "navigation"
+          "group": "navigation@1"
+        },
+        {
+          "command": "sdoa.scanActiveFile",
+          "when": "view == sdoa-control-panel",
+          "group": "navigation@2"
+        },
+        {
+          "command": "sdoa.openDashboardLocal",
+          "when": "view == sdoa-control-panel",
+          "group": "navigation@3"
+        },
+        {
+          "command": "sdoa.openReleases",
+          "when": "view == sdoa-control-panel",
+          "group": "navigation@4"
         },
         {
           "command": "sdoa.restartEngine",
           "when": "view == sdoa-control-panel",
-          "group": "navigation"
+          "group": "navigation@5"
         }
       ]
+    },
+    "configuration": {
+      "title": "SDOA MCP Settings",
+      "properties": {
+        "sdoaMcp.fispEndpoint": {
+          "type": "string",
+          "default": "http://localhost:8080",
+          "description": "The backend SDOA Engine URL"
+        },
+        "sdoaMcp.adminUser": {
+          "type": "string",
+          "default": "admin",
+          "description": "Admin username for the SDOA Engine"
+        },
+        "sdoaMcp.adminPass": {
+          "type": "string",
+          "default": "admin",
+          "description": "Admin password for the SDOA Engine"
+        },
+        "sdoaMcp.supabaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Supabase URL for cloud sync"
+        },
+        "sdoaMcp.supabaseKey": {
+          "type": "string",
+          "default": "",
+          "description": "Supabase Key for cloud sync"
+        }
+      }
     }
   },
   "mcpServers": [

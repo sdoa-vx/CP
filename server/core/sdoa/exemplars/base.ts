@@ -1,3 +1,26 @@
+
+export const MANIFEST = {
+  id: "base.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "SdoaModule",
+    "Service",
+    "Adapter",
+    "Task",
+    "Component",
+    "Engine",
+    "Primitive",
+    "Feature"
+  ],
+  dependencies: [],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
 // Last modified: 2026-06-09 08:30 UTC
 // base.ts — SDOAv5.0 Core Base Classes
 

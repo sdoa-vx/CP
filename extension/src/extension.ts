@@ -8,6 +8,7 @@ import { submitProposal } from "./api/submitProposal";
 import { saveLocalInnovation } from "./storage/localStore";
 import { excludeFromFutureChecks } from "./storage/exclusions";
 import { globalAstEngine } from "./detectors/astClusteringEngine";
+import { decomposeMonolith } from "./detectors/monolithDecomposer";
 
 let serverProcess: cp.ChildProcess | undefined;
 
@@ -31,22 +32,39 @@ async function offerExtraction(
   const content: string = innovation.source?.content || "";
 
   const extMap: Record<string, string> = {
-    primitive: "tsx", workflow: "ts", schema: "ts", token: "css", engine: "ts",
+    primitive: "tsx", workflow: "ts", schema: "json", token: "css", engine: "ts",
   };
   const ext = extMap[type] || "ts";
   const dir = path.join(workspaceRoot, EXTRACTION_DIRS[type] || "ui/primitives");
-  const fileName = `${name}.sdoa.${ext}`;
+  const fileName = `${name}.${type}.${ext}`;
   const targetPath = path.join(dir, fileName);
+
+  const manifestCode = content.includes("MANIFEST") ? content : [
+    "export const MANIFEST = {",
+    `  id: "${name}.${type}",`,
+    `  type: "${type}",`,
+    `  layer: ${type === "workflow" || type === "engine" ? 3 : 2},`,
+    `  runtime: "TypeScript",`,
+    `  version: "1.0.0",`,
+    `  operationalRole: "detected-innovation",`,
+    `  requires: [], dataFiles: [],`,
+    `  lifecycle: ["init", "mount", "update", "unmount", "destroy"],`,
+    `  actions: { commands: {}, events: {}, accepts: {}, slots: {} },`,
+    `  optimization: { priority: "speed" }`,
+    "};\n\n",
+    content
+  ].join("\n");
 
   // Build the proposed file content
   const header = [
-    "// ─────────────────────────────────────────────────────────────────────────",
-    `// SDOA Extracted ${type.charAt(0).toUpperCase() + type.slice(1)}: ${name}`,
-    `// Detected by: SDOA Engine v1.1`,
-    `// Locations: ${(innovation.fullLedger?.newPrimitives || []).flatMap((p: any) => p.locations || []).join(", ") || innovation.source?.path || ""}`,
-    "// ─────────────────────────────────────────────────────────────────────────",
+    "// ---------------------------------------------------------",
+    `// File:      ${fileName}`,
+    `// Version:   1.0.0`,
+    `// Updated:   ${new Date().toISOString()}`,
+    `// Changes:   Extracted by SDOA Innovation Detector`,
+    "// ---------------------------------------------------------",
     "",
-    content,
+    manifestCode,
   ].join("\n");
 
   // Create a virtual document for the left side (empty/original)
@@ -89,22 +107,163 @@ async function offerExtraction(
 }
 
 // ── Activate ─────────────────────────────────────────────────────────────────
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   const outputChannel = vscode.window.createOutputChannel("SDOA MCP");
   outputChannel.appendLine("VSX extension activated. Booting backend server...");
 
   // 1. Spawn backend server
   try {
+    const roots = vscode.workspace.workspaceFolders;
+    const workspaceRoot = roots?.[0]?.uri.fsPath || context.extensionPath;
+    const config = vscode.workspace.getConfiguration("sdoaMcp");
+    
+    // Ensure .sdoa directory exists before launching server to prevent SQLite crash
+    const sdoaDir = path.join(context.extensionPath, ".sdoa");
+    if (!fs.existsSync(sdoaDir)) {
+      fs.mkdirSync(sdoaDir, { recursive: true });
+    }
+
+    const envVars = { 
+      ...process.env, 
+      SDOA_DB: path.join(sdoaDir, "pipeline.db"),
+      ADMIN_USER: config.get<string>("adminUser") || "admin",
+      ADMIN_PASS: config.get<string>("adminPass") || "admin",
+      SUPABASE_URL: config.get<string>("supabaseUrl") || "",
+      SUPABASE_KEY: config.get<string>("supabaseKey") || ""
+    };
+
+    let execPathNode = "node";
+    let execPathNpm = "npm";
+
+    // Detect if Node.js is globally available
+    const isGlobalNodeAvailable = () => {
+      try {
+        cp.execSync("npm --version", { stdio: "ignore" });
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    if (!isGlobalNodeAvailable()) {
+      outputChannel.appendLine(`Global Node.js not found. Preparing portable Node.js...`);
+      const sdoaNodeDir = path.join(sdoaDir, "node");
+      const sdoaNodeZip = path.join(sdoaDir, "node.zip");
+      const platform = process.platform;
+      
+      let nodeUrl = "";
+      let extractFolder = "";
+      
+      if (platform === "win32") {
+        nodeUrl = "https://nodejs.org/dist/v20.14.0/node-v20.14.0-win-x64.zip";
+        extractFolder = "node-v20.14.0-win-x64";
+        execPathNode = path.join(sdoaNodeDir, extractFolder, "node.exe");
+        execPathNpm = path.join(sdoaNodeDir, extractFolder, "npm.cmd");
+      } else if (platform === "darwin") {
+        const arch = process.arch;
+        if (arch === "arm64") {
+          nodeUrl = "https://nodejs.org/dist/v20.14.0/node-v20.14.0-darwin-arm64.tar.gz";
+          extractFolder = "node-v20.14.0-darwin-arm64";
+        } else {
+          nodeUrl = "https://nodejs.org/dist/v20.14.0/node-v20.14.0-darwin-x64.tar.gz";
+          extractFolder = "node-v20.14.0-darwin-x64";
+        }
+        execPathNode = path.join(sdoaNodeDir, extractFolder, "bin", "node");
+        execPathNpm = path.join(sdoaNodeDir, extractFolder, "bin", "npm");
+      } else {
+        nodeUrl = "https://nodejs.org/dist/v20.14.0/node-v20.14.0-linux-x64.tar.gz";
+        extractFolder = "node-v20.14.0-linux-x64";
+        execPathNode = path.join(sdoaNodeDir, extractFolder, "bin", "node");
+        execPathNpm = path.join(sdoaNodeDir, extractFolder, "bin", "npm");
+      }
+
+      if (!fs.existsSync(execPathNode)) {
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: "Building the SDOA infrastructure (this only happens once)...",
+          cancellable: false
+        }, async () => {
+          return new Promise<void>((resolve, reject) => {
+            const https = require("node:https");
+            const file = fs.createWriteStream(sdoaNodeZip);
+            outputChannel.appendLine(`Downloading ${nodeUrl}...`);
+            https.get(nodeUrl, (response: any) => {
+              response.pipe(file);
+              file.on("finish", () => {
+                file.close();
+                outputChannel.appendLine(`Download complete. Extracting...`);
+                if (platform === "win32") {
+                  cp.exec(`powershell -command "Expand-Archive -Path '${sdoaNodeZip}' -DestinationPath '${sdoaNodeDir}' -Force"`, (err, stdout, stderr) => {
+                    if (err) {
+                      outputChannel.appendLine(`Extraction failed: ${stderr}`);
+                      reject(err);
+                    } else {
+                      fs.unlinkSync(sdoaNodeZip);
+                      outputChannel.appendLine(`Extraction successful.`);
+                      resolve();
+                    }
+                  });
+                } else {
+                  cp.exec(`mkdir -p '${sdoaNodeDir}' && tar -xzf '${sdoaNodeZip}' -C '${sdoaNodeDir}'`, (err, stdout, stderr) => {
+                    if (err) {
+                      outputChannel.appendLine(`Extraction failed: ${stderr}`);
+                      reject(err);
+                    } else {
+                      fs.unlinkSync(sdoaNodeZip);
+                      outputChannel.appendLine(`Extraction successful.`);
+                      resolve();
+                    }
+                  });
+                }
+              });
+            }).on("error", (err: any) => {
+              fs.unlinkSync(sdoaNodeZip);
+              outputChannel.appendLine(`Download failed: ${err.message}`);
+              reject(err);
+            });
+          });
+        });
+      }
+    }
+
+    const nodeModulesPath = context.asAbsolutePath("node_modules");
+    if (!fs.existsSync(nodeModulesPath)) {
+      outputChannel.appendLine(`node_modules missing. Running npm install --production using ${execPathNpm}...`);
+      await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: "Finalizing SDOA infrastructure setup (this only happens once)...",
+        cancellable: false
+      }, async () => {
+        return new Promise<void>((resolve) => {
+          const npmCmd = execPathNpm === "npm" ? "npm" : `"${execPathNpm}"`;
+          cp.exec(`${npmCmd} install --production`, { cwd: context.extensionPath }, (err, stdout, stderr) => {
+            if (err) {
+              outputChannel.appendLine(`npm install failed: ${stderr}`);
+              vscode.window.showErrorMessage("SDOA Engine failed to install native dependencies. Check SDOA MCP output.");
+            } else {
+              outputChannel.appendLine(`npm install successful.\n${stdout}`);
+            }
+            resolve();
+          });
+        });
+      });
+    }
+
+    outputChannel.appendLine(`Spawning Node.js backend using node executable: ${execPathNode}...`);
     const serverPath = context.asAbsolutePath(path.join("dist", "server", "index.js"));
     serverProcess = cp.fork(serverPath, [], {
-      env: { ...process.env, SDOA_DB: path.join(context.extensionPath, ".sdoa", "pipeline.db") },
+      cwd: workspaceRoot,
+      env: envVars,
+      execPath: execPathNode,
       silent: true,
     });
+
     serverProcess.stdout?.on("data", (d) => outputChannel.appendLine(`[Server]: ${d}`));
     serverProcess.stderr?.on("data", (d) => outputChannel.appendLine(`[Server Error]: ${d}`));
     outputChannel.appendLine(`Backend server spawned on PID ${serverProcess.pid}`);
   } catch (err) {
     outputChannel.appendLine(`Failed to spawn backend server: ${err}`);
+    vscode.window.showErrorMessage(`SDOA Engine failed to start: Node.js must be installed and in your PATH.`);
   }
 
   // 2. Status bar
@@ -131,6 +290,12 @@ export function activate(context: vscode.ExtensionContext) {
   // 4. Commands
   const endpoint = () =>
     vscode.workspace.getConfiguration("sdoaMcp").get<string>("fispEndpoint") || "http://localhost:8080";
+  const getAuthToken = () => {
+    const config = vscode.workspace.getConfiguration("sdoaMcp");
+    const u = config.get<string>("adminUser") || "admin";
+    const p = config.get<string>("adminPass") || "admin";
+    return btoa(`${u}:${p}`);
+  };
 
   context.subscriptions.push(
     vscode.commands.registerCommand("sdoa.viewLastSubmission", async () => {
@@ -162,11 +327,29 @@ export function activate(context: vscode.ExtensionContext) {
       if (!name) return;
       
       try {
+        const boilerplate = [
+          `export class ${name} {`,
+          `  static MANIFEST = {`,
+          `    id: "${name}.primitive", type: "primitive", layer: 2, runtime: "TypeScript", version: "1.0.0",`,
+          `    operationalRole: "savant", requires: [], dataFiles: [],`,
+          `    lifecycle: ["init", "mount", "update", "unmount", "destroy"],`,
+          `    actions: { commands: {}, events: {}, accepts: {}, slots: {} },`,
+          `    optimization: { priority: "speed" }`,
+          `  };`,
+          ``,
+          `  init() {}`,
+          `  mount() {}`,
+          `  update() {}`,
+          `  unmount() {}`,
+          `  destroy() {}`,
+          `};`
+        ].join("\\n");
+
         const payload = {
           proposalId: "prop_" + Date.now(),
           type: "primitive",
           name: name,
-          innovations: [{ name, type: "primitive", source: { content: "export const " + name + " = () => {};", language: "tsx" } }]
+          innovations: [{ name, type: "primitive", source: { content: boilerplate, language: "tsx" } }]
         };
         const res = await fetch(`${endpoint()}/fisp/v1/proposals`, {
           method: "POST",
@@ -205,7 +388,8 @@ export function activate(context: vscode.ExtensionContext) {
         { label: "$(search-view-icon) Scan Full Workspace", description: "Scan the entire project workspace", target: "sdoa.scanWorkspace" },
         { label: "$(file) Scan Active File", description: "Scan the currently open document", target: "sdoa.scanActiveFile" },
         { label: "$(folder) Scan Specific Folder...", description: "Select a directory to scan", target: "sdoa.scanFolder" },
-        { label: "$(file-code) Scan Specific File...", description: "Select a specific file to scan", target: "sdoa.scanFile" }
+        { label: "$(file-code) Scan Specific File...", description: "Select a specific file to scan", target: "sdoa.scanFile" },
+        { label: "$(dashboard) Open Dashboard", description: "Open the SDOA Engine Dashboard", target: "sdoa.openDashboardLocal" }
       ], { placeHolder: "Select what to scan for architectural innovations" });
       
       if (choice) {
@@ -216,7 +400,14 @@ export function activate(context: vscode.ExtensionContext) {
       const editor = vscode.window.activeTextEditor;
       if (editor) {
         outputChannel.appendLine("Manual scan triggered...");
-        await processDocument(editor.document, outputChannel, context);
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: "SDOA AST Engine",
+          cancellable: false
+        }, async (progress) => {
+          progress.report({ message: `Scanning ${path.basename(editor.document.fileName)}...` });
+          await processDocument(editor.document, outputChannel, context);
+        });
       } else {
         vscode.window.showInformationMessage("No active file to scan.");
       }
@@ -225,19 +416,44 @@ export function activate(context: vscode.ExtensionContext) {
       const uris = await vscode.window.showOpenDialog({ canSelectFiles: true, canSelectFolders: false, canSelectMany: false });
       if (uris?.[0]) {
         const doc = await vscode.workspace.openTextDocument(uris[0]);
-        await processDocument(doc, outputChannel, context);
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: "SDOA AST Engine",
+          cancellable: false
+        }, async (progress) => {
+          progress.report({ message: `Scanning ${path.basename(doc.fileName)}...` });
+          await processDocument(doc, outputChannel, context);
+        });
       }
     }),
     vscode.commands.registerCommand("sdoa.scanFolder", async () => {
       const uris = await vscode.window.showOpenDialog({ canSelectFiles: false, canSelectFolders: true, canSelectMany: false });
       if (uris?.[0]) {
         const root = uris[0].fsPath;
-        vscode.window.showInformationMessage("Workspace scan initiated...");
-        fetch(`${endpoint()}/dashboard/api/actions/scan-workspace`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: "Basic " + btoa("admin:admin") },
-          body: JSON.stringify({ workspaceRoot: root }),
-        }).then(() => controlPanelProvider.refresh()).catch(() => {});
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: "SDOA Engine",
+          cancellable: false
+        }, async (progress) => {
+          progress.report({ message: `Scanning folder: ${path.basename(root)}...` });
+          try {
+            const res = await fetch(`${endpoint()}/dashboard/api/actions/scan-workspace`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: "Basic " + getAuthToken() },
+              body: JSON.stringify({ workspaceRoot: root }),
+            });
+            if (res.ok) {
+              const data = await res.json();
+              outputChannel.appendLine(`[Scan] ${data.filesScanned} files scanned in folder.`);
+              vscode.window.showInformationMessage(`✅ Folder scan completed. ${data.filesScanned} files processed.`);
+              controlPanelProvider.refresh();
+            } else {
+              vscode.window.showErrorMessage("Folder scan failed on server.");
+            }
+          } catch (err) {
+            vscode.window.showErrorMessage("Failed to connect to SDOA Engine.");
+          }
+        });
       }
     }),
     vscode.commands.registerCommand("sdoa.openReleases", () => {
@@ -252,24 +468,38 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("sdoa.scanWorkspace", async () => {
       const roots = vscode.workspace.workspaceFolders;
       const root = roots?.[0]?.uri.fsPath || process.cwd();
-      vscode.window.showInformationMessage("Running full workspace scan...");
 
-      // Update local AST cache and report size to server
+      await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: "SDOA Engine",
+        cancellable: false
+      }, async (progress) => {
+        progress.report({ message: "Running full workspace scan..." });
 
-      fetch(`${endpoint()}/dashboard/api/actions/scan-workspace`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: "Basic " + btoa("admin:admin") },
-        body: JSON.stringify({ workspaceRoot: root }),
-      }).then(async (r) => {
-        const data = await r.json();
-        outputChannel.appendLine(`[Scan] ${data.filesScanned} files scanned on server.`);
-        controlPanelProvider.refresh();
-      }).catch(() => {});
+        try {
+          const res = await fetch(`${endpoint()}/dashboard/api/actions/scan-workspace`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: "Basic " + getAuthToken() },
+            body: JSON.stringify({ workspaceRoot: root }),
+          });
+          
+          if (res.ok) {
+            const data = await res.json();
+            outputChannel.appendLine(`[Scan] ${data.filesScanned} files scanned on server.`);
+            vscode.window.showInformationMessage(`✅ Workspace scan completed. ${data.filesScanned} files processed.`);
+            controlPanelProvider.refresh();
+          } else {
+            vscode.window.showErrorMessage("Workspace scan failed on server.");
+          }
+        } catch (err) {
+          vscode.window.showErrorMessage("Failed to connect to SDOA Engine.");
+        }
+      });
     }),
     vscode.commands.registerCommand("sdoa.clearCache", () => {
       fetch(`${endpoint()}/dashboard/api/actions/clear-cache`, {
         method: "POST",
-        headers: { Authorization: "Basic " + btoa("admin:admin") },
+        headers: { Authorization: "Basic " + getAuthToken() },
       }).then(() => {
         vscode.window.showInformationMessage("Engine cache cleared.");
         controlPanelProvider.refresh();
@@ -278,7 +508,7 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("sdoa.flushQueue", async () => {
       const res = await fetch(`${endpoint()}/dashboard/api/actions/flush-queue`, {
         method: "POST",
-        headers: { Authorization: "Basic " + btoa("admin:admin") },
+        headers: { Authorization: "Basic " + getAuthToken() },
       }).catch(() => null);
       if (res?.ok) {
         const data = await res.json();
@@ -289,7 +519,7 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("sdoa.restartEngine", () => {
       fetch(`${endpoint()}/dashboard/api/actions/restart`, {
         method: "POST",
-        headers: { Authorization: "Basic " + btoa("admin:admin") },
+        headers: { Authorization: "Basic " + getAuthToken() },
       }).then(() => {
         vscode.window.showInformationMessage("Engine restarted.");
         controlPanelProvider.refresh();
@@ -359,8 +589,29 @@ async function processDocument(
   context: vscode.ExtensionContext
 ) {
   try {
+    if (doc.lineCount > 500) {
+      const decompositions = await decomposeMonolith(doc);
+      if (decompositions && decompositions.length > 0) {
+        const typeList = decompositions.map(d => d.type).join(", ");
+        const choice = await vscode.window.showInformationMessage(
+          `SDOA detected a ${doc.lineCount}-line monolith. Would you like to automatically decompose this into: ${typeList}?`,
+          "Decompose File", "Skip"
+        );
+        if (choice === "Decompose File") {
+          for (const split of decompositions) {
+            await handleSubmission(split, doc, outputChannel);
+          }
+          vscode.window.showInformationMessage("Legacy file successfully decomposed and submitted to pipeline.");
+        }
+        return; // Skip standard detection for monoliths
+      }
+    }
+
     const innovation = await detectInnovation(doc);
-    if (!innovation) return;
+    if (!innovation) {
+      vscode.window.showInformationMessage("No SDOA innovations detected in this file.");
+      return;
+    }
 
     const choice = await showInnovationPrompt(innovation);
 
@@ -412,11 +663,18 @@ class ControlPanelProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     this.pollInterval = setInterval(() => this.poll(), 5000);
   }
 
+  private getAuthToken(): string {
+    const config = vscode.workspace.getConfiguration("sdoaMcp");
+    const u = config.get<string>("adminUser") || "admin";
+    const p = config.get<string>("adminPass") || "admin";
+    return btoa(`${u}:${p}`);
+  }
+
   private async poll() {
     try {
       const ep = vscode.workspace.getConfiguration("sdoaMcp").get<string>("fispEndpoint") || "http://localhost:8080";
       const res = await fetch(`${ep}/dashboard/api/state`, {
-        headers: { Authorization: "Basic " + btoa("admin:admin") },
+        headers: { Authorization: "Basic " + this.getAuthToken() },
         signal: AbortSignal.timeout(3000),
       });
       if (res.ok) {

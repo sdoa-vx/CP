@@ -2,6 +2,27 @@ import fs from "node:fs";
 import path from "node:path";
 import { db } from "../fisp/database";
 
+export const MANIFEST = {
+  id: "telemetry.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "telemetry"
+  ],
+  dependencies: [
+    "node:fs",
+    "node:path",
+    "../fisp/database"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export type EngineState = "idle" | "scanning" | "syncing" | "error";
 
 export interface DetectorHits {
@@ -10,6 +31,11 @@ export interface DetectorHits {
   schema: number;
   token: number;
   engine: number;
+  sdoaPrimitive: number;
+  sdoaWorkflow: number;
+  sdoaSchema: number;
+  sdoaToken: number;
+  sdoaEngine: number;
 }
 
 export interface TelemetrySnapshot {
@@ -42,7 +68,7 @@ const state: TelemetrySnapshot = {
   astCacheSize: 0,
   sqliteSize: 0,
   pendingSync: 0,
-  detectorHits: { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0 },
+  detectorHits: { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0, sdoaPrimitive: 0, sdoaWorkflow: 0, sdoaSchema: 0, sdoaToken: 0, sdoaEngine: 0 },
   syncStatus: "idle",
   uptime: 0,
 };
@@ -116,7 +142,7 @@ export const telemetry = {
   },
 
   resetDetectorHits() {
-    state.detectorHits = { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0 };
+    state.detectorHits = { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0, sdoaPrimitive: 0, sdoaWorkflow: 0, sdoaSchema: 0, sdoaToken: 0, sdoaEngine: 0 };
   },
 
   reset() {
@@ -124,7 +150,7 @@ export const telemetry = {
       engineState: "idle",
       lastScan: null,
       astCacheSize: 0,
-      detectorHits: { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0 },
+      detectorHits: { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0, sdoaPrimitive: 0, sdoaWorkflow: 0, sdoaSchema: 0, sdoaToken: 0, sdoaEngine: 0 },
       syncStatus: "idle" as const,
     });
   },

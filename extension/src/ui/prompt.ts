@@ -1,5 +1,24 @@
 import * as vscode from "vscode";
 
+export const MANIFEST = {
+  id: "prompt.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "showInnovationPrompt"
+  ],
+  dependencies: [
+    "vscode"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export interface InnovationSummary {
   name: string;
   type: string;

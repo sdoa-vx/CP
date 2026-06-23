@@ -1,3 +1,20 @@
+
+const MANIFEST = {
+  id: "app.js",
+  type: "module",
+  layer: 4,
+  runtime: "JavaScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "fetch",
+    "document"
+  ],
+  dependencies: [],
+  docs: "Polls the status API every 5 seconds"
+};
+
 // Poll the status API every 5 seconds
 async function pollStatus() {
   try {

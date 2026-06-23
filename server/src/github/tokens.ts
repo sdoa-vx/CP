@@ -1,10 +1,28 @@
 import fs from "fs";
 import jwt from "jsonwebtoken";
 
-const APP_ID = process.env.GITHUB_APP_ID!;
-const PRIVATE_KEY_PATH = process.env.GITHUB_PRIVATE_KEY_PATH!;
+export const MANIFEST = {
+  id: "tokens.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "createAppJWT",
+    "createInstallationToken"
+  ],
+  dependencies: [
+    "fs",
+    "jsonwebtoken"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
 
 export async function createAppJWT() {
+  const APP_ID = process.env.GITHUB_APP_ID!;
+  const PRIVATE_KEY_PATH = process.env.GITHUB_PRIVATE_KEY_PATH!;
   const privateKey = fs.readFileSync(PRIVATE_KEY_PATH, "utf8");
 
   const now = Math.floor(Date.now() / 1000);

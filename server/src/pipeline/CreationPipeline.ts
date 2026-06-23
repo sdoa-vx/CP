@@ -6,6 +6,32 @@ import { runComplianceSuite } from "./runComplianceSuite";
 import { openPrForProposal } from "../workers/prWorker";
 import { recordPipelineRun, recordPipelineStep } from "../utils/telemetry";
 
+export const MANIFEST = {
+  id: "CreationPipeline.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "[object Object]"
+  ],
+  dependencies: [
+    "../utils/logger",
+    "./planCanonicalPath",
+    "./writeCanonicalFile",
+    "./runComplianceSuite",
+    "../workers/prWorker",
+    "../utils/telemetry",
+    "../fisp/storeProposal",
+    "../utils/supabase"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export interface Proposal {
   id: string;
   type: string;

@@ -2,6 +2,29 @@ import { supabase } from './supabase';
 import { logger } from './logger';
 import { db } from '../fisp/database';
 
+export const MANIFEST = {
+  id: "telemetry.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "recordPipelineRun",
+    "recordPipelineStep",
+    "recordFederationSync"
+  ],
+  dependencies: [
+    "./supabase",
+    "./logger",
+    "../fisp/database"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 function queueOfflineItem(target: string, payload: any) {
   try {
     db.prepare('INSERT INTO offline_queue (type, target, payload, created_at) VALUES (?, ?, ?, ?)').run('SUPABASE', target, JSON.stringify(payload), new Date().toISOString());
@@ -21,6 +44,7 @@ export async function recordPipelineRun(proposalId: string, status: string, dura
     duration_ms: durationMs
   };
   try {
+    if (!supabase) throw new Error("Supabase unavailable");
     const { error } = await supabase.from('pipeline_runs').insert(payload);
     if (error) throw error;
     logger.info(`Telemetry: Recorded pipeline run for ${proposalId}`);
@@ -40,6 +64,7 @@ export async function recordPipelineStep(proposalId: string, stepName: string, s
     metrics
   };
   try {
+    if (!supabase) throw new Error("Supabase unavailable");
     const { error } = await supabase.from('pipeline_steps').insert(payload);
     if (error) throw error;
     logger.info(`Telemetry: Recorded step '${stepName}' for ${proposalId}`);
@@ -58,6 +83,7 @@ export async function recordFederationSync(peerId: string, status: string, propo
     proposals_synced: proposalsSynced
   };
   try {
+    if (!supabase) throw new Error("Supabase unavailable");
     const { error } = await supabase.from('federation_syncs').insert(payload);
     if (error) throw error;
     logger.info(`Telemetry: Recorded federation sync for peer ${peerId}`);
