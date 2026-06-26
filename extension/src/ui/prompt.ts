@@ -17,8 +17,6 @@ export const MANIFEST = {
   docs: "Auto-generated enriched SDOA manifest via static analysis"
 };
 
-
-
 export interface InnovationSummary {
   name: string;
   type: string;
@@ -28,15 +26,19 @@ export interface InnovationSummary {
 }
 
 export async function showInnovationPrompt(
-  innovation: InnovationSummary
+  innovation: any
 ): Promise<"local" | "submit" | "exclude" | undefined> {
+  const layer = innovation.sdoa?.layer ?? innovation.layer ?? "unknown";
+  const confidence = innovation.metrics?.confidence ?? innovation.confidence ?? 0;
+  const usageCount = innovation.metrics?.usageCount ?? innovation.usageCount ?? 0;
+
   const msg = [
     "⭐ SDOA Portfolio Expansion Opportunity",
     "",
     `The SDOA Innovation Detector has identified a reusable pattern: ${innovation.name}`,
-    `Type: ${innovation.type} (Layer ${innovation.layer})`,
-    `Heuristic Confidence: ${Math.round(innovation.confidence * 100)}%`,
-    `Occurrences: ${innovation.usageCount}`,
+    `Type: ${innovation.type} (Layer ${layer})`,
+    `Heuristic Confidence: ${Math.round(confidence * 100)}%`,
+    `Occurrences: ${usageCount}`,
     "",
     "This module is eligible for voluntary contribution to the global SDOA Asset Portfolio.",
   ].join("\n");
@@ -45,11 +47,11 @@ export async function showInnovationPrompt(
     msg,
     { modal: true },
     "Save locally only",
-    "Submit to FISP",
-    "Exclude from future checks"
+    "Submit to the Federated Sync Network (FISP)",
+    "Skip — mark as local-sovereign"
   );
 
   if (choice === "Save locally only") return "local";
-  if (choice === "Submit to FISP") return "submit";
-  if (choice === "Exclude from future checks") return "exclude";
+  if (choice === "Submit to the Federated Sync Network (FISP)") return "submit";
+  if (choice === "Skip — mark as local-sovereign") return "exclude";
 }

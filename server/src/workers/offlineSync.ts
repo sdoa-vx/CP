@@ -23,7 +23,7 @@ export const MANIFEST = {
 };
 
 import { db } from '../fisp/database';
-import { supabase } from '../utils/supabase';
+import { supabase, evaluateConnection } from '../utils/supabase';
 import { generateSignature } from '../federation/handshake';
 import { telemetry } from '../engine/telemetry';
 import { emit } from '../engine/events';
@@ -50,10 +50,24 @@ async function processItem(item: any): Promise<boolean> {
   try {
     if (item.type === 'SUPABASE') {
       if (supabase) {
-        const { error } = await supabase.from(item.target).insert(payload);
-        if (!error) success = true;
+        let result;
+        if (item.target === 'sdoa_portfolio') {
+          // Fix for duplicate key value violates unique constraint "sdoa_portfolio_module_id_workspace_hash_key"
+          result = await supabase.from(item.target).upsert(payload, { onConflict: 'module_id,workspace_hash' });
+        } else {
+          result = await supabase.from(item.target).upsert(payload);
+        }
+        
+        if (!result.error) {
+          success = true;
+        } else if (result.error.code === '23505') {
+          // If it still throws a unique constraint error on another table, consider it already synced
+          success = true;
+        } else {
+          console.error(`[SDOA MCP] Supabase insert error on ${item.target}:`, result.error);
+        }
       } else {
-        success = true; // Supabase not configured, ignore queue item
+        success = false; // Supabase not configured, keep in queue
       }
     } else if (item.type === 'FEDERATION') {
       const body = JSON.stringify(payload);
@@ -113,8 +127,8 @@ async function pullCanonicalLibrary() {
     const { data, error } = await supabase
       .from('sdoa_portfolio')
       .select('*')
-      .gt('created_at', lastSyncTime)
-      .order('created_at', { ascending: true });
+      .gt('timestamp', lastSyncTime)
+      .order('timestamp', { ascending: true });
 
     if (error) {
       console.error("[OfflineSync] Pull sync error:", error);
@@ -128,8 +142,8 @@ async function pullCanonicalLibrary() {
       db.transaction(() => {
         let latestTime = lastSyncTime;
         for (const row of data) {
-          insert.run(row.id, row.module_id, row.version, JSON.stringify(row), row.created_at);
-          if (row.created_at > latestTime) latestTime = row.created_at;
+          insert.run(row.id, row.module_id, row.version, JSON.stringify(row), row.timestamp);
+          if (row.timestamp > latestTime) latestTime = row.timestamp;
         }
         updateSync.run(latestTime);
       })();
@@ -141,6 +155,7 @@ async function pullCanonicalLibrary() {
 }
 
 async function processQueue() {
+  await evaluateConnection();
   await flushQueue();
   await pullCanonicalLibrary();
 }

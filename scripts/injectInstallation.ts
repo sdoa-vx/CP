@@ -5,7 +5,7 @@ process.env.GITHUB_PRIVATE_KEY_PATH = "./keys/sdoa-autopr.2026-06-21.private-key
 process.env.GITHUB_APP_ID = "4112812";
 
 import { createAppJWT } from "../server/src/github/tokens";
-import { getDb } from "../server/src/fisp/database";
+import { db } from "../server/src/fisp/database";
 
 
 export const MANIFEST = {
@@ -20,7 +20,7 @@ export const MANIFEST = {
     "fs",
     "path",
     "createAppJWT",
-    "getDb"
+    "db"
   ],
   dependencies: [
     "fs",
@@ -63,8 +63,6 @@ async function main() {
   
   console.log(`Found Installation ID: ${instId} for account ${account}`);
 
-  const db = getDb();
-  
   const existing = db.prepare("SELECT * FROM github_installations WHERE installation_id = ?").get(instId.toString());
   if (!existing) {
     db.prepare(`

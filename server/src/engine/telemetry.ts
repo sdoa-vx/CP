@@ -36,6 +36,11 @@ export interface DetectorHits {
   sdoaSchema: number;
   sdoaToken: number;
   sdoaEngine: number;
+  // Recognized SDOA modules are bucketed by their declared type (sdoaService,
+  // sdoaAdapter, sdoaFeature, sdoaAuthority, ...). The portfolio is dominated by
+  // these, so they must be first-class — not silently dropped because they
+  // aren't one of the five fixed detectors above.
+  [key: string]: number;
 }
 
 export interface TelemetrySnapshot {
@@ -63,7 +68,12 @@ let lastSeriesAt = 0;
 
 const state: TelemetrySnapshot = {
   engineState: "idle",
-  lastScan: null,
+  lastScan: (() => {
+    try {
+      const row = db.prepare("SELECT value FROM metadata_store WHERE key = 'lastScan'").get() as { value: string };
+      return row ? row.value : null;
+    } catch { return null; }
+  })(),
   queueDepth: 0,
   astCacheSize: 0,
   sqliteSize: 0,
@@ -120,8 +130,14 @@ export const telemetry = {
   },
 
   recordScan() {
-    state.lastScan = new Date().toISOString();
+    const timestamp = new Date().toISOString();
+    state.lastScan = timestamp;
     state.engineState = "idle";
+    try {
+      db.prepare("INSERT OR REPLACE INTO metadata_store (key, value) VALUES ('lastScan', ?)").run(timestamp);
+    } catch (err) {
+      console.warn("[Telemetry] Failed to persist lastScan to DB:", err);
+    }
   },
 
   setAstCacheSize(n: number) {
@@ -132,7 +148,7 @@ export const telemetry = {
     state.syncStatus = s;
   },
 
-  hitDetector(name: keyof DetectorHits) {
+  hitDetector(name: string) {
     state.detectorHits[name] = (state.detectorHits[name] || 0) + 1;
   },
 

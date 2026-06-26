@@ -44,8 +44,21 @@ export class TokenDetector {
     const proposals = [];
     for (const [val, files] of tokenSignatures.entries()) {
       if (files.length >= 3) {
+        const name = val.startsWith('#') ? `--color-${val.replace('#', '')}` : `--size-${val}`;
+        
+        const hits = files.map(filePath => ({
+          filePath,
+          tokenName: name,
+          value: val,
+          originalSnippet: val
+        }));
+        
+        import('../../extraction/index').then(({ runExtraction }) => {
+          runExtraction('token', hits);
+        }).catch(err => console.error("Extraction error:", err));
+
         proposals.push({
-          name: val.startsWith('#') ? `--color-${val.replace('#', '')}` : `--size-${val}`,
+          name,
           value: val,
           usedIn: files
         });

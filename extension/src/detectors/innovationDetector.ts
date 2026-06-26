@@ -29,8 +29,6 @@ export const MANIFEST = {
   docs: "Auto-generated enriched SDOA manifest via static analysis"
 };
 
-
-
 const uiDetector = new UIPrimitiveDetector();
 const workflowDetector = new WorkflowDetector();
 const schemaDetector = new SchemaDetector();
@@ -79,8 +77,8 @@ export async function detectInnovation(doc: vscode.TextDocument): Promise<any | 
     name,
     version: "1.0.0",
     source: {
-      language: "json",
-      content: JSON.stringify(ledger, null, 2),
+      language: "typescript",
+      content: doc.getText(),
       path: doc.uri.fsPath
     },
     sdoa: {

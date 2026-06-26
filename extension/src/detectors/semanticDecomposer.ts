@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import { AIProvider } from "./aiCapabilityScanner";
 import { InnovationPayload } from "../api/submitProposal";
-import { getAiSystemPromptBlock } from "../../../server/src/engine/doctrine";
 
 export const MANIFEST = {
   id: "semanticDecomposer.ts",
@@ -18,8 +17,9 @@ export const MANIFEST = {
   dependencies: [
     "vscode",
     "./aiCapabilityScanner",
-    "../api/submitProposal",
-    "../../../server/src/engine/doctrine"
+    "vscode",
+    "./aiCapabilityScanner",
+    "../api/submitProposal"
   ],
   docs: "Auto-generated enriched SDOA manifest via static analysis"
 };
@@ -29,7 +29,7 @@ export const MANIFEST = {
 export async function runSemanticDecomposition(doc: vscode.TextDocument, provider: AIProvider): Promise<InnovationPayload[] | null> {
   const content = doc.getText();
   
-  const doctrinePrompt = getAiSystemPromptBlock();
+  const doctrinePrompt = "Adhere to standard SDOA architecture.";
 
   const systemPrompt = `You are an SDOA Architect. Your job is to semantically decompose legacy monoliths.
 Extract the code into separate SDOA modules: Primitives (UI), Workflows (Logic), and Tokens (CSS).
@@ -40,7 +40,13 @@ Example:
     "type": "primitive",
     "name": "AuthModalView",
     "source": { "language": "tsx", "content": "export const AuthModalView = () => <div/>;" },
-    "sdoa": { "layer": 2, "placement": "ui/primitives", "manifest": { "operationalRole": "detected-innovation", "optimization": { "priority": "speed" } } }
+    "sdoa": { 
+      "layer": 2, 
+      "placement": "ui/primitives", 
+      "manifest": { "operationalRole": "detected-innovation", "optimization": { "priority": "speed" } } 
+    },
+    "confidenceScore": 95,
+    "reasoning": "Clean isolation of purely presentational UI elements from monolithic logic."
   }
 ]
 

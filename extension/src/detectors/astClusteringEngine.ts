@@ -99,20 +99,20 @@ export class ASTClusteringEngine {
       payload[relPath] = heat;
     }
 
-    const postData = JSON.stringify(payload);
-    const req = http.request({
-      hostname: 'localhost',
-      port: 8080,
-      path: '/dashboard/api/actions/ast-heatmap',
+    const config = vscode.workspace.getConfiguration("sdoaMcp");
+    const ep = config.get<string>("fispEndpoint") || "http://127.0.0.1:8080";
+    const u = config.get<string>("adminUser") || "admin";
+    const p = config.get<string>("adminPass") || "admin";
+    const auth = Buffer.from(`${u}:${p}`).toString('base64');
+
+    fetch(`${ep}/dashboard/api/actions/ast-heatmap`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      }
-    });
-    req.on('error', () => { /* Server might be down, ignore */ });
-    req.write(postData);
-    req.end();
+        'Authorization': `Basic ${auth}`
+      },
+      body: JSON.stringify(payload)
+    }).catch(() => { /* Server might be down, ignore */ });
   }
 
   public getCache() {
