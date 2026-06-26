@@ -17,8 +17,6 @@ export const MANIFEST = {
   docs: "Auto-generated enriched SDOA manifest via static analysis"
 };
 
-
-
 export class SchemaDetector {
   public run(cache: Map<string, any>) {
     const interfaceSignatures = new Map<string, string[]>();
@@ -48,6 +46,17 @@ export class SchemaDetector {
     let counter = 1;
     for (const [hash, files] of interfaceSignatures.entries()) {
       if (files.length >= 2) {
+        const name = `Schema${counter}`;
+        const hits = files.map(filePath => ({
+          filePath,
+          interfaceSnippet: hash,
+          name
+        }));
+        
+        import('../../extraction/index').then(({ runExtraction }) => {
+          runExtraction('schema', hits);
+        }).catch(err => console.error("Extraction error:", err));
+
         proposals.push({
           id: `schema-${counter}.json`,
           type: "schema",

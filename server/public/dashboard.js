@@ -313,8 +313,49 @@ function connectEventStream() {
       } else {
         appendEvent(data);
         
-        // Trigger topology animations
-        if (data.type.startsWith('scan:')) {
+        if (data.type === 'scan:progress' && data.payload) {
+             const pct = Math.round((data.payload.scannedCount / data.payload.totalFiles) * 100);
+             
+             // Topbar Gauge
+             const topbarGaugePath = document.getElementById('topbarScanGaugePath');
+             const topbarGaugeText = document.getElementById('topbarScanGaugeText');
+             if (topbarGaugePath && topbarGaugeText) {
+                 topbarGaugePath.style.strokeDasharray = `${pct}, 100`;
+                 topbarGaugeText.textContent = pct + '%';
+             }
+
+             // Detailed container
+             const progressContainer = document.getElementById('scanProgressContainer');
+             const progressBar = document.getElementById('scanProgressBar');
+             const scanFileName = document.getElementById('scanFileName');
+             const scanPercent = document.getElementById('scanPercent');
+             if (progressContainer && progressBar && scanFileName && scanPercent) {
+                 progressContainer.style.display = 'block';
+                 if (data.payload.totalFiles === 0) {
+                     progressBar.style.width = '100%';
+                     scanFileName.textContent = `Scanning: ${data.payload.currentFile}`;
+                     scanPercent.textContent = `100% (0 / 0)`;
+                 } else {
+                     progressBar.style.width = pct + '%';
+                     scanFileName.textContent = `Scanning: ${data.payload.currentFile}`;
+                     scanPercent.textContent = `${pct}% (${data.payload.scannedCount} / ${data.payload.totalFiles})`;
+                 }
+             }
+          }
+
+          if (data.type === 'scan:complete') {
+             const progressBar = document.getElementById('scanProgressBar');
+             const scanFileName = document.getElementById('scanFileName');
+             const scanPercent = document.getElementById('scanPercent');
+             if (progressBar && scanFileName && scanPercent) {
+                 progressBar.style.width = '100%';
+                 scanFileName.textContent = 'Scan complete.';
+                 scanPercent.textContent = '100%';
+             }
+          }
+
+          // Trigger topology animations
+          if (data.type.startsWith('scan:')) {
           pulseTopologyPath('path-vscode-mcp');
           if (data.type === 'scan:complete') pulseTopologyPath('path-mcp-sqlite');
         } else if (data.type.startsWith('detector:')) {
@@ -386,13 +427,13 @@ async function runAction(action) {
 }
 
 async function triggerScan(type) {
-  // For file scan, prompt for path; workspace scan uses server cwd
-  if (type === 'file') {
-    const target = prompt('Enter absolute path to file:');
+  // For file/folder scan, prompt for path; workspace scan uses server cwd
+  if (type === 'file' || type === 'folder') {
+    const target = prompt(`Enter absolute path to ${type}:`);
     if (!target) return;
     await apiFetch('/api/scan', {
       method: 'POST',
-      body: JSON.stringify({ path: target, type: 'file' }),
+      body: JSON.stringify({ path: target, type: type }),
     });
   } else {
     await runAction('scan-workspace');
@@ -434,4 +475,83 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', () => {
     if (activePanel === 'telemetry') drawCharts();
   });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const toggles = document.querySelectorAll('.panel-toggle');
+  toggles.forEach(toggle => {
+    // Check initial state
+    const panelId = toggle.closest('.sidenav-item').dataset.panel;
+    const panel = document.getElementById('panel-' + panelId);
+    if (panel) {
+      panel.style.display = toggle.checked ? 'block' : 'none';
+    }
+    
+    toggle.addEventListener('change', (e) => {
+      const panelId = e.target.closest('.sidenav-item').dataset.panel;
+      const panel = document.getElementById('panel-' + panelId);
+      if (panel) {
+        panel.style.display = e.target.checked ? 'block' : 'none';
+      }
+    });
+  });
+
+  // Drag and Drop Logic
+  const sidenavGroup = document.querySelector('.sidenav');
+  const mainContent = document.querySelector('.panel-container');
+  let draggedItem = null;
+
+  document.querySelectorAll('.sidenav-item').forEach(item => {
+    item.addEventListener('dragstart', (e) => {
+      draggedItem = item;
+      item.classList.add('dragging');
+      setTimeout(() => item.style.opacity = '0.5', 0);
+    });
+
+    item.addEventListener('dragend', () => {
+      setTimeout(() => {
+        draggedItem.style.opacity = '1';
+        draggedItem.classList.remove('dragging');
+        draggedItem = null;
+      }, 0);
+    });
+
+    item.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const afterElement = getDragAfterElement(sidenavGroup, e.clientY);
+      if (afterElement == null) {
+        // Find the last sidenav-item to append before the footer/end
+        const lastItem = Array.from(sidenavGroup.querySelectorAll('.sidenav-item')).pop();
+        if (lastItem) {
+            lastItem.parentNode.insertBefore(draggedItem, lastItem.nextSibling);
+        } else {
+            sidenavGroup.appendChild(draggedItem);
+        }
+      } else {
+        sidenavGroup.insertBefore(draggedItem, afterElement);
+      }
+
+      // Sync main panels order
+      const newOrder = Array.from(document.querySelectorAll('.sidenav-item')).map(i => i.dataset.panel);
+      newOrder.forEach(panelId => {
+        const panel = document.getElementById('panel-' + panelId);
+        if (panel) {
+          mainContent.appendChild(panel);
+        }
+      });
+    });
+  });
+
+  function getDragAfterElement(container, y) {
+    const draggableElements = [...document.querySelectorAll('.sidenav-item:not(.dragging)')];
+    return draggableElements.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
 });

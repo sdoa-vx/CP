@@ -2,6 +2,15 @@
 
 ## 1. What We Just Accomplished
 
+### A. The Automatic Extraction Subsystem (Full Refactoring Loop)
+We closed the loop between the detector and the source code by building a fully automated refactoring engine.
+* **`server/public/dashboard.js` & `server/src/routes/dashboard.ts`**: Built the Insights Drill-down UI. Clicking a detector card opens a modal showing all hits. Clicking **Fix-It / Extract** fires a WebSocket event (`sdoa:extract-request`) to VS Code.
+* **`extension/src/extraction/index.ts`**: The Orchestrator. It receives extraction requests and routes them to the correct layer handler.
+* **`extension/src/extraction/{primitives,workflows,schemas,tokens,engines}.ts`**: The layer-specific extractors. When triggered, they automatically:
+  1. Generate the new SDOA module file with a pre-filled `MANIFEST`.
+  2. Write it to the correct domain directory (e.g., `ui/primitives/`).
+  3. **Safely refactor the original source file**, attempting to replace the duplicated code block with a clean `import` and usage call. If an exact match can't be safely found, it gracefully degrades by inserting a `// SDOA EXTRACTED:` comment block at the top of the file to flag it for the developer without breaking the build.
+
 ### A. The Compendium Hardwiring (Doctrine Engine)
 We fundamentally shifted the system from a passive rulebook to an active, execution-blocking mandate.
 * **`server/src/engine/doctrine.ts`**: Built a new bridge that dynamically imports the core JSON/JS rules from `server/core/sdoa/sovereignty/rules.js`.

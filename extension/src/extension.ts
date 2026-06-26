@@ -8,9 +8,17 @@ import { submitProposal } from "./api/submitProposal";
 import { saveLocalInnovation } from "./storage/localStore";
 import { excludeFromFutureChecks } from "./storage/exclusions";
 import { globalAstEngine } from "./detectors/astClusteringEngine";
+import { runExtraction } from "./extraction/index";
 import { decomposeMonolith } from "./detectors/monolithDecomposer";
+import { registerExtractionDiffCommands } from "./commands/extractionDiffCommands";
+import { registerExtractionHistoryPanel } from "./ui/extractionHistoryPanel";
+import { registerExtractionAnalyticsPanel, updateExtractionAnalytics } from "./ui/extractionAnalyticsPanel";
+import { registerExtractionDriftHeatmapPanel, updateDriftHeatmap } from "./ui/extractionDriftHeatmapPanel";
+import WebSocket from 'ws';
 
 let serverProcess: cp.ChildProcess | undefined;
+let socket: WebSocket | null = null;
+let cognizanceView: vscode.WebviewView | null = null;
 
 // ── Extraction target map ────────────────────────────────────────────────────
 const EXTRACTION_DIRS: Record<string, string> = {
@@ -31,79 +39,20 @@ async function offerExtraction(
   const name: string = (innovation.name || "Extracted").replace(/\s+/g, "");
   const content: string = innovation.source?.content || "";
 
-  const extMap: Record<string, string> = {
-    primitive: "tsx", workflow: "ts", schema: "json", token: "css", engine: "ts",
-  };
-  const ext = extMap[type] || "ts";
-  const dir = path.join(workspaceRoot, EXTRACTION_DIRS[type] || "ui/primitives");
-  const fileName = `${name}.${type}.${ext}`;
-  const targetPath = path.join(dir, fileName);
+  const filePath = innovation.source?.path || vscode.window.activeTextEditor?.document.uri.fsPath;
+  
+  let hits = [];
+  if (type === "primitive") hits.push({ filePath, jsxSnippet: content, name });
+  else if (type === "workflow") hits.push({ filePath, fetchSnippet: content, name });
+  else if (type === "schema") hits.push({ filePath, interfaceSnippet: content, name });
+  else if (type === "token") hits.push({ filePath, tokenName: name, value: content, originalSnippet: content });
+  else if (type === "engine") hits.push({ filePath, spawnSnippet: content, name });
 
-  const manifestCode = content.includes("MANIFEST") ? content : [
-    "export const MANIFEST = {",
-    `  id: "${name}.${type}",`,
-    `  type: "${type}",`,
-    `  layer: ${type === "workflow" || type === "engine" ? 3 : 2},`,
-    `  runtime: "TypeScript",`,
-    `  version: "1.0.0",`,
-    `  operationalRole: "detected-innovation",`,
-    `  requires: [], dataFiles: [],`,
-    `  lifecycle: ["init", "mount", "update", "unmount", "destroy"],`,
-    `  actions: { commands: {}, events: {}, accepts: {}, slots: {} },`,
-    `  optimization: { priority: "speed" }`,
-    "};\n\n",
-    content
-  ].join("\n");
+  outputChannel.appendLine(`[SDOA] Orchestrating extraction for ${name} (${type})`);
+  
+  await runExtraction(type, hits);
 
-  // Build the proposed file content
-  const header = [
-    "// ---------------------------------------------------------",
-    `// File:      ${fileName}`,
-    `// Version:   1.0.0`,
-    `// Updated:   ${new Date().toISOString()}`,
-    `// Changes:   Extracted by SDOA Innovation Detector`,
-    "// ---------------------------------------------------------",
-    "",
-    manifestCode,
-  ].join("\n");
-
-  // Create a virtual document for the left side (empty/original)
-  const scheme = "sdoa-extract";
-  const emptyDoc = vscode.Uri.parse(`${scheme}:${fileName}?original`);
-  const proposedDoc = vscode.Uri.parse(`${scheme}:${fileName}?proposed`);
-
-  // ContentProvider for diff view
-  const provider = vscode.workspace.registerTextDocumentContentProvider(scheme, {
-    provideTextDocumentContent(uri) {
-      return uri.query === "proposed" ? header : "";
-    },
-  });
-
-  try {
-    await vscode.commands.executeCommand(
-      "vscode.diff",
-      emptyDoc,
-      proposedDoc,
-      `⭐ SDOA Extract: ${name}.sdoa.${ext}`,
-      { preview: true }
-    );
-
-    const choice = await vscode.window.showInformationMessage(
-      `SDOA detected a reusable ${type}: "${name}". Extract to ${EXTRACTION_DIRS[type]}/${fileName}?`,
-      "Extract", "Skip"
-    );
-
-    if (choice === "Extract") {
-      fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(targetPath, header, "utf-8");
-      const docUri = vscode.Uri.file(targetPath);
-      await vscode.window.showTextDocument(docUri);
-      outputChannel.appendLine(`[Fix-It] Extracted ${type} → ${targetPath}`);
-      vscode.window.showInformationMessage(`✅ Extracted to ${path.relative(workspaceRoot, targetPath)}`);
-    }
-  } finally {
-    provider.dispose();
-  }
+  vscode.window.showInformationMessage(`SDOA Extraction Complete: Generated ${name} and updated source file.`);
 }
 
 // ── Activate ─────────────────────────────────────────────────────────────────
@@ -111,7 +60,57 @@ export async function activate(context: vscode.ExtensionContext) {
   const outputChannel = vscode.window.createOutputChannel("SDOA MCP");
   outputChannel.appendLine("VSX extension activated. Booting backend server...");
 
-  // 1. Spawn backend server
+  registerExtractionDiffCommands(context);
+  registerExtractionHistoryPanel(context);
+  registerExtractionAnalyticsPanel(context);
+  registerExtractionDriftHeatmapPanel(context);
+
+  // 1. Status bar and Control Panel tree view (Register early to prevent UI lag)
+  const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  statusBar.text = "$(plug) SDOA MCP";
+  statusBar.show();
+  context.subscriptions.push(statusBar);
+
+  const scanWidget = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 101);
+  scanWidget.text = "$(search-view-icon) Scan SDOA";
+  scanWidget.command = "sdoa.scanProject";
+  scanWidget.tooltip = "Scan project for architectural innovations";
+  scanWidget.show();
+  context.subscriptions.push(scanWidget);
+
+  const controlPanelProvider = new ControlPanelProvider(outputChannel);
+  const treeView = vscode.window.createTreeView("sdoa-control-panel", {
+    treeDataProvider: controlPanelProvider,
+    showCollapseAll: false,
+  });
+  context.subscriptions.push(treeView);
+
+  // Connect to backend for real-time SDOA Cognizance
+  const roots = vscode.workspace.workspaceFolders;
+  const workspaceRoot = roots?.[0]?.uri.fsPath || context.extensionPath;
+  connectToBackend(workspaceRoot);
+
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      'sdoaCognizancePanel',
+      {
+        resolveWebviewView(webviewView) {
+          cognizanceView = webviewView;
+
+          webviewView.webview.options = {
+            enableScripts: true
+          };
+
+          webviewView.webview.html = getPanelHtml();
+
+          // Notify backend that extension is ready
+          sendToBackend('extension:ready', { workspaceRoot });
+        }
+      }
+    )
+  );
+
+  // 2. Spawn backend server
   try {
     const roots = vscode.workspace.workspaceFolders;
     const workspaceRoot = roots?.[0]?.uri.fsPath || context.extensionPath;
@@ -230,7 +229,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const serverPath = context.asAbsolutePath(path.join("dist", "server", "index.js"));
     
     if (execPathNode !== "node") {
-      envVars.PATH = `${path.dirname(execPathNode)}${path.delimiter}${envVars.PATH || ""}`;
+      (envVars as any).PATH = `${path.dirname(execPathNode)}${path.delimiter}${(envVars as any).PATH || ""}`;
     }
 
     serverProcess = cp.fork(serverPath, [], {
@@ -248,30 +247,11 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.window.showErrorMessage(`SDOA Engine failed to start: Node.js must be installed and in your PATH.`);
   }
 
-  // 2. Status bar
-  const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  statusBar.text = "$(plug) SDOA MCP";
-  statusBar.show();
-  context.subscriptions.push(statusBar);
 
-  const scanWidget = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 101);
-  scanWidget.text = "$(search-view-icon) Scan SDOA";
-  scanWidget.command = "sdoa.scanProject";
-  scanWidget.tooltip = "Scan project for architectural innovations";
-  scanWidget.show();
-  context.subscriptions.push(scanWidget);
-
-  // 3. Control Panel tree view
-  const controlPanelProvider = new ControlPanelProvider(outputChannel);
-  const treeView = vscode.window.createTreeView("sdoa-control-panel", {
-    treeDataProvider: controlPanelProvider,
-    showCollapseAll: false,
-  });
-  context.subscriptions.push(treeView);
 
   // 4. Commands
   const endpoint = () =>
-    vscode.workspace.getConfiguration("sdoaMcp").get<string>("fispEndpoint") || "http://localhost:8080";
+    vscode.workspace.getConfiguration("sdoaMcp").get<string>("fispEndpoint") || "http://127.0.0.1:8080";
   const getAuthToken = () => {
     const config = vscode.workspace.getConfiguration("sdoaMcp");
     const u = config.get<string>("adminUser") || "admin";
@@ -316,7 +296,8 @@ export async function activate(context: vscode.ExtensionContext) {
           `    operationalRole: "savant", requires: [], dataFiles: [],`,
           `    lifecycle: ["init", "mount", "update", "unmount", "destroy"],`,
           `    actions: { commands: {}, events: {}, accepts: {}, slots: {} },`,
-          `    optimization: { priority: "speed" }`,
+          `    optimization: { priority: "speed" },`,
+          `    docs: "Auto-generated primitive boilerplate"`,
           `  };`,
           ``,
           `  init() {}`,
@@ -357,6 +338,44 @@ export async function activate(context: vscode.ExtensionContext) {
       } catch (err: any) {
         vscode.window.showErrorMessage("Error: " + err.message);
       }
+    }),
+    vscode.commands.registerCommand("sdoa.generateManifestForFile", async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showInformationMessage("No active file.");
+        return;
+      }
+      
+      const doc = editor.document;
+      const content = doc.getText();
+      if (content.includes("MANIFEST")) {
+        vscode.window.showInformationMessage("Manifest already exists in this file.");
+        return;
+      }
+
+      const basename = path.basename(doc.fileName);
+      let type = "workflow";
+      let layer = 3;
+      if (basename.endsWith(".tsx") || basename.endsWith(".jsx")) { type = "primitive"; layer = 2; }
+      if (basename.endsWith(".css") || basename.endsWith(".scss")) { type = "token"; layer = 1; }
+
+      const manifestCode = [
+        "export const MANIFEST = {",
+        `  id: "${basename.split('.')[0]}.${type}",`,
+        `  type: "${type}",`,
+        `  layer: ${layer},`,
+        `  runtime: "TypeScript",`,
+        `  version: "1.0.0",`,
+        `  operationalRole: "detected-innovation",`,
+        `  optimization: { priority: "speed" },`,
+        `  docs: "Auto-generated MANIFEST"`,
+        "};\n\n"
+      ].join("\n");
+
+      const edit = new vscode.WorkspaceEdit();
+      edit.insert(doc.uri, new vscode.Position(0, 0), manifestCode);
+      await vscode.workspace.applyEdit(edit);
+      vscode.window.showInformationMessage(`Manifest generated for ${basename}`);
     }),
     vscode.commands.registerCommand("sdoa.openDashboard", () => {
       vscode.env.openExternal(vscode.Uri.parse(`${endpoint()}/dashboard`));
@@ -534,7 +553,7 @@ async function handleSubmission(
       edit.replace(doc.uri, fullRange, result.suggestion);
       await vscode.workspace.applyEdit(edit);
 
-      const ep = vscode.workspace.getConfiguration("sdoaMcp").get<string>("fispEndpoint") || "http://localhost:8080";
+      const ep = vscode.workspace.getConfiguration("sdoaMcp").get<string>("fispEndpoint") || "http://127.0.0.1:8080";
       await fetch(`${ep}/telemetry/reuse`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -640,9 +659,47 @@ class ControlPanelProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     setTimeout(() => this.startPolling(), 3000);
   }
 
+  private ws: any = null;
+
   private startPolling() {
-    this.poll();
-    this.pollInterval = setInterval(() => this.poll(), 5000);
+    this.poll(); // Initial fetch
+    
+    try {
+      const WebSocket = require('ws');
+      const config = vscode.workspace.getConfiguration("sdoaMcp");
+      const ep = config.get<string>("fispEndpoint") || "http://127.0.0.1:8080";
+      const wsUrl = ep.replace(/^http/, "ws") + "/";
+      
+      this.ws = new WebSocket(wsUrl);
+      this.ws.on('message', (data: any) => {
+        try {
+          const msg = JSON.parse(data.toString());
+          if (msg.topic === 'state_update') {
+            this.state = msg.payload;
+            this._onDidChangeTreeData.fire();
+          } else {
+            if (msg.type === 'sdoa:extract-request') {
+              const filePath = msg.payload.filePath;
+              vscode.workspace.openTextDocument(filePath).then(doc => {
+                vscode.window.showTextDocument(doc).then(() => {
+                  vscode.commands.executeCommand("sdoa.scanActiveFile");
+                });
+              });
+            } else if (msg.type && (msg.type.startsWith('scan:') || msg.type.startsWith('detector:') || msg.type.startsWith('sync:'))) {
+              this.poll();
+            }
+          }
+        } catch (e) {}
+      });
+      
+      this.ws.on('close', () => {
+        setTimeout(() => this.startPolling(), 5000); // Reconnect
+      });
+      this.ws.on('error', () => {});
+    } catch (err) {
+      // Fallback to polling if ws fails to load
+      this.pollInterval = setInterval(() => this.poll(), 5000);
+    }
   }
 
   private getAuthToken(): string {
@@ -654,7 +711,7 @@ class ControlPanelProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 
   private async poll() {
     try {
-      const ep = vscode.workspace.getConfiguration("sdoaMcp").get<string>("fispEndpoint") || "http://localhost:8080";
+      const ep = vscode.workspace.getConfiguration("sdoaMcp").get<string>("fispEndpoint") || "http://127.0.0.1:8080";
       const res = await fetch(`${ep}/dashboard/api/state`, {
         headers: { Authorization: "Basic " + this.getAuthToken() },
         signal: AbortSignal.timeout(3000),
@@ -664,7 +721,6 @@ class ControlPanelProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
         this._onDidChangeTreeData.fire();
       }
     } catch {
-      // Server not up yet — keep quiet, tree shows "Connecting..."
       this._onDidChangeTreeData.fire();
     }
   }
@@ -673,6 +729,10 @@ class ControlPanelProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 
   dispose() {
     if (this.pollInterval) clearInterval(this.pollInterval);
+    if (this.ws) {
+      this.ws.removeAllListeners();
+      this.ws.close();
+    }
   }
 
   getTreeItem(element: vscode.TreeItem): vscode.TreeItem { return element; }
@@ -770,4 +830,89 @@ class ControlPanelProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 // ── Deactivate ────────────────────────────────────────────────────────────────
 export function deactivate() {
   if (serverProcess) serverProcess.kill();
+  if (socket) socket.close();
 }
+
+// ── SDOA Cognizance Panel ──────────────────────────────────────────────────
+function connectToBackend(workspaceRoot: string) {
+  socket = new WebSocket('ws://localhost:7337');
+
+  socket.on('open', () => {
+    console.log('[SDOA] Connected to backend bridge');
+    sendToBackend('extension:ready', { workspaceRoot });
+  });
+
+  socket.on('message', (msg: any) => {
+    try {
+      const data = JSON.parse(msg.toString());
+      handleBackendEvent(data.event, data.payload);
+    } catch (err) {
+      console.error('[SDOA] Invalid backend message:', err);
+    }
+  });
+
+  socket.on('close', () => {
+    console.log('[SDOA] Backend bridge disconnected, retrying in 2s');
+    setTimeout(() => connectToBackend(workspaceRoot), 2000);
+  });
+}
+
+function sendToBackend(event: string, payload: any) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return;
+  socket.send(JSON.stringify({ event, payload }));
+}
+
+function handleBackendEvent(event: string, payload: any) {
+  if (event === 'cognizance:update') {
+    updateCognizancePanel(payload);
+  } else if (event === 'extraction:diff') {
+    vscode.commands.executeCommand("sdoa.showExtractionDiff", payload);
+  } else if (event === 'extraction.analytics') {
+    updateExtractionAnalytics(payload);
+  } else if (event === 'extraction.driftHeatmap') {
+    updateDriftHeatmap(payload);
+  }
+}
+
+function updateCognizancePanel(data: any) {
+  if (!cognizanceView) return;
+
+  cognizanceView.webview.postMessage({
+    type: 'update',
+    data
+  });
+}
+
+function getPanelHtml(): string {
+  return `
+    <html>
+      <body style="font-family: sans-serif; padding: 10px;">
+        <h2>SDOA Cognizance</h2>
+        <div id="content">Waiting for updates...</div>
+
+        <script>
+          const vscode = acquireVsCodeApi();
+
+          window.addEventListener('message', (event) => {
+            const msg = event.data;
+
+            if (msg.type === 'update') {
+              const d = msg.data;
+
+              document.getElementById('content').innerHTML = \`
+                <strong>File:</strong> \${d.file}<br>
+                <strong>Score:</strong> \${d.score}<br>
+                <strong>Cognitive Load:</strong> \${d.cognitiveLoad}<br>
+                <h3>Issues</h3>
+                <ul>\${d.issues.map(i => '<li>' + i + '</li>').join('')}</ul>
+                <h3>Suggestions</h3>
+                <ul>\${d.suggestions.map(s => '<li>' + s + '</li>').join('')}</ul>
+              \`;
+            }
+          });
+        </script>
+      </body>
+    </html>
+  `;
+}
+

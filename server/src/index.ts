@@ -8,7 +8,7 @@ import dashboardRouter, { staticRouter } from "./routes/dashboard";
 import { initWebSocket } from "./ws";
 import { Router } from "./utils/Router";
 import { logger } from "./utils/logger";
-import { githubWebhook } from "./webhooks/webhooks";
+
 
 const PORT = process.env.PORT || 8080;
 
@@ -16,6 +16,10 @@ const app = new Router();
 
 // Auth Middleware wrapper
 app.use("/dashboard", (req, res, next) => {
+  if (req.url && req.url.startsWith("/api/events")) {
+    if (next) return next();
+    return;
+  }
   const auth = req.headers.authorization;
   const adminCreds = (process.env.ADMIN_USER || "admin") + ":" + (process.env.ADMIN_PASS || "admin");
   const expected = "Basic " + Buffer.from(adminCreds).toString("base64");
@@ -38,10 +42,13 @@ app.use("/public", (req, res, next) => {
   if(next) next();
 });
 
+import configRouter from "./routes/config";
+
 // Mount modular routers
 app.use("/dashboard", dashboardRouter);
+app.use("/dashboard", configRouter);
 app.use("/public", staticRouter);
-app.post("/github/webhook", githubWebhook);
+
 
 import { handleTelemetryReuse } from "./routes/telemetry";
 
@@ -66,14 +73,20 @@ const server = http.createServer((req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  logger.info(`[MCP] Server listening on port ${PORT}`);
+server.listen(Number(PORT), '127.0.0.1', () => {
+  logger.info(`[MCP] Server listening on 127.0.0.1:${PORT}`);
 });
 
 initWebSocket(server);
 
 import { startOfflineSync } from "./workers/offlineSync";
 startOfflineSync();
+
+import { startTelemetryPersister } from "./engine/telemetryPersister";
+startTelemetryPersister();
+
+import { startVscodeBridge } from "./ipc/vscodeBridge";
+startVscodeBridge();
 
 import { emit } from "./engine/events";
 
@@ -88,8 +101,7 @@ export const MANIFEST = {
   capabilities: [
     "node:http",
     "/dashboard",
-    "/public",
-    "/github/webhook"
+    "/public"
   ],
   dependencies: [
     "node:http",
@@ -101,7 +113,6 @@ export const MANIFEST = {
     "./ws",
     "./utils/Router",
     "./utils/logger",
-    "./webhooks/webhooks",
     "./routes/telemetry",
     "./workers/offlineSync",
     "./engine/events"

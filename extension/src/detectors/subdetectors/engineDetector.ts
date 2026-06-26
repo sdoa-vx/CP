@@ -52,6 +52,16 @@ export class EngineDetector {
       if (files.length >= 2) {
         const name = bin.split(' ')[0].replace(/[^a-zA-Z]/g, '') || 'Engine';
         
+        const hits = files.map(filePath => ({
+          filePath,
+          spawnSnippet: bin,
+          name
+        }));
+        
+        import('../../extraction/index').then(({ runExtraction }) => {
+          runExtraction('engine', hits);
+        }).catch(err => console.error("Extraction error:", err));
+
         proposals.push({
           id: `${name}.engine.js`,
           type: "engine",

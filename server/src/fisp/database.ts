@@ -91,3 +91,14 @@ db.prepare(`
   )
 `).run();
 
+// Ensure telemetry_history exists
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS telemetry_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp TEXT,
+    ast_cache_size INTEGER,
+    queue_depth INTEGER,
+    detector_hits TEXT
+  )
+`).run();
+
