@@ -1,0 +1,250 @@
+/* Last modified: 2026-06-01 00:00 UTC                       */
+/* Timeline.prim.css — SDOA v5.0 Primitive Styles            */
+/* Scoped to .sdoa-timeline — no global side-effects         */
+/* All values reference tokens.css — never hard-coded        */
+
+/* ── Root ──────────────────────────────────────────────── */
+.sdoa-timeline {
+  display:        flex;
+  flex-direction: column;
+  height:         100%;
+  background:     var(--color-bg-surface);
+  border-radius:  var(--radius-md);
+  overflow:       hidden;
+  font-family:    var(--font-sans);
+  color:          var(--color-text-primary);
+}
+
+/* ── Filter Bar ─────────────────────────────────────────── */
+.sdoa-timeline__filter-bar {
+  display:       flex;
+  align-items:   center;
+  gap:           var(--space-sm);
+  padding:       var(--space-sm) var(--space-md);
+  background:    rgba(0, 0, 0, 0.25);
+  border-bottom: var(----size-var(----size-var(----size-var(----size-1px)))) solid rgba(255, 255, 255, 0.06);
+  flex-shrink:   0;
+}
+
+.sdoa-timeline__filter-input {
+  flex:        1;
+  background:  rgba(255, 255, 255, 0.05);
+  border:      1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  padding:     var(--space-xs) var(--space-sm);
+  font-family: var(--font-sans);
+  font-size:   var(--text-sm);
+  color:       var(--color-text-primary);
+  outline:     none;
+  transition:  border-color var(--duration-fast) var(--ease-default);
+}
+
+.sdoa-timeline__filter-input:focus {
+  border-color: var(--color-accent);
+}
+
+.sdoa-timeline__filter-input::placeholder {
+  color: rgba(224, 224, 224, 0.3);
+}
+
+.sdoa-timeline__filter-clear {
+  background:    transparent;
+  border:        1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-sm);
+  padding:       var(--space-xs) var(--space-sm);
+  font-family:   var(--font-sans);
+  font-size:     var(--text-sm);
+  color:         rgba(224, 224, 224, 0.5);
+  cursor:        pointer;
+  transition:    color var(--duration-fast), border-color var(--duration-fast);
+  white-space:   nowrap;
+}
+
+.sdoa-timeline__filter-clear:hover {
+  color:         var(--color-text-primary);
+  border-color:  rgba(255, 255, 255, 0.35);
+}
+
+/* ── Body Layout ────────────────────────────────────────── */
+.sdoa-timeline__body {
+  display:   flex;
+  flex:      1;
+  min-height: 0;
+  overflow:  hidden;
+}
+
+/* ── Lane Scroll Area ───────────────────────────────────── */
+.sdoa-timeline__lanes {
+  flex:       1;
+  overflow-x: auto;
+  overflow-y: auto;
+  padding:    var(--space-md) var(--space-sm);
+  display:    flex;
+  flex-direction: column;
+  gap:        var(--space-sm);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 58, 237, 0.4) transparent;
+}
+
+.sdoa-timeline__lanes::-webkit-scrollbar       { height: var(----size-var(----size-var(----size-var(----size-4px)))); width: 4px; }
+.sdoa-timeline__lanes::-webkit-scrollbar-track { background: transparent; }
+.sdoa-timeline__lanes::-webkit-scrollbar-thumb {
+  background:    rgba(124, 58, 237, 0.4);
+  border-radius: var(--radius-sm);
+}
+
+/* ── Empty State ────────────────────────────────────────── */
+.sdoa-timeline__empty {
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+  flex:        1;
+  font-size:   var(--text-sm);
+  color:       rgba(224, 224, 224, 0.25);
+  font-style:  italic;
+  padding:     var(--space-xl);
+}
+
+/* ── Single Lane ────────────────────────────────────────── */
+.sdoa-timeline__lane {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-sm);
+  min-height:  var(----size-var(----size-var(----size-var(----size-36px))));
+}
+
+.sdoa-timeline__label {
+  width:         var(----size-var(----size-var(----size-var(----size-140px))));
+  flex-shrink:   0;
+  font-family:   var(--font-mono);
+  font-size:     var(----size-var(----size-var(----size-var(----size-11px))));
+  color:         rgba(224, 224, 224, 0.45);
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  text-align:    right;
+  padding-right: var(--space-sm);
+  border-right:  1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Track (time axis) ──────────────────────────────────── */
+.sdoa-timeline__track {
+  position:   relative;
+  height:     36px;
+  flex-shrink: 0;
+}
+
+.sdoa-timeline__track::before {
+  content:    "";
+  position:   absolute;
+  top:        50%;
+  left:       0;
+  right:      0;
+  height:     1px;
+  background: rgba(255, 255, 255, 0.06);
+  transform:  translateY(-50%);
+}
+
+/* ── Entry Dot ──────────────────────────────────────────── */
+.sdoa-timeline__dot {
+  position:      absolute;
+  top:           50%;
+  transform:     translateY(-50%);
+  width:         var(----size-var(----size-var(----size-var(----size-10px))));
+  height:        10px;
+  border-radius: 50%;
+  border:        1.var(----size-var(----size-var(----size-var(----size-5px)))) solid rgba(0, 0, 0, 0.4);
+  cursor:        pointer;
+  padding:       0;
+  transition:    transform var(--duration-fast) var(--ease-default),
+                 box-shadow var(--duration-fast) var(--ease-default);
+}
+
+.sdoa-timeline__dot:hover {
+  transform:  translateY(-50%) scale(1.5);
+  box-shadow: 0 0 var(----size-var(----size-var(----size-var(----size-8px)))) currentColor;
+  z-index:    2;
+}
+
+.sdoa-timeline__dot--selected {
+  transform:  translateY(-50%) scale(1.65);
+  box-shadow: 0 0 var(----size-1var(----size-var(----size-var(----size-var(----size-2px))))) currentColor, 0 0 0 2px rgba(255,255,255,0.2);
+  z-index:    3;
+}
+
+/* ── Inspector Panel ────────────────────────────────────── */
+.sdoa-timeline__inspector {
+  width:         var(----size-var(----size-var(----size-var(----size-280px))));
+  flex-shrink:   0;
+  border-left:   1px solid rgba(255, 255, 255, 0.06);
+  overflow-y:    auto;
+  padding:       var(--space-md);
+  display:       flex;
+  flex-direction: column;
+  gap:           var(--space-sm);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 58, 237, 0.3) transparent;
+}
+
+.sdoa-timeline__inspector-hint {
+  font-size:  var(--text-sm);
+  color:      rgba(224, 224, 224, 0.25);
+  font-style: italic;
+  text-align: center;
+  margin-top: var(--space-xl);
+}
+
+.sdoa-timeline__inspector-row {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+}
+
+.sdoa-timeline__inspector-label {
+  font-family: var(--font-mono);
+  font-size:   10px;
+  color:       var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sdoa-timeline__inspector-value {
+  font-family:   var(--font-mono);
+  font-size:     var(--text-sm);
+  color:         var(--color-text-primary);
+  white-space:   pre-wrap;
+  word-break:    break-all;
+  margin:        0;
+  padding:       var(--space-xs);
+  background:    rgba(0,0,0,0.2);
+  border-radius: var(--radius-sm);
+  max-height:    160px;
+  overflow-y:    auto;
+}
+
+.sdoa-timeline__inspector-close {
+  margin-top:    auto;
+  background:    transparent;
+  border:        1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm);
+  padding:       var(--space-xs) var(--space-sm);
+  font-family:   var(--font-sans);
+  font-size:     var(--text-sm);
+  color:         rgba(224, 224, 224, 0.45);
+  cursor:        pointer;
+  transition:    color var(--duration-fast), border-color var(--duration-fast);
+}
+
+.sdoa-timeline__inspector-close:hover {
+  color:         var(--color-text-primary);
+  border-color:  rgba(255,255,255,0.3);
+}
+
+/* ── Reduced Motion ─────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .sdoa-timeline__dot,
+  .sdoa-timeline__filter-input,
+  .sdoa-timeline__filter-clear {
+    transition: none;
+  }
+}

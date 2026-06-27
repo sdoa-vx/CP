@@ -1,0 +1,422 @@
+================================================================================
+SDOA HISTORICAL TIMELINE
+Version: 1.0
+Date: 2026-06-17
+Classification: Internal — Development Team Reference
+================================================================================
+
+This document records the chronological evolution of the Self-Describing Object
+Architecture (SDOA) as implemented in the SDOAvX project, including version
+history, key architectural decisions, and implementation milestones.
+
+--------------------------------------------------------------------------------
+SECTION 1 — VERSION HISTORY TABLE
+--------------------------------------------------------------------------------
+
+| Version    | Date         | Key Changes                                                    |
+|------------|--------------|----------------------------------------------------------------|
+| v1.0       | March 2026   | Initial SDOA specification. Base manifest fields: id, type,    |
+|            |              | version, runtime, capabilities, dependencies, docs,            |
+|            |              | last_modified. WorkflowBase, WorkflowResult, WorkflowRegistry. |
+|            |              | Language-agnostic: Rust macros, Node.js class statics, Python  |
+|            |              | metaclass, C/C++ macros, TypeScript decorators.                |
+|            |              | Object types: Dashboard, Service, Component, Engine, Task,     |
+|            |              | Adapter, Validator.                                            |
+|            |              |                                                                |
+| v2.0       | April 2026   | Added EventBus, module bridges, MANIFEST blocks. Added         |
+|            |              | .sdoa sidecar files for languages that cannot embed manifests. |
+|            |              | Added gRPC bridge for cross-language IPC. Added hot-reload:    |
+|            |              | registry detects file changes and re-instantiates individual   |
+|            |              | objects without restarting. Added Universal Version CLI        |
+|            |              | (sdoa command) — cross-language AST rewriter. Added System     |
+|            |              | Map: produces dependency/capability graph of entire system.    |
+|            |              |                                                                |
+| v3.0       | April 2026   | Formalized 3-layer architecture, action surfaces, Tauri IPC    |
+|            |              | mapping. SDOA 3.0 Action Surface added to every MANIFEST:      |
+|            |              | commands (callable functions), triggers (events reacted to),   |
+|            |              | emits (events broadcast), workflows (multi-step actions).      |
+|            |              | System becomes event-driven. Registry can auto-generate        |
+|            |              | system-wide command map, event graph, and workflow graph.      |
+|            |              |                                                                |
+| v3.2       | May 2026     | Added BackendConnector explicit routing and reconnect logic.   |
+|            |              | Formalized the BackendConnector as the single point of         |
+|            |              | contact between frontend and backend IPC.                      |
+|            |              |                                                                |
+| v4.0       | May 2026     | Major expansion. Introduced:                                   |
+|            |              | - Primitive catalog (19 UI primitives)                         |
+|            |              | - Declarative UI schemas (schema-driven rendering)             |
+|            |              | - StateStore (replaces all window.* globals)                   |
+|            |              | - Auto-routing BackendConnector (declaration-based, no switch) |
+|            |              | - Lifecycle contracts (init/mount/update/unmount/destroy)      |
+|            |              | - CSS design tokens (tokens.css)                               |
+|            |              | - Data externalization (models.catalog.json, etc.)             |
+|            |              | - layer, requires, dataFiles, lifecycle, actions,              |
+|            |              |   backendDeps added to manifest                                |
+|            |              | - New module types: primitive, feature, adapter, service,      |
+|            |              |   workflow, repository                                         |
+|            |              | - File suffix conventions: .prim.js, .feature.js, etc.         |
+|            |              | - v4.0 line limits established (Primitive 150, Feature 200,    |
+|            |              |   Adapter 200, Workflow 200)                                   |
+|            |              |                                                                |
+| v4.1 Amend | May/June 2026| Line-Limit Amendment ratified. Per-type line limit targets     |
+|            |              | revised upward from v4.0 originals to reflect operational      |
+|            |              | reality. Hard limit of ~500 lines established as absolute      |
+|            |              | ceiling. New targets: Primitives 150-250, Features 200-350,    |
+|            |              | Adapters 200-350, Workflows 200-400, Repositories 200-400.     |
+|            |              |                                                                |
+| v5.0       | June 2026    | Dynamic Evolutionary Ecosystem paradigm. Introduced:           |
+|            |              | - operationalRole field (registrar/captain/conductor/coach/    |
+|            |              |   probation-officer/assembly-line/triage/savant)               |
+|            |              | - optimization{priority, assertionSuite} field                 |
+|            |              | - System Sovereign Directory (7 named system roles)            |
+|            |              | - Cognitive/Defensive Sovereigns: Coach.workflow.py (Python    |
+|            |              |   AST-based code mutation), ProbationOfficer.workflow.rs       |
+|            |              |   (Rust WASM sandbox validation)                               |
+|            |              | - Mechanical Sovereigns: AssemblyLine (V8 shared memory),      |
+|            |              |   Triage (telemetry-driven routing)                            |
+|            |              | - Fully polyglot: JS, TS, Rust, Python, C++, COBOL, VB         |
+|            |              | - master.manifest.json generated 2026-06-15T02:28:37Z          |
+|            |              | - 147 modules registered at time of v5.0 documentation         |
+
+--------------------------------------------------------------------------------
+SECTION 2 — KEY ARCHITECTURAL DECISIONS
+--------------------------------------------------------------------------------
+
+2.1 Name Canonicalization
+--------------------------
+Decision: "Self-Describing Object Architecture" is the official canonical name.
+Date: C1 Resolution, 2026-06-17
+Context: The v4.0 specification document headers used the name "Service-Oriented
+Dispatcher Architecture." This name was a drafting artifact and never reflected
+the architecture's core principle (self-description). The C1 Resolution formally
+supersedes all prior naming variants.
+
+Status: All files should be updated to use "Self-Describing Object Architecture"
+on next touch. The abbreviation SDOA remains unchanged.
+
+2.2 Sovereignty Principle Adoption
+------------------------------------
+Decision: Every module is a sovereign. No module mutates another's internals.
+Version: v1.2 (implicit), formalized by v4.0
+Context: Early versions of the architecture focused on the manifest contract but
+did not formalize the concept of module sovereignty. As the codebase grew,
+informal cross-module mutations became a maintenance problem. The sovereignty
+principle was formalized to make cross-module mutation architecturally
+impermissible, not merely discouraged.
+
+Impact: Required defining clean APIs for cross-module communication (EventBus,
+StateStore), eliminating window.* global state, and prohibiting direct imports
+across language boundaries.
+
+2.3 Variant Policy Formalization
+----------------------------------
+Decision: Variants live in their parent sovereign's variants/ subdirectory with
+full SDOA v1.2 manifests and a variant_of field.
+Version: v5.0 (sdoav5 clarification document, June 2026)
+Context: Prior to formalization, variant and legacy files accumulated in ad-hoc
+directories (/legacy/, /experimental/, /misc/). The formal variant policy
+established that variants are sovereigns, not loose files, and must declare
+their parentage. This enables the registrar to auto-discover variants and
+maintain the dependency graph accurately.
+
+Key rules established:
+  - Variants are not versions; they are branches
+  - Variants live with their parent sovereign, always
+  - Legacy variants go to domain-level legacy/ only after formal deprecation
+  - Experimental variants may go in parent sovereign's variants/experimental/
+
+2.4 v4.1 Line-Limit Amendment Ratification
+--------------------------------------------
+Decision: Per-type line limit targets raised from v4.0 originals. Hard limit
+of ~500 lines established.
+Date: May/June 2026
+Context: The v4.0 limits (Primitive 150 lines, Feature 200 lines) were set as
+aspirational targets. In practice, complex but legitimately single-responsibility
+modules regularly exceeded these targets. Rather than generating constant false
+positives from the governance system, the amendment raised the per-type targets
+while establishing the ~500 line hard limit as inviolable.
+
+Before (v4.0 originals):
+  Primitive: max 150, Feature: max 200, Adapter: max 200, Workflow: max 200
+
+After (v4.1 Amendment):
+  Primitive: 150-250, Feature: 200-350, Adapter: 200-350,
+  Workflow: 200-400, Repository: 200-400, Hard limit: ~500
+
+2.5 StateStore Replacing window.* Globals
+-------------------------------------------
+Decision: All application state must flow through StateStore.get/.set/.watch.
+Version: v4.0 (May 2026)
+Context: The pre-v4.0 codebase scattered state across window.currentProject,
+window._attachedFiles, and various localStorage direct accesses. This created
+invisible dependencies between modules that were not declared in manifests,
+made testing difficult, and caused the recurring "projects don't persist across
+refresh" bug. The StateStore eliminates this class of problem entirely by making
+all state access explicit and reactive.
+
+2.6 Action Surface Introduction (SDOA 3.0)
+--------------------------------------------
+Decision: Every manifest includes an Actions section with commands, triggers,
+emits, and workflows.
+Version: v3.0 (April 2026)
+Context: SDOA 2.0 modules knew what they depended on but not what they could do.
+The 3.0 Action Surface made modules discoverable by capability — the registry
+could now auto-generate a system-wide command map and event graph. This was the
+turning point that made AI-driven orchestration architecturally possible.
+
+2.7 Primitive Catalog Formalization (v4.0)
+--------------------------------------------
+Decision: All visual elements must map to exactly one of the 19 canonical
+primitives. One-off bespoke components are prohibited.
+Version: v4.0 (May 2026)
+Context: The pre-v4.0 codebase had dozens of slightly-different one-off
+components: bespoke buttons, hand-coded form fields, custom list renderers.
+Each was a slightly different version of the same thing, created in isolation.
+The primitive catalog replaced this with a single generic implementation per
+visual concept, configured by the feature that uses it.
+
+2.8 Auto-Routing Backend Connector
+-------------------------------------
+Decision: BackendConnector builds its routing table automatically from module
+manifests. Manual switch statements are prohibited.
+Version: v4.0 (May 2026, preceded by v3.2 partial implementation)
+Context: The pre-v4.0 BackendConnector contained a large manual switch statement
+that required updating every time a new backend action was added. This was a
+classic example of centralized configuration that caused merge conflicts and
+silent failures. The auto-routing approach from SDOA principle 4 ("Declare,
+Don't Hard-Wire") replaced it entirely.
+
+--------------------------------------------------------------------------------
+SECTION 3 — IMPLEMENTATION MILESTONES
+--------------------------------------------------------------------------------
+
+3.1 Prior Plans Cross-Reference (14 Items)
+-------------------------------------------
+The following prior plan documents have been mapped into the SDOA v4 migration:
+
+| Prior Plan Document                                     | Status            | v4 Phase |
+|---------------------------------------------------------|-------------------|----------|
+| implementation_plan.md — File Manager Redesign          | Implemented       | Phase 4b |
+| implementation_plan_intelligence.md — Memory/Profiling  | Partially built   | Phase 8a |
+| implementation_plan_intelligence.md — Silent Partner    | Not started       | Phase 8b |
+| implementation_plan_intelligence.md — Tools/Real-time   | DeepSearch exists | Phase 8  |
+| google_drive_plan.md — Google Drive Integration         | Partially built   | Phase 8c |
+| analysis_results.md — VFS Tier System                   | Not started       | Phase 8d |
+| analysis_results.md — Archetype & Hybrid Profiles       | JSON exists       | Phase 8h |
+| analysis_results.md — Response Caching                  | Not started       | Phase 8j |
+| handoff_report.md — Multi-Session Chat UI               | Backend exists    | Phase 8f |
+| handoff_report.md — Browser & Terminal Tabs             | Not started       | Phase 8g |
+| handoff_report.md — System Prompt Injection             | UI exists only    | Phase 8k |
+| handoff_report.md — Sidebar Filtering                   | Not started       | Phase 4c |
+| SysProvisionBunWorkflow.js — Bun Runtime                | Implemented       | Phase 8e |
+| QmdAdapter.js / IngestWorkflow.js — Semantic Search     | Built, fragile    | Phase 8i |
+
+3.2 Migration Phases 0-9
+--------------------------
+
+Phase 0 — Skeleton & Foundation
+  Goal: Create v4 directory structure and core infrastructure.
+  Tasks: Write SDOA v4 Specification (done). Create directory skeleton.
+  Create tokens.css (extracted from styles.css). Create StateStore.adapter.js.
+  Create ModuleLoader.service.js.
+  Verification: All v3 functionality continues. New directories exist but inactive.
+
+Phase 1 — Core Primitives
+  Goal: Build the 8 most-reused primitives.
+  1a. Button.prim.js     — Replaces all hand-coded <button> elements
+  1b. Input.prim.js      — Replaces all <input>, <textarea>, <select> in Settings
+  1c. Panel.prim.js      — Replaces sidebar/pane bordered content areas
+  1d. Modal.prim.js      — Replaces Settings overlay, ProjectManager overlay
+  1e. TabGroup.prim.js   — Replaces 4 tab-switching implementations
+  1f. List.prim.js       — Replaces 5 scrollable list implementations
+  1g. Form.prim.js       — Replaces ~30 hand-coded form fields
+  1h. Toast.prim.js      — Replaces showToast() in app.js
+  Verification: Each primitive has visual test page; renders in isolation.
+
+Phase 2 — StateStore & BackendConnector v4
+  Goal: Replace scattered globals; replace manual switch routing.
+  2a. StateStore.adapter.js — window.* -> StateStore.get/set
+  2b. BackendConnector.adapter.js (v4) — reads backendDeps, auto-builds routes
+  2c. EventBus upgrade — lifecycle awareness, remove setTimeout hacks
+  Verification: window.* state replaced; BackendConnector routes correctly;
+  projects persist across refresh.
+
+Phase 3 — Settings Migration (Proof of Concept)
+  Goal: Migrate largest/most complex UI surface to prove pattern end-to-end.
+  Before: Settings.ui.js 965 lines + ~200 lines of HTML in index.html
+  After: Settings.feature.js ~100 lines + ~200 lines JSON schemas
+  Verification: Open settings, change API key, test key, save, reload — all work.
+
+Phase 4 — Feature Migrations
+  4a. Chat Feature — extract from app.js
+  4b. FileExplorer Feature — merge 4 existing file UI modules
+  4c. ProjectManager Feature — extract from app.js
+  4d. ModelManager Feature — refactor 826-line module, externalize archetypes
+  4e. app.js Slim-Down — target ~80 lines (thin orchestrator only)
+
+Phase 5 — Backend Decomposition
+  Goal: Replace server-ipc.cjs (778 lines) with auto-discovering Router.
+  Create Router.service.js, Middleware.service.js, ResponseFormatter.service.js.
+  Convert all handlers to *.workflow.js files with v4 manifests.
+  Verification: All IPC commands work; adding workflow = creating one file.
+
+Phase 6 — Data Externalization
+  Goal: Move all embedded datasets out of code into JSON files.
+  Model catalog      -> ui/data/catalogs/models.catalog.json
+  Archetypes         -> ui/data/catalogs/archetypes.catalog.json
+  Supported exts     -> ui/data/catalogs/extensions.catalog.json
+  Default settings   -> ui/data/defaults/settings.defaults.json
+  Default policy     -> ui/data/defaults/policy.defaults.json
+
+Phase 7 — CSS Extraction
+  Goal: Break styles.css (2,160 lines) into tokens + co-located primitive CSS.
+  Extract :root variables -> ui/tokens.css
+  Extract per-primitive styles -> ui/primitives/{Name}/Name.prim.css
+  Extract feature/layout styles -> ui/features/{Feature}/Feature.css
+  Update index.html load order: tokens -> primitives -> features
+
+Phase 8 — Feature Roadmap (Prior Plans Integrated)
+  11 independently shippable sub-features:
+  8a. Memory & User Profiling       8b. Silent Partner Personas
+  8c. Google Drive Integration      8d. VFS Tier System
+  8e. Bun Runtime (rename only)     8f. Multi-Session Chat UI
+  8g. Browser & Terminal Tabs       8h. Archetype & Hybrid Profiles
+  8i. QMD Semantic Search           8j. Response Caching
+  8k. System Prompt Injection
+
+Phase 8 sub-feature status at time of documentation:
+  8a Memory/Profiling: MemoryManager.js (157 lines) exists, partially wired
+  8b Silent Partner: Not started
+  8c Google Drive: GoogleDriveWorkflow.js (136 lines) + GoogleDriveConnector.ui.js
+     (162 lines) exist, partially functional
+  8d VFS Tier System: Not started
+  8e Bun Runtime: SysProvisionBunWorkflow.js + SysCheckBinaryWorkflow.js both
+     functional, need rename only
+  8f Multi-Session Chat: Backend ChatSessionWorkflow.js exists; UI missing
+  8g Browser/Terminal: Not started
+  8h Archetype Profiles: 9 archetypes exist as JSON in data/archetypes/;
+     no resolution chain
+  8i QMD Semantic Search: IngestWorkflow.js (83 lines) + QmdAdapter.js (109 lines)
+     + QmdAdapter.ui.js (188 lines) exist; optional/fragile
+  8j Response Caching: Not started
+  8k System Prompt Injection: UI exists (Rules & Standards tab in ProjectManager);
+     backend does not read it
+
+Phase 9 — Infrastructure & Quality of Life
+  9a. Error Mapping & Actionable Traces
+  9b. Token Usage Monitoring
+  9c. History Compaction (auto-summarize long conversations)
+  9d. Encrypted Vault for API Keys (migrate from plaintext settings.json)
+
+3.3 Current State at Time of Documentation (June 2026)
+-------------------------------------------------------
+Files that drove the v4 migration (pre-refactor sizes):
+
+| File                | Lines | Problem Description                                 |
+|---------------------|-------|-----------------------------------------------------|
+| styles.css          | 2,160 | Monolithic; no tokens, no scoping                   |
+| Settings.ui.js      |   965 | One-off modal + tabs + 9 form sections + save logic |
+| app.js              |   833 | God-object: init, chat, projects, scroll, profiles  |
+| server-ipc.cjs      |   778 | Monolithic dispatcher with manual case statements   |
+| ModelManager.ui.js  |   826 | Embeds entire archetype catalog + UI + save logic   |
+| index.html          |   645 | 400+ lines of hand-coded modal/form HTML            |
+| PrimaryPanel.ui.js  |   631 | File upload + code editor + manifest panel + tabs   |
+| FileList.ui.js      |   433 | Hand-coded list + context menu + drag/drop          |
+
+Registry state at documentation timestamp:
+  master.manifest.json generated: 2026-06-15T02:28:37Z
+  Registered modules: 147
+
+Repeated patterns identified as candidates for primitive extraction:
+
+| Pattern           | Instances | v4 Primitive         |
+|-------------------|-----------|----------------------|
+| Tab switching     |     4     | TabGroup.prim.js     |
+| Form fields       |    ~30    | Form.prim.js +       |
+|                   |           | Input.prim.js        |
+| Modal overlays    |     3     | Modal.prim.js        |
+| Scrollable lists  |     5     | List.prim.js         |
+| Status badges     |     4     | Badge.prim.js        |
+| Empty states      |     3     | EmptyState.prim.js   |
+| Action toolbars   |     3     | Toolbar.prim.js      |
+| Toast notifs      |     1     | Toast.prim.js        |
+
+--------------------------------------------------------------------------------
+SECTION 4 — v5.0 SYSTEM SOVEREIGN DIRECTORY
+--------------------------------------------------------------------------------
+
+v5.0 introduced formal operational roles for system-level modules. These are
+documented here as part of the architectural evolution record.
+
+System Sovereigns (Infrastructure Layer):
+  registrar     Registrar.service.js
+                Monitors portfolio directories for structural changes, reads
+                manifest profiles, resolves naming collisions. Evaluates
+                compiler matrices to prioritize the most optimal asset when
+                multiple components claim identical functional identity paths.
+
+  captain       Captain.service.js
+                Dictates application state transitions, handles global
+                initializations, manages fallback containment protocols when
+                a runtime component fails or encounters an unhandled exception.
+
+  conductor     Conductor.service.js
+                Intercepts cross-module message passing across the universal
+                EventBus. Evaluates actions.events and actions.accepts manifest
+                blocks to prevent event storms or circular logical deadlocks.
+
+Cognitive & Defensive Sovereigns (Automation Layer):
+  coach         Coach.workflow.py (Python)
+                Executed within a Python runtime leveraging native AST tools,
+                data parsing frameworks, and LLM orchestration providers.
+                Evaluates runtime performance gaps or test runner failures to
+                synthesize standalone, micro-incremented source code corrections.
+
+  probation-officer  ProbationOfficer.workflow.rs (Rust)
+                Compiled to high-performance, memory-safe Rust code. Intercepts
+                newly synthesized files before acceptance into the live portfolio.
+                Executes them within sandboxed WebAssembly boundaries to verify
+                manifest contracts, enforce anti-pattern constraints, and catch
+                errors prior to hot-reloading.
+
+Mechanical Sovereigns (Execution Layer):
+  assembly-line  AssemblyLine.service.js
+                Manages near-zero-overhead polyglot bindings. Configures
+                SharedArrayBuffer structures and maps V8 typed arrays directly
+                to shared native binary heaps.
+
+  triage        Triage.workflow.js
+                Intercepts incoming execution requests, evaluating parameter
+                complexity, input data sizes, and CPU thread health to
+                stream tasks to the most efficient operational lane.
+
+  savant        (Not a named system module — a role value for domain-expert
+                modules with no system governance role. Most application
+                modules use operationalRole: "savant".)
+
+--------------------------------------------------------------------------------
+SECTION 5 — APPENDIX: SPECIFICATION DOCUMENT REGISTER
+--------------------------------------------------------------------------------
+
+All SDOA specification documents for the SDOAvX project:
+
+| Document                          | Version | Date         | Status   |
+|-----------------------------------|---------|--------------|----------|
+| SDOA.md                           | 1.2.0   | March 2026   | Canonical base spec    |
+| SDOA-v4-Specification.md          | 4.0.0   | 2026-05-03   | Canonical v4 spec      |
+| SDOA-Guide.md                     | 4.0     | May 2026     | General reference      |
+| SDOA-v4-Implementation-Plan.md    | 4.0     | May 2026     | Migration plan         |
+| SDOAv4.5 to v5.0                  | 5.0     | June 2026    | v5 evolution spec      |
+| sdoav5 clarification.txt          | 5.0     | June 2026    | File placement & variants|
+| SDOA-Whitepaper-Technical.txt     | 5.0     | 2026-06-17   | Single source of truth |
+| SDOA-Whitepaper-Executive.txt     | 5.0     | 2026-06-17   | Leadership reference   |
+| SDOA-Governance-Outline.txt       | 5.0     | 2026-06-17   | Operational governance |
+| SDOA-Historical-Timeline.txt      | 1.0     | 2026-06-17   | This document          |
+
+> The SDOA-Whitepaper-Technical.txt is the single source of truth for the
+> current architecture. All other documents are either historical records or
+> audience-specific summaries derived from it.
+
+================================================================================
+END OF SDOA HISTORICAL TIMELINE
+================================================================================

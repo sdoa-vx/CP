@@ -1,0 +1,12 @@
+{
+  "id": "AiBroker.legacy",
+  "type": "adapter",
+  "version": "1.0.0",
+  "runtime": "NodeJS",
+  "capabilities": [],
+  "dependencies": [],
+  "docs": { "description": "Legacy variant of AiBroker.adapter retained from .bak. Lineage reference only." },
+  "last_modified": "2026-06-17T00:00:00Z",
+  "compliance": "sdoa-v1.2",
+  "variant_of": "AiBroker.adapter"
+}

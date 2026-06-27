@@ -1,0 +1,9 @@
+{
+  "variant_of": "authorities/registrar/Registry.service.ts",
+  "variant_source": "_variances/SDOAvX/authorities/registrar/Registry.service.ts",
+  "reason": "Content differs from canonical — variance version includes PolyglotBridge import and registerPolyglot method; canonical version is a more complete standalone implementation with validateManifest and reregister methods",
+  "captured_at": "2026-06-17T00:00:00Z",
+  "variance_last_modified": "2026-06-09 (imported from _variances)",
+  "canonical_version": "5.0.0",
+  "canonical_last_modified": "2026-06-17T00:00:00Z"
+}

@@ -1,0 +1,181 @@
+================================================================================
+SDOA COMPENDIUM — BOOK III: THE SLEEVE MODULE CLASS
+Edition: 5.4 — Sovereign Integration & Sleeve Amendment
+Date: 27 June 2026
+Classification: Canonical — Development Team Reference
+Amendment Ribbon: v5.4 / 27-06-2026 / Sleeve Ratification
+================================================================================
+
+BOOK III — THE SLEEVE MODULE CLASS (THE AMENDMENT)
+
+§1  RATIONALE
+────────────────────────────────────────────────────────────────────────────────
+Prior to v5.4, adapters and workflows directly contacted external systems —
+making raw HTTPS calls, spawning subprocesses, importing native libraries, and
+reading window.__TAURI__ without declaring these actions in any manifest field.
+This created five classes of silent violation:
+
+  V1  Source mutation via fs.writeFileSync from within adapters.
+  V2  Missing await on async external calls.
+  V3  Duplicate port conflicts between sibling engines.
+  V4  Synchronous calls to async external adapters.
+  V5  Dependency on a Browser-only module from a NodeJS runtime.
+
+The Sleeve Amendment resolves all five by introducing a single, narrow class —
+the Sleeve — whose job is exactly to own the boundary crossing. All other
+module classes become pure internal logic.
+
+§2  THE SLEEVE DEFINITION
+────────────────────────────────────────────────────────────────────────────────
+A Sleeve is a Layer 3 module that:
+
+  1. Wraps exactly one external system.
+  2. Declares that system, transport, path, and commands in its MANIFEST.
+  3. Is the only module in the entire portfolio permitted to contact that system.
+  4. Normalises all external responses through ResponseFormatter.
+  5. Resolves all paths through PathResolver.
+  6. Emits lifecycle telemetry (sleeve:boundaryCall, sleeve:disposed) for Triage.
+
+§3  MANIFEST EXTERNAL BLOCK
+────────────────────────────────────────────────────────────────────────────────
+Required on every sleeve:
+
+  external: {
+    system:    string    // canonical external system name (unique per portfolio)
+    transport: string    // https | cli | node-module | http+spawn |
+                         // polyglot-bridge | window.__TAURI__
+    path:      string    // "auto" = PathResolver resolves at init()
+                         // explicit = still validated by PathResolver
+    commands:  string[]  // the complete allowed command surface
+                         // ANY command not in this list is a governance breach
+  }
+
+§4  THE FIVE FORBIDDEN ACTS
+────────────────────────────────────────────────────────────────────────────────
+A sleeve MUST NEVER:
+
+  1. Write to a peer module's source file (fs.writeFileSync on *.js / *.ts).
+  2. Use eval() or the Function() constructor.
+  3. Hardcode a machine-absolute path (C:\..., /home/user/...).
+  4. Use a transport not declared in external.transport.
+  5. Return raw external payloads — all output passes through ResponseFormatter.
+
+§5  THE LIFECYCLE CONTRACT
+────────────────────────────────────────────────────────────────────────────────
+All sleeves extend SleeveBase.module.js and implement three lifecycle phases:
+
+  init(registry)
+    a. Resolve this._pathResolver = registry.get("PathResolver.service").
+    b. If external.path !== "auto": this._resolvedPath = pathResolver.resolve(path).
+    c. Call _healthCheck() — throw to mark sleeve unhealthy (non-fatal).
+    d. Emit sleeve:healthCheckFailed if unhealthy.
+
+  run({ command, payload })
+    a. Reject if command ∉ external.commands.
+    b. Delegate to _callExternal(command, payload).
+    c. Normalize response via _normalize() → { ok, data } | { ok: false, error }.
+    d. Emit sleeve:boundaryCall telemetry { moduleId, command, durationMs, ok }.
+    e. Notify Pulse.workflow for latency tracking.
+
+  dispose()
+    a. Call _teardown() (subclass: close sockets, kill subprocesses).
+    b. Emit sleeve:disposed { moduleId }.
+
+§6  BOUNDARY TOPOLOGY
+────────────────────────────────────────────────────────────────────────────────
+The boundary topology represents how sleeves sit at the edge of the SDOA
+ecosystem:
+
+  ┌──────────────────── SDOA Sovereign Layer ──────────────────────┐
+  │  Registry ─── Oracle ─── ProbationOfficer ─── Triage          │
+  │                                                                │
+  │  AiSleeve  QwenSleeve  PolicySleeve  ContextSleeve  BrowserSleeve │
+  └────⟁──────────⟁──────────⟁─────────────⟁──────────────⟁────────┘
+       │           │           │             │             │
+  ⬚ node-llama ⬚ http+   ⬚ HTTPS APIs ⬚ QmdAdapter  ⬚ Tauri IPC
+     (ghost)   spawn(ghost)  (ghost)      (ghost)       (ghost)
+
+  ⟁  sleeve boundary node  (amber)
+  ⬚  external ghost node   (amber, dashed)
+
+Ghost nodes are rendered by Cartographer but are not SDOA modules — they
+represent uncontrolled external systems. Only the sleeve may cross the line
+between ⟁ and ⬚.
+
+§7  THE FIVE CANONICAL SLEEVE SOVEREIGNS (v5.4)
+────────────────────────────────────────────────────────────────────────────────
+  AiSleeve.module.ts
+      Wraps node-llama-cpp GGUF inference library.
+      transport: node-module | commands: getLlama, LlamaChatSession
+      Emits heal:patch-request instead of writing files directly.
+
+  QwenSleeve.module.js
+      Spawns LocalLlmServer.engine.py and routes HTTP inference.
+      transport: http+spawn | commands: /generate, /health
+
+  PolicySleeve.module.js
+      Tier-aware LLM provider routing via LlmPolicyEngine.
+      transport: https | commands: complete, stream
+      Delegates HTTP execution to AiProvider.adapter (internal).
+
+  ContextSleeve.module.py
+      Wraps NodeJS QmdAdapter via PolyglotBridge.
+      transport: polyglot-bridge | commands: search, query
+      All QmdAdapter calls async; SQL parameterized.
+
+  BrowserSleeve.module.js
+      The sole module permitted to call window.__TAURI__.
+      transport: window.__TAURI__ | commands: engine_chat, engine_projects,
+                                              engine_status, run_workflow
+      Sets window.backendConnector alias for backward compatibility.
+
+§8  GOVERNANCE GATES FOR SLEEVES
+────────────────────────────────────────────────────────────────────────────────
+A sleeve passes through four gates before it can operate:
+
+  Gate 1 — ProbationOfficer (static)
+    Rejects eval(), Function(), absolute paths, missing external block,
+    undeclared transport usage, line limit (500).
+
+  Gate 2 — Registrar (structural)
+    Validates external block fields: system, transport, path, commands.
+    Rejects if any field missing or commands is empty.
+
+  Gate 3 — Oracle (discovery)
+    Indexes external.commands as surfaceType: "boundary" entries.
+    whoHasBoundary(system) must return this sleeve and only this sleeve.
+
+  Gate 4 — Triage (runtime)
+    Monitors boundary calls via circuit breaker.
+    Opens circuit on error threshold; emits triage:boundaryFault.
+    Chronicles all boundary faults for Cartographer drift analysis.
+
+§9  CREATING A NEW SLEEVE
+────────────────────────────────────────────────────────────────────────────────
+Use Scaffold:
+  sdoa new sleeve --id GitSleeve.sleeve --system git --transport cli
+
+This generates:
+  1. MANIFEST with external: { system, transport, path, commands[] }
+  2. Extends SleeveBase.module.js
+  3. _callExternal(command, payload) stub
+  4. _healthCheck() stub
+  5. ResponseFormatter + PathResolver wired in init()
+  6. sleeve:disposed emitted in dispose()
+
+Name: PascalCase + "Sleeve.sleeve"  e.g. GitSleeve.sleeve.js
+File: portfolio/substrate/adapters/GitSleeve.sleeve.js
+
+================================================================================
+RATIFICATION
+────────────────────────────────────────────────────────────────────────────────
+The Sleeve Amendment described in this volume is formally ratified under
+SDOA v5.4 — 27 June 2026. The sleeve class is the sole boundary sovereign.
+The five forbidden acts, four governance gates, and lifecycle contract are
+absolute. No module class other than sleeve may contact an external system.
+
+The constitution evolves only through governance — never through drift.
+
+================================================================================
+END OF BOOK III
+================================================================================

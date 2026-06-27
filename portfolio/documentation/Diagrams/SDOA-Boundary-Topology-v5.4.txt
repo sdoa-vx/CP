@@ -1,0 +1,131 @@
+================================================================================
+SDOA BOUNDARY TOPOLOGY DIAGRAM — v5.4
+Date: 27 June 2026
+Classification: Canonical — Architecture Reference
+Amendment Ribbon: v5.4 / 27-06-2026 / Sleeve Ratification
+================================================================================
+
+BOUNDARY TOPOLOGY — FULL VIEW
+────────────────────────────────────────────────────────────────────────────────
+
+  ┌──────────────────────── SDOA Sovereign Layer ──────────────────────────┐
+  │                                                                        │
+  │  ┌─────────────┐   ┌─────────────┐   ┌──────────────────┐            │
+  │  │ Registry    │   │ Oracle      │   │ ProbationOfficer │            │
+  │  │ .service    │◄──│ .service    │   │ .workflow        │            │
+  │  └──────┬──────┘   └──────┬──────┘   └────────┬─────────┘            │
+  │         │                 │                    │                      │
+  │  ┌──────▼──────┐   ┌──────▼──────┐   ┌────────▼─────────┐            │
+  │  │ Triage      │   │ Cartographer│   │ Coach            │            │
+  │  │ .workflow   │   │ .workflow   │   │ .workflow        │            │
+  │  └──────┬──────┘   └─────────────┘   └─────────────────-┘            │
+  │         │                                                              │
+  │  ┌──────▼──────────────────────────────────────────────────────┐      │
+  │  │ Sleeve Sovereigns (Layer 3 boundary — amber ⟁)              │      │
+  │  │                                                              │      │
+  │  │  ⟁ AiSleeve      ⟁ QwenSleeve   ⟁ PolicySleeve           │      │
+  │  │  ⟁ ContextSleeve ⟁ BrowserSleeve                          │      │
+  │  └────┬──────────────┬─────────────┬─────────────────────┬─────┘      │
+  │                                                                        │
+  └────────│──────────────│─────────────│─────────────────────│────────────┘
+           │              │             │                     │
+     ─ ─ ─│─ ─ ─ ─ ─ ─ ─│─ ─ ─ ─ ─ ─│─ ─ ─ ─ ─ ─ ─ ─ ─ ─│─ ─ BOUNDARY
+           │              │             │                     │
+     ┌─────┴──┐     ┌─────┴──┐   ┌─────┴──┐         ┌───────┴─┐
+     │ ⬚      │     │ ⬚      │   │ ⬚      │         │ ⬚       │
+     │node-   │     │python- │   │llm-    │         │tauri-   │
+     │llama-  │     │http-   │   │providers│         │ipc      │
+     │cpp     │     │infer.  │   │(HTTPS) │         │(__TAURI__)│
+     └────────┘     └────────┘   └────────┘         └─────────┘
+     + ⬚ qmd-adapter (ContextSleeve → polyglot-bridge → NodeJS QmdAdapter)
+
+LEGEND
+────────────────────────────────────────────────────────────────────────────────
+  ⟁   Sleeve boundary node        Amber fill (#f59e0b)
+  ⬚   External ghost node         Amber dashed outline — not an SDOA module
+  ─   Requires / event edge        Internal SDOA connection
+  - - Boundary edge                Sleeve → external system (amber dashed)
+      ─ ─  BOUNDARY ─ ─           The sovereignty boundary line
+
+GOVERNANCE GATE DIAGRAM
+────────────────────────────────────────────────────────────────────────────────
+
+  ┌─────────────┐
+  │ Synthesized │  (AI-generated or developer-written module)
+  └──────┬──────┘
+         │
+         ▼
+  ┌─────────────────────────────────────────────────────────┐
+  │ Gate 1 — ProbationOfficer (static analysis)             │
+  │                                                         │
+  │  ✓ LINE_LIMIT          ✓ NO_EVAL                        │
+  │  ✓ FORBIDDEN_GLOBALS   ✓ LAYER_ISOLATION                │
+  │  [sleeve] SLEEVE_NO_MUTATION                            │
+  │  [sleeve] SLEEVE_NO_EVAL                                │
+  │  [sleeve] SLEEVE_NO_ABSOLUTE_PATHS                      │
+  │  [sleeve] SLEEVE_DECLARED_TRANSPORT_ONLY                 │
+  │  [sleeve] SLEEVE_EXTERNAL_DECLARATION_REQUIRED           │
+  └──────┬──────────────────────────────────────────────────┘
+         │ PASS
+         ▼
+  ┌─────────────────────────────────────────────────────────┐
+  │ Gate 2 — Human Sign-off (IDE widget or CLI)             │
+  │  Developer reviews diff and approves.                   │
+  └──────┬──────────────────────────────────────────────────┘
+         │ APPROVED
+         ▼
+  ┌─────────────────────────────────────────────────────────┐
+  │ Gate 3 — Registrar (structural alignment)               │
+  │  validateManifest() — all fields, sleeve external block │
+  │  resolve requires[] — all deps must be registered       │
+  │  emit registry:moduleRegistered → Oracle rebuilds       │
+  └──────┬──────────────────────────────────────────────────┘
+         │ REGISTERED
+         ▼
+  ┌─────────────────────────────────────────────────────────┐
+  │ Gate 4 — Oracle (capability mesh)                       │
+  │  Index commands, events, accepts                        │
+  │  [sleeve] Index external.commands as boundary entries   │
+  │  [sleeve] whoHasBoundary(system) returns this sleeve    │
+  └──────┬──────────────────────────────────────────────────┘
+         │ INDEXED
+         ▼
+  ┌─────────────────────────────────────────────────────────┐
+  │ Runtime — Triage monitoring                             │
+  │  Circuit breaker on all commands + boundary entries     │
+  │  [sleeve] triage:boundaryFault on external failure      │
+  │  [sleeve] Chronicle logs all boundary calls             │
+  └─────────────────────────────────────────────────────────┘
+         │
+         ▼
+  ┌─────────────┐
+  │  Canonical  │  Sealed into portfolio/ — immutable until next amendment
+  └─────────────┘
+
+HEALING PATH DIAGRAM
+────────────────────────────────────────────────────────────────────────────────
+
+  AlgosimTest.workflow (TestCore)
+    │   [test fails]
+    ▼
+  AiSleeve.healTestFailure()     ← only sleeve may contact node-llama-cpp
+    │   emits heal:patch-request
+    ▼
+  Registry event bus
+    │   routes to accepts: heal:patch-request
+    ▼
+  Coach.on_patch_request()
+    │   reads target module source from registry
+    │   applies patch (search/replace)
+    ├─► ProbationOfficer.run()   [GATE — must pass or patch rejected]
+    │
+    └─► emits coach:mutationReady
+          │
+          ▼
+        Registrar re-fields module with patched source
+
+  ═══ NO MODULE OTHER THAN COACH MAY WRITE TO A PEER'S SOURCE FILE ═══
+
+================================================================================
+END OF BOUNDARY TOPOLOGY DIAGRAM v5.4
+================================================================================

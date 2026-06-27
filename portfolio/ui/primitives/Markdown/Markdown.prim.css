@@ -1,0 +1,175 @@
+/* Last modified: 2026-06-07 00:00 UTC */
+/* Markdown.prim.css — SDOA v4 */
+
+.sdoa-markdown {
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--line-height);
+}
+
+/* ── Headings ─────────────────────────────────── */
+.sdoa-markdown .sdoa-md-h1,
+.sdoa-markdown h1 {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: var(--space-lg) 0 var(--space-sm);
+  line-height: var(--line-height-tight);
+  border-bottom: var(----size-var(----size-var(----size-var(----size-1px)))) solid var(--border-subtle);
+  padding-bottom: var(--space-xs);
+}
+.sdoa-markdown .sdoa-md-h2,
+.sdoa-markdown h2 {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: var(--space-lg) 0 var(--space-sm);
+  line-height: var(--line-height-tight);
+}
+.sdoa-markdown .sdoa-md-h3,
+.sdoa-markdown h3 {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: var(--space-md) 0 var(--space-xs);
+}
+.sdoa-markdown .sdoa-md-h4,
+.sdoa-markdown h4 {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: var(--space-md) 0 var(--space-xs);
+}
+.sdoa-markdown .sdoa-md-h5,
+.sdoa-markdown h5,
+.sdoa-markdown .sdoa-md-h6,
+.sdoa-markdown h6 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: var(--space-sm) 0 var(--space-xs);
+}
+
+/* ── Paragraphs ───────────────────────────────── */
+.sdoa-markdown .sdoa-md-p,
+.sdoa-markdown p {
+  margin: 0 0 var(--space-sm);
+}
+.sdoa-markdown .sdoa-md-p:last-child,
+.sdoa-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Code ─────────────────────────────────────── */
+.sdoa-markdown .sdoa-md-pre,
+.sdoa-markdown pre {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  overflow-x: auto;
+  margin: var(--space-sm) 0;
+  font-size: var(--text-sm);
+}
+.sdoa-markdown .sdoa-md-code--block,
+.sdoa-markdown pre code {
+  font-family: var(--font-mono);
+  font-size: inherit;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  padding: 0;
+  border-radius: 0;
+}
+.sdoa-markdown .sdoa-md-code,
+.sdoa-markdown code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--accent-strong);
+  background: var(--bg-elevated-2, var(--bg-elevated));
+  border-radius: var(--radius-sm);
+  padding: 1px var(----size-var(----size-var(----size-var(----size-5px))));
+}
+
+/* ── Blockquotes ──────────────────────────────── */
+.sdoa-markdown .sdoa-md-blockquote,
+.sdoa-markdown blockquote {
+  border-left: var(----size-var(----size-var(----size-var(----size-3px)))) solid var(--accent);
+  margin: var(--space-sm) 0;
+  padding: var(--space-xs) var(--space-md);
+  color: var(--text-muted);
+  background: var(--accent-dim);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+/* ── Lists ────────────────────────────────────── */
+.sdoa-markdown .sdoa-md-list,
+.sdoa-markdown ul,
+.sdoa-markdown ol {
+  margin: var(--space-xs) 0 var(--space-sm);
+  padding-left: var(--space-lg);
+}
+.sdoa-markdown .sdoa-md-list li,
+.sdoa-markdown li {
+  margin-bottom: var(--space-2xs);
+  line-height: var(--line-height);
+}
+.sdoa-markdown .sdoa-md-list--ordered,
+.sdoa-markdown ol {
+  list-style: decimal;
+}
+.sdoa-markdown .sdoa-md-list:not(.sdoa-md-list--ordered),
+.sdoa-markdown ul {
+  list-style: disc;
+}
+
+/* ── Horizontal Rule ──────────────────────────── */
+.sdoa-markdown .sdoa-md-hr,
+.sdoa-markdown hr {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: var(--space-md) 0;
+}
+
+/* ── Links ────────────────────────────────────── */
+.sdoa-markdown .sdoa-md-link,
+.sdoa-markdown a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.sdoa-markdown .sdoa-md-link:hover,
+.sdoa-markdown a:hover {
+  text-decoration: underline;
+  color: var(--accent-strong);
+}
+
+/* ── Tables ───────────────────────────────────── */
+.sdoa-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  margin: var(--space-sm) 0;
+}
+.sdoa-markdown th,
+.sdoa-markdown td {
+  text-align: left;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--border-subtle);
+}
+.sdoa-markdown th {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.sdoa-markdown tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ── Images ───────────────────────────────────── */
+.sdoa-markdown img {
+  max-width: 100%;
+  border-radius: var(--radius-md);
+  display: block;
+  margin: var(--space-sm) 0;
+}

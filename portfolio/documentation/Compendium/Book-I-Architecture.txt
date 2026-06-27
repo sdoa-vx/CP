@@ -1,0 +1,176 @@
+================================================================================
+SDOA COMPENDIUM — BOOK I: ARCHITECTURE & MODULE TAXONOMY
+Edition: 5.4 — Sovereign Integration & Sleeve Amendment
+Date: 27 June 2026
+Classification: Canonical — Development Team Reference
+Amendment Ribbon: v5.4 / 27-06-2026 / Sleeve Ratification
+================================================================================
+
+BOOK I — ARCHITECTURE & MODULE TAXONOMY
+
+§1  THE SDOA PRINCIPLE
+────────────────────────────────────────────────────────────────────────────────
+Every module in the SDOA ecosystem is self-describing. A module's identity,
+capabilities, dependencies, events, and governance metadata are embedded in a
+static MANIFEST block — not in a separate registry file, not in a build tool,
+not in a comment. The runtime reads the manifest; it does not ask the developer
+to maintain a separate routing table.
+
+Key invariants:
+  - No hidden dependencies.
+  - No ambient globals (window.*, process.env.* used outside declared boundaries).
+  - No inline hardcoded behaviours (behaviour = manifest + code, nothing else).
+  - No discretionary exceptions to governance rules.
+
+§2  THE THREE-LAYER MODEL
+────────────────────────────────────────────────────────────────────────────────
+SDOA organises all modules into three layers.
+
+Layer 1 — Features
+  What the user sees and touches. Features are sovereign over their own UI.
+  They load schemas, delegate computation to Layer 3, and render results.
+  Features MUST NOT contain business logic or direct backend calls.
+  Examples: Dashboard.feature, Projects.feature, Chat.feature
+
+Layer 2 — Primitives
+  Reusable, generic UI building blocks. Features are assembled from primitives.
+  Every UI element is a configured instance of a generic primitive.
+  Primitives own their own styling and expose a typed configuration surface.
+  Examples: Button.prim, Modal.prim, Input.prim, DataTable.prim
+
+Layer 3 — Substrate
+  The backend sovereign layer: services, workflows, adapters, engines, and sleeves.
+  Layer 3 modules may not reference window.* or any browser global.
+  They communicate via the registry, event bus, and capability surface.
+  Examples: Registry.service, Oracle.service, Coach.workflow, AiSleeve.module
+
+§3  MODULE CLASS TAXONOMY
+────────────────────────────────────────────────────────────────────────────────
+v5.4 recognises eight module classes:
+
+  feature      Layer 1.  User-facing view sovereign. Loads JSON schema; never
+               hardcodes structure. lifecycle: init/mount/update/unmount/destroy.
+
+  primitive    Layer 2.  Generic UI building block. Purely presentational.
+               Props are typed. No business logic. lifecycle: init/mount/update/
+               unmount/destroy.
+
+               Canonical primitive catalog (19 primitives, v5.4):
+                 Button      Input       Toggle      Select      Panel
+                 Modal       TabGroup    List        Tree        Form
+                 Toast       Badge       Toolbar     EmptyState  ScrollMap
+                 CodeEditor  ContextMenu Spinner     Markdown
+
+  adapter      Layer 3.  Bridge between internal SDOA modules and external
+               interfaces. v5.4: replaced by "sleeve" for any module that
+               contacts an external system. Remaining adapters are internal
+               transformation layers only.
+
+  service      Layer 3.  Stateful shared utility — registry, logger, formatter,
+               chronicle. lifecycle: init/run/dispose.
+
+  workflow     Layer 3.  Stateless orchestration — Coach, ProbationOfficer,
+               Scaffold, Triage, Cartographer, InnovationDetector.
+               lifecycle: init/run/dispose.
+
+  engine       Layer 3.  Heavy computation or inference.
+               Examples: LlmPolicyEngine, LocalLlmServer, ContextEngine.
+
+  repository   Layer 3.  Data persistence and query abstraction.
+
+  sleeve       Layer 3.  v5.4 NEW — the only class permitted to contact an
+               external system (CLI, HTTP API, IPC channel, native library).
+               Boundary sovereign. See §4 and Book III for full specification.
+
+§4  THE SLEEVE CLASS (BRIEF — SEE BOOK III FOR FULL SPECIFICATION)
+────────────────────────────────────────────────────────────────────────────────
+A sleeve is a Layer 3 module whose sole purpose is to wrap one external system.
+It declares that external system in its MANIFEST external block:
+
+  external: {
+    system:    "git",           // canonical name of the external system
+    transport: "cli",           // https | cli | node-module | http+spawn |
+                                // polyglot-bridge | window.__TAURI__
+    path:      "auto",          // resolved at runtime via PathResolver
+    commands:  ["status", ...]  // the full allowed command surface
+  }
+
+No other module class may contact an external system.
+
+§5  THE MANIFEST CONTRACT
+────────────────────────────────────────────────────────────────────────────────
+Every SDOA module MUST expose a static MANIFEST block. Mandatory fields:
+
+  id              string      Unique, dot-separated.  "Oracle.service"
+  type            string      One of the eight classes above.
+  layer           number      1 | 2 | 3
+  runtime         string      NodeJS | Browser | Universal | Python | Rust
+  version         string      Semantic version.  "5.0.0"
+  operationalRole string      "savant" for ordinary modules; named roles for
+                              sovereigns: "registrar", "oracle", "coach",
+                              "probation-officer", "triage", "savant"
+  requires        string[]    Module IDs this module depends on.
+  lifecycle       string[]    Ordered lifecycle phases.
+  actions.commands object     Named commands with typed input/output.
+  actions.events  object      Events this module emits with typed payloads.
+  actions.accepts object      Events this module subscribes to.
+  docs.description string     Non-empty description.
+
+Sleeve modules MUST additionally declare:
+  external        object      { system, transport, path, commands[] }
+
+§6  NAMING CONVENTIONS
+────────────────────────────────────────────────────────────────────────────────
+Module ID conventions:
+  Feature:    PascalCase + ".feature"       Dashboard.feature
+  Primitive:  PascalCase + ".prim"          Button.prim
+  Service:    PascalCase + ".service"       Oracle.service
+  Workflow:   PascalCase + ".workflow"      Coach.workflow
+  Engine:     PascalCase + ".engine"        LlmPolicyEngine (exception: bare)
+  Adapter:    PascalCase + ".adapter"       AiProvider.adapter
+  Repository: PascalCase + ".repository"   Memory.repository
+  Sleeve:     PascalCase + "Sleeve.sleeve"  GitSleeve.sleeve  ← v5.4
+
+File naming mirrors module ID with runtime-appropriate extension:
+  NodeJS:   GitSleeve.sleeve.js
+  TypeScript: GitSleeve.sleeve.ts
+  Python:   ContextSleeve.sleeve.py
+  Browser:  BrowserSleeve.sleeve.js
+
+§7  FOLDER LAYOUT RULES
+────────────────────────────────────────────────────────────────────────────────
+Files live alongside the sovereign layer that consumes them.
+Prohibited generic dump directories: /assets/, /static/, /deps/,
+/resources/, /misc/, /global/. Their presence triggers a build failure.
+
+Canonical structure:
+  portfolio/
+  ├── authorities/registrar/      Registry.service.ts
+  ├── substrate/
+  │   ├── adapters/               AiProvider, sleeve sovereigns
+  │   ├── bridges/                Cross-runtime bridges
+  │   ├── engines/                Inference engines
+  │   ├── services/               Oracle, Logger, ResponseFormatter
+  │   ├── tests/                  Sleeve.tests.json, cert suites
+  │   └── workflows/              Coach, ProbationOfficer, Triage, Scaffold
+  └── documentation/
+      ├── Compendium/             Books I–IV (this volume)
+      ├── Whitepaper/             Executive + Technical editions
+      ├── Manifest-Spec/          Machine-readable manifest specification
+      ├── Diagrams/               Architecture + boundary topology diagrams
+      ├── Release-Notes/          Per-version release notes
+      ├── Freeze/                 Checksum + freeze certificate
+      └── Archive/                Superseded editions (v4.x, v5.0)
+
+================================================================================
+RATIFICATION
+────────────────────────────────────────────────────────────────────────────────
+The architecture and taxonomy described in this volume are ratified under
+SDOA v5.4 — Sovereign Integration & Sleeve Amendment, 27 June 2026.
+All layer rules, naming conventions, and module class definitions are absolute.
+
+The constitution evolves only through governance — never through drift.
+
+================================================================================
+END OF BOOK I
+================================================================================
