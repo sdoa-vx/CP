@@ -1,0 +1,1255 @@
+================================================================================
+SDOA — SELF-DESCRIBING OBJECT ARCHITECTURE
+Complete Specification  |  Version 4.0.0  |  Status: Canonical
+================================================================================
+
+Every module declares its own identity, dependencies, capabilities, and
+behavior — directly inside its own definition. The registry wires everything
+automatically at startup. The code is the documentation.
+
+CORE PRINCIPLE: The MANIFEST is the contract. The registry is the spine.
+Modules are self-describing: an AI or human can understand any module by
+reading that single file. Zero configuration drift. Zero doc-code divergence.
+
+
+================================================================================
+QUICK REFERENCE
+================================================================================
+
+  Need a button?          →  Button.prim.js + config object
+  Need a form?            →  Form.prim.js + schema.json
+  Need a modal?           →  Modal.prim.js + schema.json
+  Need a new screen?      →  MyFeature.feature.js composing primitives
+  Need backend data?      →  MyAdapter.adapter.js with backendDeps declared
+  Need a new workflow?    →  MyWorkflow.workflow.js  (auto-discovered)
+  Need to share state?    →  StateStore.get() / .set() / .watch()
+  Cross-module comms?     →  EventBus.emit() / .on()
+
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+
+  1.  Version History
+  2.  Core Principles
+  3.  The Three Layers
+  4.  Module Types
+  5.  Manifest Fields
+  6.  Primitive Catalog
+  7.  Declarative Schemas
+  8.  State Management
+  9.  Auto-Routing
+  10. CSS Architecture
+  11. Action Surface
+  12. Commands
+  13. Events & Accepts
+  14. Workflows
+  15. Language Guide
+  16. File Structure
+  17. Conventions & Standards
+  18. Compatibility Rules
+  19. Implementation Protocol
+  20. Evolution Roadmap
+
+
+================================================================================
+1. VERSION HISTORY
+================================================================================
+
+SDOA evolves additively — no version ever breaks compatibility with the one
+before it. Each release adds new optional fields; nothing is ever removed.
+
+────────────────────────────────────────────────────────────────────────────────
+SDOA v1.2 — Foundation  |  Manifest + Docs
+────────────────────────────────────────────────────────────────────────────────
+Establishes the minimum contract. Every module must declare:
+  id, type, version, runtime, capabilities, dependencies, docs
+
+The registry validates at startup and rejects non-compliant modules.
+Versioning via bump_patch() / bump_minor() / bump_major() available in all
+language runtimes.
+
+────────────────────────────────────────────────────────────────────────────────
+SDOA v2.0 — Infrastructure  |  Sidecars · Hot-reload · Version CLI · System Map
+────────────────────────────────────────────────────────────────────────────────
+Additive over v1.2. Adds:
+  - .sdoa sidecar files for languages that can't embed manifests
+  - Hot-reload: registry detects file changes and re-instantiates
+  - Universal Version CLI (sdoa command) for cross-language version bumps
+  - System Map: full dependency/capability graph output
+
+────────────────────────────────────────────────────────────────────────────────
+SDOA v3.0 — Action Surface  |  Commands · Triggers · Emits · Workflows
+────────────────────────────────────────────────────────────────────────────────
+Additive over v2.0. Every module now exposes an actions block defining:
+  - commands:   what it can do on request
+  - triggers:   events it reacts to
+  - emits:      events it broadcasts
+  - workflows:  multi-step operations it exposes
+
+Transforms the system into self-routing, self-orchestrating architecture.
+
+────────────────────────────────────────────────────────────────────────────────
+SDOA v4.0 — Component-Primitive Architecture  [CURRENT / CANONICAL]
+  Three Layers · Primitives · Schemas · StateStore · Auto-Routing · Lifecycle
+────────────────────────────────────────────────────────────────────────────────
+Introduces:
+  - Three-layer architecture (Features → Primitives → Adapters)
+  - Formal primitive catalog (19 UI atoms)
+  - Declarative schema-driven rendering
+  - Centralized StateStore replacing all window.* globals
+  - Declaration-based auto-routing on frontend and backend
+  - Co-located CSS with design tokens
+  - Strict lifecycle contracts for all UI modules
+  - Actions block renames: triggers → accepts, emits → events
+
+Compatibility rows (all additions are optional):
+
+  v1.2  [REQUIRED]  id, type, version, runtime, capabilities,
+                    dependencies, docs
+  v2.0  [+OPTIONAL] sidecars, hot_reload, version_cli
+  v3.0  [+OPTIONAL] actions.commands, actions.triggers,
+                    actions.emits, actions.workflows
+  v4.0  [+OPTIONAL] layer, dataFiles, lifecycle, backendDeps,
+                    actions.accepts, actions.events, actions.slots
+
+
+================================================================================
+2. CORE PRINCIPLES (v4.0)
+================================================================================
+
+1. BUILD ONCE, USE EVERYWHERE
+   Every UI element is a configured instance of a generic primitive. A Panel
+   makes all panels. A Button makes all buttons. Zero one-off components.
+
+2. DATA LIVES OUTSIDE CODE
+   Large datasets, UI schemas, and configuration presets are stored in external
+   .json files. Modules load them at runtime. Code stays lean and logic-only.
+
+3. THREE STRICT LAYERS
+   Every operation flows through exactly three layers: Features → Primitives →
+   Adapters. No shortcuts. No layer-skipping. Ever.
+
+4. DECLARE, DON'T HARD-WIRE
+   Modules declare their capabilities and dependencies in manifests. The system
+   auto-discovers and auto-routes. Manual switch statements and hard-coded
+   registrations are prohibited.
+
+5. LIFECYCLE DISCIPLINE
+   Every UI module follows: init → mount → update → unmount → destroy.
+   No ad-hoc initialization.
+
+
+================================================================================
+3. THE THREE LAYERS
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  LAYER 1 — FEATURES  (Composition & Intent)                                 │
+│                                                                             │
+│  Feature modules compose primitives with JSON schemas. They define WHAT     │
+│  the user sees and WHICH behavior profile to use. They never touch the      │
+│  DOM directly or call the backend.                                          │
+│                                                                             │
+│  Files:  ui/features/**/*.feature.js                                        │
+│          ui/data/**/*.schema.json                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  LAYER 2 — PRIMITIVES  (Reusable Atoms)                                     │
+│                                                                             │
+│  Generic, behavior-agnostic UI building blocks. They receive their          │
+│  personality from Layer 1 via configuration objects. They own their own     │
+│  CSS. They emit events but never subscribe to backend state directly.       │
+│                                                                             │
+│  Files:  ui/primitives/**/*.prim.js                                         │
+│          ui/primitives/**/*.prim.css                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  LAYER 3 — ADAPTERS  (Backend Contracts)                                    │
+│                                                                             │
+│  All IPC calls, data fetching, state management, and side effects live      │
+│  here. Features request data through adapters. Adapters respond with        │
+│  standardized Result objects.                                               │
+│                                                                             │
+│  Files:  ui/adapters/**/*.adapter.js                                        │
+│          server/**/*.workflow.js                                            │
+│          server/access/**/*.repository.js                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+LAYER RULES
+  L1 → L2 only       Features call primitives. Never Layer 3 directly.
+  L2 → Events only   Primitives emit events. Never call adapters or features.
+  L3 ← L1 only       Only features call adapters. Primitives unaware of backend.
+  No layer skipping  L1 never calls L3 repos directly. L2 never calls L1.
+  No circular deps   If A depends on B, B must not depend on A.
+
+DATA FLOW
+  User Action → Feature.handle() → StateStore.set()
+    → Watchers notified → Primitives update → Adapter syncs backend
+
+RULE: No module ever reads window.currentUser or sets window.appState for
+shared state. All state access goes through StateStore.get() and
+StateStore.watch(). The global namespace is reserved for registry refs only.
+
+
+================================================================================
+4. MODULE TYPES
+================================================================================
+
+┌────────────────┬─────────┬──────────────────┬───────────┬──────────────────┐
+│ Type           │ Layer   │ Suffix           │ Runtime   │ May Call         │
+├────────────────┼─────────┼──────────────────┼───────────┼──────────────────┤
+│ primitive      │ 2       │ .prim.js         │ Browser   │ Emits events only│
+│ feature        │ 1       │ .feature.js      │ Browser   │ Primitives+Adapt.│
+│ adapter        │ 3       │ .adapter.js      │ Browser   │ IPC transport    │
+│ service        │ 3       │ .service.js      │ Universal │ Internal only    │
+│ workflow       │ 3       │ .workflow.js     │ NodeJS    │ Repos + Services │
+│ repository     │ 3       │ .repository.js   │ NodeJS    │ Storage only     │
+└────────────────┴─────────┴──────────────────┴───────────┴──────────────────┘
+
+  primitive    Generic, behavior-agnostic UI atom. Receives personality from
+               Layer 1 via config object. Owns its own CSS.
+
+  feature      Composes primitives with JSON schemas to build a complete
+               screen or region. Never touches DOM directly.
+
+  adapter      All IPC calls, data fetching, state management, side effects.
+               Declares backendDeps in MANIFEST for auto-routing.
+
+  service      Cross-cutting infrastructure: EventBus, StateStore, Router.
+               No UI. Runs in Node.js, browser, or both.
+
+  workflow     Backend Node.js operation. Auto-discovered by Router.
+               Creating the file IS the registration step.
+
+  repository   Data persistence only. Called exclusively by workflows.
+
+
+================================================================================
+5. MANIFEST FIELDS
+================================================================================
+
+Every module carries a static MANIFEST block at the top of the file.
+
+────────────────────────────────────────────────────────────────────────────────
+v1.2 REQUIRED FIELDS  (mandatory in every module, every version, always)
+────────────────────────────────────────────────────────────────────────────────
+
+  id            string    Unique module ID. Convention: Name.type
+                          e.g. Button.prim, FetchUsers.workflow
+
+  type          string    primitive | feature | adapter | service
+                          | workflow | repository
+
+  version       semver    Bump on every change.
+                          Patch = fix, Minor = feature, Major = breaking.
+
+  runtime       string    Browser | NodeJS | Universal | Rust | Python | C++
+
+  capabilities  string[]  Dot-notation tokens: ["data.fetch", "data.stream"]
+
+  dependencies  string[]  File names or module IDs. Registry resolves at startup.
+
+  docs          object    docs.description (required)
+                          docs.input, docs.output, docs.author (optional)
+
+────────────────────────────────────────────────────────────────────────────────
+v4.0 ADDITIONS  (all optional, all backward-compatible)
+────────────────────────────────────────────────────────────────────────────────
+
+  layer         number    1 = Feature, 2 = Primitive, 3 = Adapter/Service/WF
+
+  requires      string[]  Replaces dependencies — module IDs only, no file paths
+
+  dataFiles     string[]  External JSON files loaded at runtime
+
+  lifecycle     string[]  ["init","mount","update","unmount","destroy"] for UI
+                          ["init","run","dispose"] for backend modules
+
+  actions.events   object  Events this module emits (renamed from v3 emits)
+
+  actions.accepts  object  Events this module listens to (renamed from v3 triggers)
+
+  actions.slots    object  Named content insertion points for composition
+
+  backendDeps   array     [{ action, via, params }] — adapter modules only
+
+  docs.sdoa     string    SDOA version targeted e.g. "4.0.0"
+
+────────────────────────────────────────────────────────────────────────────────
+FULL v4.0 MANIFEST SKELETON
+────────────────────────────────────────────────────────────────────────────────
+
+  static MANIFEST = {
+    // ── Identity ──────────────────────────────
+    id:        "Button.prim",
+    type:      "primitive",   // primitive|feature|adapter|service|workflow|repository
+    layer:     2,             // 1=feature  2=primitive  3=adapter/service/workflow
+    runtime:   "Browser",     // Browser | NodeJS | Universal
+    version:   "4.0.0",
+
+    // ── Dependencies ──────────────────────────
+    requires:  [],            // Module IDs this module depends on
+    dataFiles: [],            // External JSON files loaded at runtime
+
+    // ── Lifecycle ─────────────────────────────
+    lifecycle: ["init", "mount", "update", "unmount", "destroy"],
+
+    // ── Actions Surface ───────────────────────
+    actions: {
+      commands: {},           // Named commands this module exposes
+      events:   {},           // Events this module emits
+      accepts:  {},           // Events this module listens to
+      slots:    {},           // Named content insertion points
+    },
+
+    // ── Backend Contract (adapters only) ──────
+    backendDeps: [],          // [{ action, via, params }]
+
+    // ── Documentation ─────────────────────────
+    docs: {
+      description: "",
+      author: "your team",
+      sdoa: "4.0.0"
+    }
+  };
+
+
+================================================================================
+6. PRIMITIVE CATALOG  (Layer 2)
+================================================================================
+
+Every visual element maps to exactly one primitive. Never create a one-off
+component — find the primitive that fits and configure it.
+
+UI PRIMITIVES
+┌───────────────┬─────────────────────┬─────────────────────────────────────────┐
+│ Primitive     │ File                │ Key Config                              │
+├───────────────┼─────────────────────┼─────────────────────────────────────────┤
+│ Button        │ Button.prim.js      │ label, icon, variant, onClick, disabled │
+│ Input         │ Input.prim.js       │ type, label, placeholder, onChange      │
+│ Toggle        │ Toggle.prim.js      │ label, checked, onChange                │
+│ Select        │ Select.prim.js      │ label, options, value, onChange         │
+│ Panel         │ Panel.prim.js       │ title, collapsible, actions, slots      │
+│ Modal         │ Modal.prim.js       │ title, size, onClose, slots             │
+│ TabGroup      │ TabGroup.prim.js    │ tabs: [{id, label, content}], activeTab │
+│ List          │ List.prim.js        │ items, renderItem, onSelect, emptyState │
+│ Tree          │ Tree.prim.js        │ nodes, onExpand, onSelect, renderNode   │
+│ Form          │ Form.prim.js        │ schema, values, onSubmit, onChange      │
+│ Toast         │ Toast.prim.js       │ message, type, duration                 │
+│ Badge         │ Badge.prim.js       │ text, variant, icon                     │
+│ Toolbar       │ Toolbar.prim.js     │ items: [Button configs]                 │
+│ EmptyState    │ EmptyState.prim.js  │ icon, title, hint, action               │
+│ ScrollMap     │ ScrollMap.prim.js   │ container, renderDot                    │
+│ CodeEditor    │ CodeEditor.prim.js  │ language, value, onChange, readOnly     │
+│ ContextMenu   │ ContextMenu.prim.js │ items, position                         │
+│ Spinner       │ Spinner.prim.js     │ size, label                             │
+│ Markdown      │ Markdown.prim.js    │ content, allowHtml                      │
+└───────────────┴─────────────────────┴─────────────────────────────────────────┘
+
+BACKEND PRIMITIVES (Layer 3)
+  Router               Router.service.js          Auto-dispatches IPC to workflows
+  WorkflowRunner       WorkflowRunner.service.js  Executes workflows with middleware
+  ResponseFormatter    ResponseFormatter.service.js  ok(data) / fail(msg)
+  Logger               Logger.service.js          Structured leveled logging
+
+
+================================================================================
+7. DECLARATIVE SCHEMAS
+================================================================================
+
+Features do not hard-code their UI structure. They load a schema file that
+describes what to render, and feed it to the appropriate primitives.
+
+ADDING A NEW FIELD = ~10 LINES OF JSON. ZERO JAVASCRIPT CHANGES.
+
+HOW IT WORKS:
+  schema.json → Feature loads at init() → Feeds config to primitives → UI renders
+
+EXAMPLE — Settings UI Schema (ui/data/schemas/settings.schema.json):
+
+  {
+    "id": "settings",
+    "primitive": "Modal",
+    "config": { "title": "Settings", "size": "large" },
+    "content": {
+      "primitive": "TabGroup",
+      "tabs": [
+        {
+          "id": "account",
+          "label": "Account",
+          "content": { "primitive": "Form", "schemaRef": "settings.account.form.json" }
+        },
+        {
+          "id": "integrations",
+          "label": "Integrations",
+          "content": { "primitive": "Form", "schemaRef": "settings.integrations.form.json" }
+        }
+      ]
+    }
+  }
+
+EXAMPLE — Form Field Schema:
+
+  {
+    "fields": [
+      {
+        "id": "apiKey-primary",
+        "primitive": "Input",
+        "config": {
+          "type": "password",
+          "label": "Primary API Key",
+          "placeholder": "sk-...",
+          "testable": true,
+          "testAction": "api_test_key",
+          "testParams": { "provider": "primary" }
+        }
+      }
+    ],
+    "saveAction": "settings_set",
+    "loadAction": "settings_get"
+  }
+
+BACKEND DATA FILES  (server/data/)
+  models.catalog.json      Model definitions and capability presets
+  settings.defaults.json   Global configuration defaults and extensions
+  policy.defaults.json     Routing policy defaults and fallback rules
+
+
+================================================================================
+8. STATE MANAGEMENT
+================================================================================
+
+A single centralized StateStore replaces all scattered window.* globals.
+Every state read and write goes through the store.
+
+RULE: No module ever writes window.currentUser = ... or reads window.appData
+for shared state. This is a prohibited anti-pattern in v4.0.
+
+THE STATESTORE API:
+
+  StateStore.get("currentUser");
+
+  StateStore.set("currentUser", { id: "u1", name: "Alex" });
+
+  StateStore.watch("currentUser", (newValue) => {
+    console.log("User changed:", newValue);
+  });
+
+  // Hydrates from localStorage on init()
+  // Auto-persists configured keys to localStorage on set()
+
+CORE STATE SHAPE:
+  currentWorkspace   string   Active workspace identifier
+  currentProfile     string   Active user profile key
+  backendStatus      string   "connecting" | "ready" | "error"
+  attachedFiles      array    Files attached to current context
+  settings           object   Loaded settings object
+  policy             object   Active routing policy
+  workspaces         array    Available workspaces list
+
+STATE FLOW:
+  User Action → Feature.handle() → StateStore.set(key, val)
+    → Notifies all watchers → Feature A updates → Feature B updates
+    → Adapter syncs to backend
+
+
+================================================================================
+9. AUTO-ROUTING
+================================================================================
+
+Both the frontend connector and the backend router are declaration-driven.
+No manual switch statements. No hard-coded registrations.
+Adding a new workflow = creating one file.
+
+FRONTEND — BackendConnector:
+
+  The BackendConnector reads MANIFEST.backendDeps from all loaded modules at
+  startup and auto-builds its routing table. dispatch(action, payload) routes
+  to the correct IPC handler automatically.
+
+  class BackendConnector {
+    _routes = new Map();
+
+    buildRoutes(modules) {
+      for (const mod of modules) {
+        for (const dep of mod.MANIFEST.backendDeps || []) {
+          this._routes.set(dep.action, {
+            via: dep.via, params: dep.params || [], module: mod.MANIFEST.id
+          });
+        }
+      }
+    }
+
+    async dispatch(action, payload) {
+      const route = this._routes.get(action);
+      if (!route) return this._invoke("engine_ipc", { msgType: action, payload });
+      return this._invoke(route.via, this._mapParams(route, payload));
+    }
+  }
+
+BACKEND — Router Auto-Discovery:
+
+  The server Router converts incoming message type to PascalCase, appends
+  .workflow, and dispatches if registered. No switch statement needed.
+
+  async dispatchMessage(msg) {
+    // "fetch_users" → "FetchUsers.workflow"
+    const camelCase = msg.type
+      .split("_")
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join("");
+    const workflowId = `${camelCase}.workflow`;
+
+    if (this.registry.has(workflowId)) {
+      return await this._runWorkflow(workflowId, msg.payload);
+    }
+    return ResponseFormatter.fail(`No handler for: ${msg.type}`);
+  }
+
+RESULT: Adding FetchUsers.workflow.js to server/workflows/ is the only step
+needed. The router discovers it on next startup (or immediately with
+hot-reload). Zero manual registration.
+
+
+================================================================================
+10. CSS ARCHITECTURE
+================================================================================
+
+Each primitive owns its own CSS file, co-located with its JavaScript.
+A single tokens.css defines all design values.
+Primitives reference tokens — never raw values.
+
+CO-LOCATION RULE:
+  ui/primitives/
+    Button/
+      Button.prim.js
+      Button.prim.css     ← scoped to .sdoa-button
+    Modal/
+      Modal.prim.js
+      Modal.prim.css      ← scoped to .sdoa-modal
+
+CSS NAMING:
+  All primitive classes use the sdoa-{primitive} prefix.
+  Variants use BEM modifiers: sdoa-button--primary, sdoa-button--ghost.
+
+DESIGN TOKENS (tokens.css):
+  :root {
+    /* Colors */
+    --color-bg-base:       #0d0d0d;
+    --color-bg-surface:    #1a1a2e;
+    --color-accent:        #7c3aed;
+    --color-text-primary:  #e0e0e0;
+    --color-success:       #22c55e;
+    --color-error:         #ef4444;
+
+    /* Spacing */
+    --space-xs: 4px;   --space-sm: 8px;
+    --space-md: 16px;  --space-lg: 24px;  --space-xl: 32px;
+
+    /* Typography */
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --text-sm: 13px;  --text-base: 14px;  --text-lg: 16px;
+
+    /* Radii */
+    --radius-sm: 4px;  --radius-md: 8px;  --radius-lg: 12px;
+
+    /* Motion */
+    --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+    --duration-fast: 150ms;  --duration-normal: 250ms;
+  }
+
+LOAD ORDER:
+  tokens.css  →  primitives.bundle.css  →  features.bundle.css
+
+  Tokens load first. Primitive styles second. Feature overrides last.
+  Never hard-code a color or spacing value inside a primitive.
+
+
+================================================================================
+11. ACTION SURFACE
+================================================================================
+
+The actions block is where SDOA becomes an operating system for modules.
+Every module declares what it can do, what it listens for, what it broadcasts,
+and what slots it exposes for composition.
+
+ONCE DECLARED, THE REGISTRY CAN:
+  ✔ Auto-generate a system-wide command map
+  ✔ Auto-generate a system-wide event graph
+  ✔ Allow AI to safely orchestrate modules (reads surface, not implementation)
+  ✔ Allow cross-language command routing
+  ✔ Allow user-defined automation (wire trigger→command→event chains)
+  ✔ Allow skills to be built from modules
+
+THE FOUR ACTION KEYS:
+
+  commands    "Things this module can DO on request."
+              Callable functions. Typed inputs and outputs. Cross-language.
+
+  accepts     "Events this module REACTS to."  (renamed from v3 triggers)
+              Events from EventBus that trigger a command in this module.
+
+  events      "Things this module BROADCASTS."  (renamed from v3 emits)
+              Events other modules can subscribe to. No direct coupling.
+
+  slots       "Named insertion points for composition."
+              Parent features can fill named slots with additional content.
+
+v3 → v4 RENAME REFERENCE:
+  v3.0 triggers  →  v4.0 accepts
+  v3.0 emits     →  v4.0 events
+  v3.0 workflows →  (now a module type — .workflow.js files)
+  (new in v4)    →  actions.slots
+
+
+================================================================================
+12. COMMANDS
+================================================================================
+
+Commands are callable functions the registry can invoke on behalf of any
+caller — another module, a workflow, or an AI orchestrator.
+
+A command must be: explicit (declared in MANIFEST), typed (input/output
+specified), discoverable (in the registry map), and safe (no side effects
+outside its declared scope).
+
+COMMAND SCHEMA:
+  commands: {
+    commandName: {
+      description: "Human-readable explanation.",
+      input: {
+        paramName: "type",    // "string", "number", "boolean", "DOMElement"
+        optional:  "type?"    // trailing "?" marks optional params
+      },
+      output: "type"          // "void", "string", "object", "object[]"
+    }
+  }
+
+EXAMPLE — FileExplorer.feature.js:
+  commands: {
+    render:      { description: "Render into container.", input: { container: "DOMElement" }, output: "void" },
+    setRootPath: { description: "Navigate to path.",     input: { path: "string" },         output: "void" },
+    refresh:     { description: "Reload from disk.",     input: {},                          output: "void" },
+    showHidden:  { description: "Toggle hidden files.",  input: { visible: "boolean" },     output: "void" }
+  }
+
+WIRING VIA EVENTBUS:
+  // Register:
+  bus.command("explorer", "refresh",     ()         => refresh());
+  bus.command("explorer", "setRootPath", ({ path }) => setRootPath(path));
+
+  // Invoke from anywhere:
+  window.EventBus.command("explorer", "refresh");
+  window.EventBus.command("explorer", "setRootPath", { path: "/home/user/docs" });
+
+
+================================================================================
+13. EVENTS & ACCEPTS
+================================================================================
+
+events   — what a module broadcasts (renamed from v3 emits)
+accepts  — what a module listens for (renamed from v3 triggers)
+
+ACCEPTS EXAMPLE:
+  accepts: {
+    "sidebar:folderSelected": { description: "Load folder contents." },
+    "app:workspaceChanged":   { description: "Reset root path." }
+  }
+
+EVENTS EXAMPLE:
+  events: {
+    "explorer:fileOpened":    { payload: { path: "string", entry: "object" } },
+    "explorer:treeRefreshed": { payload: { rootPath: "string", count: "number" } }
+  }
+
+NAMING CONVENTIONS:
+  module:verb       Module emits past-tense event       explorer:fileOpened
+  module:nounVerbed Module emits state-change event     explorer:treeRefreshed
+  app:noun          App-level lifecycle events           app:workspaceChanged
+  provider:event    External service state events        ai:requestCompleted
+
+REAL EXAMPLE — AiProvider.adapter.js:
+  accepts: {
+    "allProvidersExhausted": { description: "Fires when all AI routes failed." }
+  },
+  events: {
+    "ai:requestStarted":   { payload: { provider: "string?" } },
+    "ai:requestCompleted": { payload: { provider: "string?", tokens: "number" } },
+    "ai:requestFailed":    { payload: { provider: "string?", error: "string" } }
+  }
+
+
+================================================================================
+14. WORKFLOWS
+================================================================================
+
+In v4.0, workflows are their own module type (.workflow.js). They are
+auto-discovered by the backend Router and implement a three-method lifecycle:
+init, run, dispose.
+
+DISTINCTION: A command is a single atomic operation. A workflow is a complete
+backend Node.js operation — it accesses repositories, calls external services,
+and returns a standardized result via ResponseFormatter.
+
+FULL EXAMPLE — FetchUsers.workflow.js:
+
+  // FetchUsers.workflow.js — SDOA v4.0 Workflow (NodeJS)
+  // Last modified: 2026-01-01 00:00 UTC
+  const ResponseFormatter = require("../ResponseFormatter.service");
+
+  class FetchUsersWorkflow {
+    static MANIFEST = {
+      id: "FetchUsers.workflow", type: "workflow", layer: 3,
+      runtime: "NodeJS", version: "4.0.0",
+      requires: ["Users.repository"], dataFiles: [],
+      lifecycle: ["init", "run", "dispose"],
+      actions: {
+        commands: { run: { description: "Fetch users.", input: { filter: "object?" }, output: "object[]" } },
+        events: {}, accepts: {}, slots: {}
+      },
+      docs: { description: "Retrieves user records, optionally filtered.", sdoa: "4.0.0" }
+    };
+
+    async init(registry) {
+      this.repo = registry.get("Users.repository");
+    }
+
+    async run(payload) {
+      try {
+        const users = await this.repo.find(payload?.filter ?? {});
+        return ResponseFormatter.ok({ users });
+      } catch (err) {
+        return ResponseFormatter.fail(err.message);
+      }
+    }
+
+    async dispose() {}
+  }
+
+  module.exports = FetchUsersWorkflow;
+
+AUTO-DISCOVERY FLOW:
+  msg "fetch_users"
+    → Router.dispatchMessage()
+    → builds "FetchUsers.workflow"
+    → registry.has() ✓
+    → runs workflow
+    → ResponseFormatter.ok({ users })
+
+FULL INVOCATION PATH:
+  UI dispatch() → DataAdapter → IPC Transport → Router.service
+    → FetchUsers.workflow → Users.repository → ResponseFormatter.ok(data)
+
+
+================================================================================
+15. LANGUAGE GUIDE
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+PRIMITIVE  (Browser / JS)  —  Button.prim.js
+────────────────────────────────────────────────────────────────────────────────
+
+  (function () {
+    "use strict";
+
+    class ButtonPrim {
+      static MANIFEST = {
+        id: "Button.prim", type: "primitive", layer: 2,
+        runtime: "Browser", version: "4.0.0",
+        requires: [], dataFiles: [],
+        lifecycle: ["init", "mount", "update", "unmount", "destroy"],
+        actions: {
+          commands: {
+            setDisabled: { description: "Enable or disable.", input: { disabled: "boolean" }, output: "void" }
+          },
+          events:  { "button:clicked": { payload: { label: "string" } } },
+          accepts: {},
+          slots:   {}
+        },
+        docs: { description: "Generic clickable action primitive.", sdoa: "4.0.0" }
+      };
+
+      _container = null;
+      _config    = {};
+
+      async init(config)     { this._config = config; }
+      async mount(container) { this._container = container; this._render(); }
+      async update(newState) {
+        if ("disabled" in newState) this._config.disabled = newState.disabled;
+        this._render();
+      }
+      async unmount()  { this._container?.replaceChildren(); }
+      async destroy()  { this._container = null; }
+
+      _render() {
+        const btn = document.createElement("button");
+        btn.className = `sdoa-button sdoa-button--${this._config.variant || "default"}`;
+        btn.textContent = this._config.label || "";
+        btn.disabled = !!this._config.disabled;
+        btn.onclick = () => {
+          this._config.onClick?.();
+          window.EventBus?.emit("button:clicked", { label: this._config.label });
+        };
+        this._container.replaceChildren(btn);
+      }
+    }
+
+    window.ButtonPrim = ButtonPrim;
+  })();
+
+────────────────────────────────────────────────────────────────────────────────
+FEATURE  (Browser / JS)  —  Dashboard.feature.js
+────────────────────────────────────────────────────────────────────────────────
+
+  (function () {
+    "use strict";
+
+    class DashboardFeature {
+      static MANIFEST = {
+        id: "Dashboard.feature", type: "feature", layer: 1,
+        runtime: "Browser", version: "4.0.0",
+        requires: ["Panel.prim", "List.prim", "Toolbar.prim"],
+        dataFiles: ["ui/data/schemas/dashboard.schema.json"],
+        lifecycle: ["init", "mount", "update", "unmount", "destroy"],
+        actions: {
+          commands: { refresh: { description: "Reload and re-render.", input: {}, output: "void" } },
+          events:  { "dashboard:itemSelected": { payload: { id: "string" } } },
+          accepts: { "app:workspaceChanged": { description: "Re-render for new workspace." } },
+          slots:   { toolbar: "Custom toolbar actions", aside: "Supplemental content" }
+        },
+        backendDeps: [
+          { action: "records_fetch",  via: "engine_ipc", params: ["filter"] },
+          { action: "records_delete", via: "engine_ipc", params: ["id"] }
+        ],
+        docs: { description: "Main dashboard composing Panel, List, Toolbar.", sdoa: "4.0.0" }
+      };
+
+      _panel = null; _list = null; _toolbar = null;
+
+      async init(config) {
+        window.EventBus?.on("app:workspaceChanged", () => this.update({}));
+      }
+      async mount(container) {
+        this._panel   = new window.PanelPrim();
+        this._list    = new window.ListPrim();
+        this._toolbar = new window.ToolbarPrim();
+        await this._panel.mount(container);
+        await this._list.mount(this._panel.contentSlot);
+        await this._toolbar.mount(this._panel.headerSlot);
+        await this.update({});
+      }
+      async update(newState) {
+        const data = await window.DataAdapter.dispatch("records_fetch", {});
+        await this._list.update({ items: data.records });
+      }
+      async unmount() { await this._list?.unmount(); await this._panel?.unmount(); }
+      async destroy() {}
+    }
+
+    window.DashboardFeature = DashboardFeature;
+  })();
+
+────────────────────────────────────────────────────────────────────────────────
+WORKFLOW  (NodeJS)  —  FetchUsers.workflow.js
+────────────────────────────────────────────────────────────────────────────────
+  (See Section 14 — full example provided there.)
+
+────────────────────────────────────────────────────────────────────────────────
+ENGINE  (Rust)  —  PriceEngine.rs
+────────────────────────────────────────────────────────────────────────────────
+
+  // PriceEngine.rs — SDOA v4.0 Engine (Rust)
+  // Last modified: 2026-01-01 00:00 UTC
+  //
+  // SDOA v4.0 — type: engine, layer: 3, runtime: Rust
+  // docs: "High-performance pricing engine. Compiles to WASM
+  //        for zero-overhead browser execution."
+
+  use serde::{Deserialize, Serialize};
+
+  #[derive(Deserialize)]
+  pub struct PriceInput { pub sku: String, pub quantity: u32, pub promo: Option<String> }
+
+  #[derive(Serialize)]
+  pub struct PriceOutput { pub unit_price: f64, pub total: f64, pub discount_pct: f64 }
+
+  pub fn calculate(input: PriceInput) -> PriceOutput {
+    let base     = lookup_base_price(&input.sku);
+    let discount = resolve_discount(&input.promo, input.quantity);
+    let unit     = base * (1.0 - discount);
+    PriceOutput { unit_price: unit, total: unit * input.quantity as f64, discount_pct: discount * 100.0 }
+  }
+
+────────────────────────────────────────────────────────────────────────────────
+SERVICE  (Python)  —  DataPipeline.py
+────────────────────────────────────────────────────────────────────────────────
+
+  # DataPipeline.py — SDOA v4.0 Service (Python)
+  from base import Service
+
+  class DataPipeline(Service):
+    MANIFEST = {
+      "id": "DataPipeline", "type": "service", "layer": 3,
+      "runtime": "Python", "version": "4.0.0",
+      "requires": [], "dataFiles": [],
+      "lifecycle": ["init", "run", "dispose"],
+      "actions": {
+        "commands": { "run": { "description": "Execute ETL pipeline.", "output": "dict" } },
+        "events":  { "pipeline:completed": { "payload": { "record_count": "int" } } },
+        "accepts": {}, "slots": {}
+      },
+      "docs": { "description": "ETL pipeline for raw data ingestion.", "sdoa": "4.0.0" }
+    }
+
+    async def init(self, registry): pass
+
+    async def run(self, payload: dict) -> dict:
+      records = self._extract(payload["source_path"])
+      records = self._transform(records)
+      self.emit("pipeline:completed", { "record_count": len(records) })
+      return { "records": records, "errors": [] }
+
+    async def dispose(self): pass
+
+
+================================================================================
+16. FILE STRUCTURE  (v4.0 Canonical)
+================================================================================
+
+Organized by module TYPE, not by feature.
+
+FRONTEND (Browser):
+
+  ui/
+    index.html                     ← Minimal shell — containers + script tags only
+    tokens.css                     ← Design tokens only, no component styles
+    app.js                         ← Thin orchestrator (< 100 lines)
+
+    primitives/                    ← Layer 2: Generic atoms
+      Button/   Button.prim.js   Button.prim.css
+      Input/    Input.prim.js    Input.prim.css
+      Modal/    Modal.prim.js    Modal.prim.css
+      Panel/    Panel.prim.js    Panel.prim.css
+      Form/     Form.prim.js     Form.prim.css
+      List/     List.prim.js     List.prim.css
+      ... (one folder per primitive)
+
+    features/                      ← Layer 1: Composed screens
+      Dashboard/    Dashboard.feature.js
+      Settings/     Settings.feature.js
+      FileExplorer/ FileExplorer.feature.js
+      UserManager/  UserManager.feature.js
+
+    adapters/                      ← Layer 3: Backend contracts
+      DataAdapter.adapter.js
+      StateStore.adapter.js
+
+    services/                      ← Cross-cutting
+      EventBus.service.js
+
+    data/                          ← Externalized UI data
+      schemas/     ← UI schema JSON files
+      catalogs/    ← Data catalog JSON files
+      defaults/    ← Default config JSON files
+
+    lib/                           ← Third-party libraries
+
+BACKEND (Node.js):
+
+  server/
+    main.js                        ← Entry point (< 50 lines)
+    Router.service.js              ← Auto-discovering message dispatcher
+    Middleware.service.js          ← Logging, auth, rate limiting
+    ResponseFormatter.service.js   ← ok() / fail() response shapes
+
+    workflows/                     ← Auto-discovered on startup
+      FetchUsers.workflow.js
+      SaveRecord.workflow.js
+      FileUpload.workflow.js
+      DataSync.workflow.js
+      Auth.workflow.js
+      Search.workflow.js
+      Export.workflow.js
+
+    repositories/                  ← Data persistence
+      User.repository.js
+      File.repository.js
+      Session.repository.js
+      Settings.repository.js
+
+    access/                        ← External service adapters
+      providers/    ← Third-party API adapters
+      env/          ← Environment and path utilities
+
+    data/                          ← Runtime data
+      settings.json
+      models.catalog.json
+      policy.defaults.json
+      logs/
+
+
+================================================================================
+17. CONVENTIONS & STANDARDS
+================================================================================
+
+NAMING CONVENTIONS:
+
+  Primitive files      PascalCase.prim.js         Button.prim.js
+  Feature files        PascalCase.feature.js      UserDashboard.feature.js
+  Adapter files        PascalCase.adapter.js      DataAdapter.adapter.js
+  Service files        PascalCase.service.js      EventBus.service.js
+  Workflow files       PascalCase.workflow.js     FetchUsers.workflow.js
+  Repository files     PascalCase.repository.js   Users.repository.js
+  Schema files         kebab-case.schema.json     user-settings.schema.json
+  CSS class prefix     sdoa-{primitive}           sdoa-button, sdoa-modal
+  Event names          module:action              explorer:fileOpened
+  State keys           camelCase                  currentWorkspace
+  Token variables      --category-name            --color-accent, --space-md
+
+FILE SIZE LIMITS:
+
+  Primitive      150 lines   → Split into sub-primitives
+  Feature        200 lines   → Extract into adapters or sub-features
+  Adapter        200 lines   → Split by concern
+  Workflow       200 lines   → Extract helpers into repositories
+  Repository     200 lines   → Split by entity or concern
+  Schema         100 fields  → Split into sub-schemas via schemaRef
+
+A file exceeding its limit is doing too much. Files stay small so any module
+is fully readable in a single pass — by both humans and AI agents.
+
+ANTI-PATTERNS  (Prohibited in v4.0):
+
+  ❌  window.currentUser = ...
+  ✅  StateStore.set("currentUser", ...)
+
+  ❌  Manual switch in router or connector
+  ✅  Auto-routing from MANIFEST.backendDeps / auto-discovered workflows
+
+  ❌  Hand-coded HTML in index.html
+  ✅  Schema-driven rendering via Form / Panel primitives
+
+  ❌  700+ line files
+  ✅  Split into primitive + feature + adapter per boundary
+
+  ❌  CSS in one giant file
+  ✅  Co-located .prim.css per primitive + tokens.css for values
+
+  ❌  document.createElement scattered everywhere
+  ✅  Primitive's mount(container) lifecycle method
+
+  ❌  Direct IPC calls from UI components
+  ✅  BackendConnector.dispatch(action, payload)
+
+  ❌  Hardcoded data lists in JS
+  ✅  External .catalog.json files loaded at runtime
+
+  ❌  setTimeout(_init, 500) hacks
+  ✅  Lifecycle init() with proper async ordering
+
+  ❌  Importing Layer 3 from a primitive
+  ✅  Primitives are always unaware of the backend
+
+
+================================================================================
+18. COMPATIBILITY RULES
+================================================================================
+
+COMPATIBILITY GUARANTEE: Any module containing all v1.2 fields will run
+correctly in all SDOA versions — past, present, and future. The contract is
+additive only. No field ever changes meaning. No field is ever removed.
+
+1. v1.2 FIELDS ARE MANDATORY IN EVERY MODULE, ALWAYS
+   id, type, version, runtime, capabilities, dependencies, docs.description.
+   The registry rejects non-compliant modules at startup. No silent fallback.
+
+2. v2.0 READS v1.2 PLUS OPTIONAL INFRASTRUCTURE METADATA
+   sidecars, hot_reload, version_cli. A v2.0 runtime must not break if any
+   v2.0-specific field is absent.
+
+3. v3.0 MAY ADD THE ACTIONS BLOCK
+   commands, triggers, emits, workflows are all optional. A module without
+   them is still fully valid. A module with them gains AI-orchestrability.
+
+4. v4.0 MAY ADD LAYER, REQUIRES, DATAFILES, LIFECYCLE, BACKENDDEPS, SLOTS
+   All optional. All backward-compatible. v3 and v4 modules coexist in the
+   same registry with zero friction.
+
+5. OLDER RUNTIMES MUST IGNORE UNKNOWN FIELDS
+   A v1.2 registry loading a v4.0 module must skip fields it doesn't
+   recognise. No errors, no crashes, no warnings.
+
+6. NEWER RUNTIMES MUST NOT CHANGE THE MEANING OF OLDER FIELDS
+   id, type, version, capabilities, dependencies mean exactly the same thing
+   in all versions, forever.
+
+COMPATIBILITY MATRIX:
+  v1.2 module in v4.0 registry            ✅  Works — uses only v1.2 fields
+  v4.0 module in v1.2 registry            ✅  Works — ignores unknown fields
+  Module missing id, type, or version     ❌  Rejected at startup
+  v3.0 module with actions in v4.0 reg    ✅  Full command/event surface
+  v4.0 module with backendDeps in v3.0    ⚠️  backendDeps ignored
+
+
+================================================================================
+19. IMPLEMENTATION PROTOCOL
+================================================================================
+
+I. INTERACTION & FEEDBACK
+
+  Trigger-Based Response (~Signal)
+    For file-only uploads, initiate a State: Pending mode. Do not execute
+    analysis or provide output until the ~ signal is received.
+
+  Atomic File Delivery
+    All code modifications must be delivered as complete source files.
+    Snippets are prohibited. Partial files break the MANIFEST contract.
+
+II. ARCHITECTURAL INTEGRITY
+
+  Declarative Compliance
+    All code must adhere to SDOA standards. Strict separation between the
+    Orchestration Layer (logic flow) and the Resource Layer (execution).
+    No cross-language coupling in source — dependencies go in MANIFEST only.
+
+  v4 Architecture Compliance
+    All new modules must use the three-layer structure and lifecycle
+    contracts. Features load schemas. Primitives own their CSS. State goes
+    through StateStore. New workflows go in server/workflows/ — no manual
+    router registration. No exceptions.
+
+III. VERSIONING & TRACEABILITY
+
+  Temporal Metadata — Every File
+    Every file must begin with a time and date stamp (ISO 8601 / UTC).
+    Format:  // Last modified: YYYY-MM-DD HH:MM UTC
+
+  Micro-Incrementation Policy
+    Every alteration requires a version increment. Even single-line changes
+    bump the patch version. This guarantees a granular audit trail.
+    Format: MAJOR.MINOR.PATCH
+
+  Manifest Documentation on Change
+    Every code change must include documentation in the file header detailing
+    the specific modifications and their impact. The MANIFEST docs block is
+    the single source of truth — update it when behavior changes.
+
+THE NORTH STAR:
+  A self-describing, self-routing, self-orchestrating system. Every module is
+  legible to both AI and human developers from a single file read.
+  The code is the documentation. The manifest is the contract.
+  The registry is the spine.
+
+
+================================================================================
+20. EVOLUTION ROADMAP
+================================================================================
+
+NOTE: These phases are forward-looking proposals. They describe where the
+architecture can evolve — not what is implemented today. Phase 1 is the most
+near-term. Phase 3 is the most experimental.
+
+────────────────────────────────────────────────────────────────────────────────
+PHASE 1 — THE EXECUTION ENGINE  (Wasm & Memory Sharing)
+────────────────────────────────────────────────────────────────────────────────
+
+Goal: Run polyglot code in a single thread with zero context-switching cost.
+
+  • Compile SDOA Rust/C++ engines to WASM targets
+  • Implement SharedArrayBuffer in NodeJS/Browser
+  • Expose in-memory direct bindings — no IPC overhead
+
+HOW TO BUILD:
+  Compile Rust modules using wasm-pack targeting nodejs or bundler. In
+  Registry.service.ts, dynamically load the .wasm file using
+  WebAssembly.instantiate instead of spawning a subprocess. Pass memory
+  directly via TypedArrays (e.g. Float64Array) pointing to the shared WASM
+  heap. V8, Node, and Bun all natively support highly optimised WebAssembly
+  execution — no external dependencies required.
+
+────────────────────────────────────────────────────────────────────────────────
+PHASE 2 — THE INTERFACE LAYER  (Visual SDOA Blueprints)
+────────────────────────────────────────────────────────────────────────────────
+
+Goal: Auto-generate visual orchestration flows directly from static manifests.
+
+  • Build a Web UI that queries the Registry's manifest map
+  • Render SDOA modules as visual nodes (Inputs / Commands / Events)
+  • Connect nodes to save flowcharts as .schema.json files
+
+HOW TO BUILD:
+  Use a React/TypeScript node library such as React Flow or Rete.js. Write a
+  VisualOrchestrator.service.ts that reads SDOA manifests and formats them
+  into node-graph JSON configurations. Dragging a connection from Node A
+  (Event emitter) to Node B (Command input) writes the association directly
+  into the SDOA v4 accepts and events schema configurations — turning a
+  visual drag into a code change.
+
+────────────────────────────────────────────────────────────────────────────────
+PHASE 3 — THE COGNITIVE LOOP  (AI Self-Healing)
+────────────────────────────────────────────────────────────────────────────────
+
+Goal: Let the codebase maintain, test, and repair itself under AI supervision.
+
+  • Wire TestRunner failures to an LLM Agent API
+  • Agent resolves error → modifies module → auto-increments semver
+    → hot-reloads registry
+  • Self-healing commits checked in to git automatically overnight
+
+HOW TO BUILD:
+  In the catch block of TestCore.workflow.ts, when a test fails, format a
+  payload:
+    [Failing Expression, Expected Value, Actual Value,
+     Target Module Source, Target Module MANIFEST]
+
+  Dispatch to a local LLM or API with the instruction:
+    "Identify the bug, modify the function body, increment
+     manifest.version patch, return only the rewritten file."
+
+  The SDOA Registry writes the file to disk, triggering the v4 hot-reload
+  mechanism to swap the code in memory and rerun the test automatically.
+
+────────────────────────────────────────────────────────────────────────────────
+WHO WOULD USE THIS?
+────────────────────────────────────────────────────────────────────────────────
+
+AUDIENCE 01 — Developer Tooling & AI Agent Platforms
+  Appeal: AI coding assistants struggle with large, unstructured codebases —
+  they don't know where side effects happen or which files to safely edit.
+
+  Why SDOA fits: An SDOA codebase is AI-native. Because every file declares
+  its manifest (what it depends on, what it can do), an AI agent can read an
+  SDOA project and understand its full scope instantly — resulting in
+  dramatically fewer hallucinated file paths and generation errors.
+
+AUDIENCE 02 — High-Performance Engineering & Simulation
+  Appeal: Aerospace, automotive, and CAD teams use complex numerical models
+  in C++ or Fortran but want modern web interfaces for their clients.
+
+  Why SDOA fits: The Phase 1 Wasm/IPC polyglot registry gives them the raw
+  speed of C++ running inside the browser, without writing complex network
+  glue code or maintaining separate deployment pipelines for the computation
+  layer.
+
+AUDIENCE 03 — Enterprise QA & DevOps Teams
+  Appeal: Large enterprises waste thousands of developer hours writing and
+  maintaining test scripts that break every time an API changes.
+
+  Why SDOA fits: The Phase 3 AI self-healing test runner can identify and fix
+  simple math, syntax, and logic errors automatically — checking in
+  self-healed commits to git overnight, without human intervention.
+
+AUDIENCE 04 — Low-Code / No-Code SaaS Platforms
+  Appeal: Platforms like Zapier, Node-RED, and Webflow need modular plugin
+  architectures where developers write code and end-users build workflows.
+
+  Why SDOA fits: SDOA's strict separation between Layer 1 (Composition /
+  Schemas) and Layer 2 (Primitives) means end-users can modify UI schemas
+  visually via the Phase 2 Interface Layer — without ever touching backend
+  code.
+
+
+================================================================================
+END OF SPECIFICATION
+SDOA v4.0.0  |  Self-Describing Object Architecture
+================================================================================

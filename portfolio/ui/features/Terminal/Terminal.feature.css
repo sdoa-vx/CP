@@ -1,0 +1,164 @@
+/* ============================================================
+   Terminal.feature.css — UI Feature Stylesheet
+   version: 5.0.0
+   Sacred Geometry meets Rebellious Intelligence
+   ============================================================ */
+
+.sdoa-terminal {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #0d0d0f;
+    border: var(----size-var(----size-var(----size-var(----size-1px)))) solid var(--border-subtle, #232329);
+    border-radius: var(--radius-md, var(----size-var(----size-var(----size-var(----size-6px)))));
+    overflow: hidden;
+    font-family: var(--font-mono, "Cascadia Code", Consolas, monospace);
+    box-shadow: 0 var(----size-var(----size-var(----size-var(----size-4px)))) var(----size-var(----size-var(----size-var(----size-24px)))) rgba(0, 0, 0, 0.4);
+}
+
+.sdoa-term-tabbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-elevated, #141416);
+    border-bottom: 1px solid var(--border-subtle, #232329);
+    padding: 0 var(--space-xs, var(----size-var(----size-var(----size-var(----size-8px)))));
+    min-height: 38px;
+    user-select: none;
+}
+
+.sdoa-term-tabs {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs, 4px);
+    overflow-x: auto;
+}
+
+.sdoa-term-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.sdoa-term-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px var(----size-var(----size-var(----size-var(----size-12px))));
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm, 4px);
+    color: var(--text-muted, #8e8e9f);
+    cursor: pointer;
+    font-size: var(--text-xs, 12px);
+    font-family: var(--font-mono, "Cascadia Code", Consolas, monospace);
+    background: transparent;
+    transition: all var(--duration-fast, 150ms) ease;
+}
+
+.sdoa-term-tab:hover {
+    background: var(--bg-hover, rgba(255, 255, 255, 0.04));
+    color: var(--text, #e2e2e8);
+}
+
+.sdoa-term-tab--active {
+    background: rgba(79, 140, 255, 0.08);
+    border-color: rgba(79, 140, 255, 0.25);
+    color: var(--accent, var(----color-4f8cff));
+    box-shadow: inset 0 0 8px rgba(79, 140, 255, 0.05);
+}
+
+.sdoa-term-close {
+    font-size: var(----size-var(----size-var(----size-var(----size-10px))));
+    opacity: 0.6;
+    transition: opacity 100ms ease, color 100ms ease;
+}
+
+.sdoa-term-close:hover {
+    opacity: 1;
+    color: var(--rebellion, var(----color-ef4444));
+}
+
+.sdoa-term-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm, 4px);
+    color: var(--text-muted, #8e8e9f);
+    background: transparent;
+    cursor: pointer;
+    font-size: var(----size-var(----size-var(----size-var(----size-16px))));
+    transition: all var(--duration-fast, 150ms) ease;
+}
+
+.sdoa-term-add:hover {
+    background: var(--bg-hover, rgba(255, 255, 255, 0.04));
+    color: var(--accent, var(----color-4f8cff));
+    border-color: rgba(79, 140, 255, 0.2);
+}
+
+.sdoa-term-panes {
+    flex: 1;
+    position: relative;
+    background: #09090b;
+}
+
+.sdoa-term-pane {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+}
+
+.sdoa-term-pane--active {
+    display: flex;
+}
+
+.sdoa-term-output {
+    flex: 1;
+    overflow-y: auto;
+    color: #e2e2e8;
+    font-size: var(----size-1var(----size-var(----size-var(----size-var(----size-3px)))));
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 0;
+    padding: var(--space-xs, 12px);
+    background: transparent;
+}
+
+.sdoa-term-input {
+    width: 100%;
+    background: #0c0c0e;
+    border: none;
+    border-top: 1px solid var(--border-subtle, #232329);
+    color: #e2e2e8;
+    font-family: var(--font-mono, "Cascadia Code", Consolas, monospace);
+    font-size: var(----size-var(----size-var(----size-13px)));
+    padding: var(--space-xs, 10px) var(--space-sm, var(----size-var(----size-var(----size-var(----size-14px)))));
+    outline: none;
+    caret-color: var(--accent, var(----color-4f8cff));
+    transition: border-top-color var(--duration-fast, 150ms) ease;
+}
+
+.sdoa-term-input:focus {
+    border-top-color: rgba(79, 140, 255, 0.4);
+    background: #0f0f12;
+}
+
+.sdoa-term-output::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sdoa-term-output::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sdoa-term-output::-webkit-scrollbar-thumb {
+    background: var(--border-mid, #3e3e4a);
+    border-radius: 3px;
+}
+
+.sdoa-term-output::-webkit-scrollbar-thumb:hover {
+    background: var(--accent, var(----color-4f8cff));
+}

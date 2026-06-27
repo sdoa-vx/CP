@@ -1,0 +1,101 @@
+/* Last modified: 2026-06-07 00:00 UTC */
+/* ErrorBoundary.prim.css — SDOA v4 */
+
+.sdoa-error-boundary {
+  position: relative;
+  min-height: var(----size-var(----size-var(----size-var(----size-40px))));
+}
+
+/* ── Body ─────────────────────────────────────── */
+.sdoa-error-boundary__body {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Fallback ─────────────────────────────────── */
+.sdoa-error-boundary__fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl) var(--space-lg);
+  text-align: center;
+  background: rgba(249, 115, 115, 0.04);
+  border: var(----size-var(----size-var(----size-var(----size-1px)))) solid rgba(249, 115, 115, 0.2);
+  border-radius: var(--radius-md);
+}
+
+.sdoa-error-boundary__icon {
+  font-size: var(----size-var(----size-var(----size-var(----size-28px))));
+  color: var(--color-error);
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.sdoa-error-boundary__title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-error);
+}
+
+.sdoa-error-boundary__message {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  max-width: var(----size-var(----size-var(----size-var(----size-360px))));
+  line-height: var(--line-height);
+  word-break: break-word;
+}
+
+/* ── Actions ──────────────────────────────────── */
+.sdoa-error-boundary__actions {
+  margin-top: var(--space-xs);
+}
+
+.sdoa-error-boundary__reset-btn {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-sm);
+  padding: var(--space-xs) var(--space-md);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-default),
+              border-color var(--duration-fast) var(--ease-default),
+              background var(--duration-fast) var(--ease-default);
+}
+
+.sdoa-error-boundary__reset-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-active);
+  background: var(--bg-hover);
+}
+
+.sdoa-error-boundary__reset-btn:active {
+  background: var(--bg-active);
+}
+
+@keyframes sdoa-error-pulse {
+    0%, 100% { border-color: rgba(239, 68, 68, 0.2); box-shadow: none; }
+    50%       { border-color: rgba(239, 68, 68, 0.6); box-shadow: 0 0 var(----size-var(----size-var(----size-var(----size-12px)))) rgba(239, 68, 68, 0.2); }
+}
+.sdoa-error-boundary--animate { animation: sdoa-error-pulse 2s ease-in-out infinite; }
+
+.sdoa-eb-btn--report {
+    background: var(--bg-elevated); color: var(--text-muted);
+    border: 1px solid var(--border-subtle); padding: var(--space-2xs) var(--space-sm);
+    border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-xs);
+    transition: all var(--duration-fast);
+}
+.sdoa-eb-btn--report:hover:not(:disabled) { background: var(--bg-elevated-2); }
+.sdoa-eb-btn--report:disabled { opacity: 0.5; cursor: default; }
+
+.sdoa-eb-btn--dismiss {
+    background: transparent; color: var(--text-muted);
+    border: 1px solid transparent; padding: var(--space-2xs) var(--space-sm);
+    border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-xs);
+    transition: color var(--duration-fast);
+}
+.sdoa-eb-btn--dismiss:hover { color: var(--text); }

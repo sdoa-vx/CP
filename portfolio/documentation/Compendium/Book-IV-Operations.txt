@@ -1,0 +1,177 @@
+================================================================================
+SDOA COMPENDIUM — BOOK IV: OPERATIONS & CERTIFICATION
+Edition: 5.4 — Sovereign Integration & Sleeve Amendment
+Date: 27 June 2026
+Classification: Canonical — Development Team Reference
+Amendment Ribbon: v5.4 / 27-06-2026 / Sleeve Ratification
+================================================================================
+
+BOOK IV — OPERATIONS & CERTIFICATION
+
+§1  TESTCORE SUITE
+────────────────────────────────────────────────────────────────────────────────
+File:     c:/MCP/test_core.exe (compiled Rust binary)
+Runner:   portfolio/substrate/workflows/TestCore.workflow.ts → AlgosimTest.workflow
+
+TestCore currently passes 26 assertions across four suites:
+  - SDOA Model Contract Tests       (8 tests)
+  - SDOA Pipeline Contract Tests    (3 tests)
+  - SDOA Execution Tests            (9 tests)
+  - SDOA Phase 4 Tests              (6 tests)
+
+§2  SLEEVE CERTIFICATION SUITE (PHASE 5 TRACK A)
+────────────────────────────────────────────────────────────────────────────────
+File:  portfolio/substrate/tests/Sleeve.tests.json
+
+Tests every sleeve sovereign must pass before promotion to SDOA vNext:
+
+  sleeve-cert-1  Boundary fault injection
+                 Kill external daemon mid-call.
+                 → triage:boundaryFault + OPEN circuit + no deadlock.
+
+  sleeve-cert-2  Transport normalization
+                 Inject malformed external payload.
+                 → ResponseFormatter produces { ok, data } or { ok: false, error }.
+                 → No raw blobs escape the sleeve boundary.
+
+  sleeve-cert-3  PathResolver enforcement
+                 Inject absolute path into sleeve source.
+                 → ProbationOfficer fires SLEEVE_NO_ABSOLUTE_PATHS.
+
+  sleeve-cert-4  Capability exposure
+                 Oracle whoHasBoundary("node-llama-cpp").
+                 → Returns AiSleeve.module only. No rogue adapter or workflow.
+
+  sleeve-cert-5  Line limit enforcement
+                 Sleeve over 500 lines.
+                 → ProbationOfficer fires LINE_LIMIT_EXCEEDED.
+
+  sleeve-chaos-6  Daemon crash under high load
+                  Randomly kill daemon during 10 concurrent calls.
+                  → Circuit opens, no deadlock, Chronicle logs all faults.
+
+  sleeve-chaos-7  Corrupted external response
+                  50% corruption rate on external payloads.
+                  → All responses conform to { ok: boolean } schema.
+
+  sleeve-chaos-8  External system timeout (10 s delay)
+                  → { ok: false, error: "timeout" }, no deadlock,
+                    triage:boundaryFault emitted.
+
+§3  CARTOGRAPHER DRIFT DETECTION (PHASE 5 TRACK B)
+────────────────────────────────────────────────────────────────────────────────
+File:     portfolio/substrate/workflows/Cartographer.workflow.js v5.2
+
+Command:  boundaryDrift({ since? })
+
+Algorithm:
+  For each sleeve sovereign registered in Oracle:
+    1. Read external.commands from MANIFEST.
+    2. Pull sleeve:boundaryCall entries from Chronicle for the window.
+    3. Compute: observed = union of all command fields in telemetry.
+    4. missingCommands = observed ∖ declared  → severity: critical
+    5. extraCommands   = declared ∖ observed  → severity: low/medium
+    6. pathMismatch: fault rate > 50%         → severity: high
+
+Output format (boundaryDriftReport):
+  {
+    moduleId,
+    system,
+    transport,
+    severity,          // critical | high | medium | low
+    missingCommands,   // sovereignty breach — use was not declared
+    extraCommands,     // stale — declared but never invoked
+    pathMismatch       // string | null
+  }
+
+§4  SCAFFOLD — CREATION PIPELINE (PHASE 5 TRACK D)
+────────────────────────────────────────────────────────────────────────────────
+File:     portfolio/substrate/workflows/Scaffold.workflow.js v5.1
+
+Creating a sleeve:
+  sdoa new sleeve --id GitSleeve.sleeve --system git --transport cli
+
+Scaffold generates:
+  - MANIFEST with external: { system, transport, path: "auto", commands: [...] }
+  - Class extending SleeveBase.module.js
+  - _callExternal(command, payload) stub → to be implemented
+  - _healthCheck() stub → probe external system
+  - _teardown() stub → clean up connections
+  - ResponseFormatter + PathResolver wired in init()
+  - sleeve:disposed emitted in dispose()
+
+Validation before write:
+  - external block present (SLEEVE_EXTERNAL_DECLARATION_REQUIRED)
+  - no eval() or Function() (SLEEVE_NO_EVAL)
+  - no absolute paths (SLEEVE_NO_ABSOLUTE_PATHS)
+  - file under 500 lines
+
+§5  INNOVATIONDETECTOR — PATTERN DETECTION
+────────────────────────────────────────────────────────────────────────────────
+File:     portfolio/substrate/workflows/InnovationDetector.workflow.js v5.4.0
+
+The InnovationDetector scans the live portfolio surface via Oracle and
+identifies repeated patterns that should become new SDOA modules.
+
+Sleeve detection (v5.4):
+  _detectSleeves() checks analysis.external.calls for contacts with external
+  systems not already covered by a sleeve sovereign.
+  → Proposes a new sleeve module for each uncovered system.
+  → Emits innovation:sleeveRequired { id, externalSystem, reason }.
+
+suggest({ description }) shorthand:
+  Keywords api/http/https/cli/daemon/ipc/spawn/python/llm trigger sleeve
+  recommendation at "high" confidence.
+
+§6  SLEEVE CAPABILITY NORMALIZATION
+────────────────────────────────────────────────────────────────────────────────
+Rules (v5.4 §6):
+
+  1. All sleeve commands map 1:1 to external.commands.
+  2. Typed payloads — no `any` or untyped blobs.
+  3. All responses: { ok: true, data: {...} } or { ok: false, error: "..." }.
+  4. Oracle indexes sleeve commands as surfaceType: "boundary".
+  5. Oracle scores sleeve candidates by (v5.2):
+       latency      p95 < 200 ms  → +3   |  p95 > 2000 ms → −3
+       error rate   > 5%          → −2   |  > 20%         → −5
+       fault count  per fault     → −1 each (cap −5)
+
+§7  PROMOTION GATE — SDOA vNext
+────────────────────────────────────────────────────────────────────────────────
+A sleeve (or any module) is promoted to SDOA vNext when:
+
+  1. All 26 TestCore assertions pass.
+  2. All 8 Sleeve Certification Suite tests pass.
+  3. ProbationOfficer finds zero SLEEVE_* violations.
+  4. Oracle.dumpSurface returns no rogue boundary entries.
+  5. Cartographer.boundaryDrift returns severity: none or low.
+
+Promotion is recorded in portfolio/sdoa-vnext.lock.json.
+
+§8  VERSION HISTORY
+────────────────────────────────────────────────────────────────────────────────
+  v1.0.0  Genesis — SDOA Multi-Agent Framework first release.
+  v4.0   Initial SDOA architecture. Layer model, manifest contract.
+  v4.5   Polyglot Bridge added. Cross-runtime Python↔NodeJS support.
+  v5.0   Registry v2, Coach, ProbationOfficer, Oracle, Cartographer.
+         Triage circuit breaker. Chronicle. InnovationDetector spec.
+  v5.4   Sleeve Module Class ratified.
+         Five sleeve sovereigns created.
+         Ten violations repaired.
+         Governance gates updated (SLEEVE_* rules).
+         Blueprint ghost nodes and boundary topology.
+         Phase 5: Certification suite, drift detection, lifecycle contract.
+  vNext  Pending Phase 6. See sdoa-vnext.lock.json.
+
+================================================================================
+RATIFICATION
+────────────────────────────────────────────────────────────────────────────────
+The operational procedures, certification suite, and promotion gates described
+in this volume are ratified under SDOA v5.4 — 27 June 2026.
+No sleeve may be promoted to vNext without satisfying all five gates in §7.
+
+The constitution evolves only through governance — never through drift.
+
+================================================================================
+END OF BOOK IV
+================================================================================

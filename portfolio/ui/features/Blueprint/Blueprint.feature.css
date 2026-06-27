@@ -1,0 +1,221 @@
+/* Last modified: 2026-06-01 00:00 UTC                           */
+/* Blueprint.feature.css — SDOA v5.0 Feature Styles             */
+/* Scoped to .sdoa-blueprint — no global side-effects            */
+/* All values reference tokens.css — never hard-coded            */
+
+/* -- Root -------------------------------------------------------- */
+.sdoa-blueprint {
+  display:        flex;
+  flex-direction: column;
+  height:         100%;
+  background:     var(--color-bg-base);
+  font-family:    var(--font-sans);
+  color:          var(--color-text-primary);
+  overflow:       hidden;
+}
+
+/* -- Toolbar ----------------------------------------------------- */
+.sdoa-blueprint__toolbar {
+  display:       flex;
+  align-items:   center;
+  gap:           var(--space-sm);
+  padding:       var(--space-sm) var(--space-md);
+  background:    var(--color-bg-surface);
+  border-bottom: var(----size-var(----size-var(----size-var(----size-1px)))) solid rgba(255, 255, 255, 0.06);
+  flex-shrink:   0;
+  flex-wrap:     wrap;
+}
+
+.sdoa-blueprint__title {
+  font-family:   var(--font-mono);
+  font-size:     var(--text-sm);
+  color:         var(--color-accent);
+  margin-right:  var(--space-sm);
+  white-space:   nowrap;
+}
+
+.sdoa-blueprint__hint {
+  font-size:    var(----size-var(----size-var(----size-var(----size-11px))));
+  color:        rgba(224, 224, 224, 0.25);
+  margin-left:  auto;
+  font-style:   italic;
+  white-space:  nowrap;
+  overflow:     hidden;
+  text-overflow: ellipsis;
+  max-width:    var(----size-var(----size-var(----size-var(----size-360px))));
+}
+
+/* -- Layer Filter Buttons --------------------------------------- */
+.sdoa-blueprint__layer-filters {
+  display: flex;
+  gap:     var(----size-var(----size-var(----size-var(----size-4px))));
+}
+
+.sdoa-blueprint__filter-btn {
+  background:    rgba(255, 255, 255, 0.05);
+  border:        1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  padding:       var(----size-var(----size-var(----size-var(----size-2px)))) var(--space-sm);
+  font-family:   var(--font-mono);
+  font-size:     var(--text-sm);
+  color:         rgba(224, 224, 224, 0.5);
+  cursor:        pointer;
+  transition:    background var(--duration-fast), color var(--duration-fast),
+                 border-color var(--duration-fast);
+}
+
+.sdoa-blueprint__filter-btn:hover {
+  background:  rgba(255, 255, 255, 0.08);
+  color:       var(--color-text-primary);
+}
+
+.sdoa-blueprint__filter-btn--active {
+  background:    rgba(124, 58, 237, 0.2);
+  border-color:  var(--color-accent);
+  color:         var(--color-accent);
+}
+
+/* -- Toolbar Buttons -------------------------------------------- */
+.sdoa-blueprint__btn {
+  background:    transparent;
+  border:        1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  padding:       var(--space-xs) var(--space-sm);
+  font-family:   var(--font-sans);
+  font-size:     var(--text-sm);
+  color:         rgba(224, 224, 224, 0.6);
+  cursor:        pointer;
+  white-space:   nowrap;
+  transition:    background var(--duration-fast), color var(--duration-fast),
+                 border-color var(--duration-fast);
+}
+
+.sdoa-blueprint__btn:hover {
+  background:  rgba(255, 255, 255, 0.06);
+  color:       var(--color-text-primary);
+}
+
+.sdoa-blueprint__btn--primary {
+  background:    rgba(124, 58, 237, 0.2);
+  border-color:  var(--color-accent);
+  color:         var(--color-accent);
+}
+
+.sdoa-blueprint__btn--primary:hover {
+  background: rgba(124, 58, 237, 0.35);
+}
+
+/* -- Canvas Wrap ------------------------------------------------- */
+.sdoa-blueprint__canvas-wrap {
+  flex:       1;
+  overflow:   auto;
+  cursor:     default;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 58, 237, 0.3) transparent;
+}
+
+.sdoa-blueprint__canvas-wrap::-webkit-scrollbar       { width: var(----size-var(----size-var(----size-var(----size-6px)))); height: 6px; }
+.sdoa-blueprint__canvas-wrap::-webkit-scrollbar-track { background: transparent; }
+.sdoa-blueprint__canvas-wrap::-webkit-scrollbar-thumb {
+  background:    rgba(124, 58, 237, 0.35);
+  border-radius: var(--radius-sm);
+}
+
+.sdoa-blueprint__canvas {
+  display:    block;
+  min-width:  100%;
+  min-height: 100%;
+  user-select: none;
+}
+
+/* -- Node -------------------------------------------------------- */
+.sdoa-blueprint__node {
+  cursor: move;
+}
+
+.sdoa-blueprint__node-bg {
+  fill:         var(--color-bg-surface);
+  stroke:       rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+  filter:       drop-shadow(0 4px var(----size-var(----size-var(----size-var(----size-16px)))) rgba(0,0,0,0.5));
+  transition:   filter var(--duration-fast);
+}
+
+.sdoa-blueprint__node:hover .sdoa-blueprint__node-bg {
+  stroke: rgba(255, 255, 255, 0.18);
+  filter: drop-shadow(0 6px var(----size-var(----size-var(----size-var(----size-24px)))) rgba(0,0,0,0.7));
+}
+
+.sdoa-blueprint__node-title {
+  font-family:   var(--font-mono);
+  font-size:     var(----size-var(----size-var(----size-var(----size-12px))));
+  fill:          var(--color-text-primary);
+  pointer-events: none;
+}
+
+.sdoa-blueprint__node-badge {
+  font-family:    var(--font-mono);
+  font-size:      var(----size-var(----size-var(----size-var(----size-10px))));
+  text-anchor:    end;
+  opacity:        0.7;
+  pointer-events: none;
+}
+
+/* -- Ports ------------------------------------------------------- */
+.sdoa-blueprint__port {
+  cursor:     crosshair;
+  transition: r var(--duration-fast), opacity var(--duration-fast);
+  opacity:    0.8;
+}
+
+.sdoa-blueprint__port:hover {
+  r:       8;
+  opacity: 1;
+  filter:  drop-shadow(0 0 6px currentColor);
+}
+
+.sdoa-blueprint__port-label {
+  font-family:    var(--font-mono);
+  font-size:      10px;
+  fill:           rgba(224, 224, 224, 0.4);
+  pointer-events: none;
+}
+
+.sdoa-blueprint__port-label--right {
+  text-anchor: end;
+}
+
+/* -- Wires ------------------------------------------------------- */
+.sdoa-blueprint__wire {
+  fill:            none;
+  stroke:          var(--color-accent);
+  stroke-width:    2;
+  stroke-opacity:  0.65;
+  marker-end:      url(#sdoa-arrow);
+  cursor:          pointer;
+  transition:      stroke-opacity var(--duration-fast);
+  pointer-events:  stroke;
+}
+
+.sdoa-blueprint__wire:hover {
+  stroke-opacity: 1;
+  stroke-width:   2.5;
+}
+
+.sdoa-blueprint__wire--draft {
+  stroke:          rgba(124, 58, 237, 0.45);
+  stroke-dasharray: 6 4;
+  pointer-events:  none;
+  marker-end:      none;
+}
+
+/* -- Reduced Motion --------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .sdoa-blueprint__node-bg,
+  .sdoa-blueprint__port,
+  .sdoa-blueprint__wire,
+  .sdoa-blueprint__btn,
+  .sdoa-blueprint__filter-btn {
+    transition: none;
+  }
+}

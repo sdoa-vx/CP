@@ -1,0 +1,325 @@
+/* Last modified: 2026-06-01 00:00 UTC                         */
+/* Playground.feature.css — SDOA v5.0 Feature Styles          */
+/* Scoped to .sdoa-playground — no global side-effects         */
+/* All values reference tokens.css — never hard-coded          */
+
+/* -- Root ------------------------------------------------------ */
+.sdoa-playground {
+  display:        flex;
+  flex-direction: column;
+  height:         100%;
+  background:     var(--color-bg-base);
+  font-family:    var(--font-sans);
+  color:          var(--color-text-primary);
+  overflow:       hidden;
+}
+
+/* -- Top Bar ---------------------------------------------------- */
+.sdoa-playground__topbar {
+  display:       flex;
+  align-items:   center;
+  gap:           var(--space-sm);
+  padding:       var(--space-sm) var(--space-md);
+  background:    var(--color-bg-surface);
+  border-bottom: var(----size-var(----size-var(----size-var(----size-1px)))) solid rgba(255, 255, 255, 0.06);
+  flex-shrink:   0;
+}
+
+.sdoa-playground__title {
+  font-family:  var(--font-mono);
+  font-size:    var(--text-sm);
+  color:        var(--color-accent);
+  white-space:  nowrap;
+  margin-right: var(--space-sm);
+}
+
+/* -- Status Badge ----------------------------------------------- */
+.sdoa-playground__status {
+  font-family:   var(--font-mono);
+  font-size:     var(----size-var(----size-var(----size-var(----size-11px))));
+  padding:       var(----size-var(----size-var(----size-var(----size-2px)))) var(--space-sm);
+  border-radius: var(--radius-sm);
+  white-space:   nowrap;
+  margin-right:  auto;
+}
+.sdoa-playground__status--loading { background: rgba(202,138,4,0.15);  color: #ca8a04; }
+.sdoa-playground__status--ready   { background: rgba(22,163,74,0.15);  color: var(--color-success); }
+.sdoa-playground__status--running { background: rgba(37,99,235,0.15);  color: #60a5fa; }
+.sdoa-playground__status--error   { background: rgba(239,68,68,0.15);  color: var(--color-error); }
+
+.sdoa-playground__toolbar-btn {
+  background:    transparent;
+  border:        1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  padding:       var(--space-xs) var(--space-sm);
+  font-family:   var(--font-sans);
+  font-size:     var(--text-sm);
+  color:         rgba(224, 224, 224, 0.5);
+  cursor:        pointer;
+  transition:    color var(--duration-fast), border-color var(--duration-fast);
+  white-space:   nowrap;
+}
+.sdoa-playground__toolbar-btn:hover {
+  color:        var(--color-text-primary);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* -- Selector Row ----------------------------------------------- */
+.sdoa-playground__selector-row {
+  display:       flex;
+  align-items:   center;
+  gap:           var(--space-sm);
+  padding:       var(--space-sm) var(--space-md);
+  background:    rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink:   0;
+}
+
+.sdoa-playground__select {
+  flex:          1;
+  max-width:     var(----size-var(----size-var(----size-var(----size-360px))));
+  background:    var(--color-bg-surface);
+  border:        1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  padding:       var(--space-xs) var(--space-sm);
+  font-family:   var(--font-mono);
+  font-size:     var(--text-sm);
+  color:         var(--color-text-primary);
+  outline:       none;
+  cursor:        pointer;
+  transition:    border-color var(--duration-fast);
+}
+.sdoa-playground__select:focus    { border-color: var(--color-accent); }
+.sdoa-playground__select:disabled { opacity: 0.35; cursor: default; }
+
+.sdoa-playground__arrow {
+  font-size:  var(--text-lg);
+  color:      rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.sdoa-playground__run-btn {
+  background:    var(--color-accent);
+  border:        none;
+  border-radius: var(--radius-sm);
+  padding:       var(--space-xs) var(--space-md);
+  font-family:   var(--font-sans);
+  font-size:     var(--text-sm);
+  font-weight:   600;
+  color:         var(----color-fff);
+  cursor:        pointer;
+  letter-spacing: 0.03em;
+  transition:    opacity var(--duration-fast), transform var(--duration-fast);
+  white-space:   nowrap;
+  flex-shrink:   0;
+}
+.sdoa-playground__run-btn:hover:not(:disabled) {
+  opacity:   0.88;
+  transform: translateY(-1px);
+}
+.sdoa-playground__run-btn:disabled {
+  opacity: 0.3;
+  cursor:  default;
+  transform: none;
+}
+
+/* -- Main Body -------------------------------------------------- */
+.sdoa-playground__body {
+  display:    flex;
+  flex:       1;
+  min-height: 0;
+  overflow:   hidden;
+}
+
+/* -- Column ---------------------------------------------------- */
+.sdoa-playground__col {
+  display:        flex;
+  flex-direction: column;
+  overflow:       hidden;
+  border-right:   1px solid rgba(255, 255, 255, 0.05);
+}
+.sdoa-playground__col--form    { flex: 0 0 var(----size-var(----size-var(----size-var(----size-280px)))); }
+.sdoa-playground__col--result  { flex: 1; }
+.sdoa-playground__col--history { flex: 0 0 240px; border-right: none; }
+
+.sdoa-playground__col-title {
+  padding:       var(--space-xs) var(--space-md);
+  font-family:   var(--font-mono);
+  font-size:     var(----size-var(----size-var(----size-var(----size-10px))));
+  color:         rgba(224, 224, 224, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom:  1px solid rgba(255, 255, 255, 0.04);
+  flex-shrink:    0;
+}
+
+/* -- Form Panel ------------------------------------------------- */
+.sdoa-playground__form-panel {
+  flex:       1;
+  overflow-y: auto;
+  padding:    var(--space-md);
+  display:    flex;
+  flex-direction: column;
+  gap:        var(--space-md);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124,58,237,0.3) transparent;
+}
+
+.sdoa-playground__field {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-xs);
+}
+
+.sdoa-playground__label {
+  font-family:   var(--font-mono);
+  font-size:     var(--text-sm);
+  color:         rgba(224, 224, 224, 0.7);
+  display:       flex;
+  align-items:   center;
+  gap:           var(--space-xs);
+}
+
+.sdoa-playground__type-tag {
+  font-size:     10px;
+  padding:       1px var(----size-var(----size-var(----size-var(----size-5px))));
+  border-radius: var(--radius-sm);
+  background:    rgba(124, 58, 237, 0.15);
+  color:         var(--color-accent);
+  margin-left:   auto;
+}
+
+.sdoa-playground__input {
+  background:    rgba(255, 255, 255, 0.04);
+  border:        1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding:       var(--space-xs) var(--space-sm);
+  font-family:   var(--font-mono);
+  font-size:     var(--text-sm);
+  color:         var(--color-text-primary);
+  outline:       none;
+  width:         100%;
+  box-sizing:    border-box;
+  resize:        vertical;
+  transition:    border-color var(--duration-fast);
+}
+.sdoa-playground__input:focus { border-color: var(--color-accent); }
+
+/* -- Result Panel ----------------------------------------------- */
+.sdoa-playground__result-panel {
+  flex:       1;
+  overflow-y: auto;
+  padding:    var(--space-md);
+  display:    flex;
+  flex-direction: column;
+  gap:        var(--space-sm);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124,58,237,0.3) transparent;
+}
+
+.sdoa-playground__result-header {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-sm);
+}
+
+.sdoa-playground__result-label {
+  font-family:  var(--font-mono);
+  font-size:    var(--text-sm);
+  font-weight:  600;
+}
+
+.sdoa-playground__result-timing {
+  font-family: var(--font-mono);
+  font-size:   11px;
+  color:       rgba(224, 224, 224, 0.3);
+  margin-left: auto;
+}
+
+.sdoa-playground__result-body {
+  flex:           1;
+  background:     rgba(0, 0, 0, 0.3);
+  border:         1px solid rgba(255, 255, 255, 0.06);
+  border-radius:  var(--radius-md);
+  padding:        var(--space-md);
+  font-family:    var(--font-mono);
+  font-size:      var(--text-sm);
+  color:          var(--color-text-primary);
+  white-space:    pre-wrap;
+  word-break:     break-word;
+  margin:         0;
+  overflow-y:     auto;
+}
+.sdoa-playground__result-body--error { color: var(--color-error); }
+
+.sdoa-playground__spinner {
+  font-family: var(--font-mono);
+  font-size:   var(--text-sm);
+  color:       rgba(224, 224, 224, 0.3);
+  padding:     var(--space-lg);
+  text-align:  center;
+  animation:   sdoa-playground-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes sdoa-playground-pulse {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 0.8; }
+}
+
+/* -- History Panel ---------------------------------------------- */
+.sdoa-playground__history-panel {
+  flex:       1;
+  overflow-y: auto;
+  padding:    var(--space-xs) 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124,58,237,0.3) transparent;
+}
+
+.sdoa-playground__history-row {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+  padding:        var(--space-xs) var(--space-md);
+  cursor:         pointer;
+  border-left:    2px solid transparent;
+  transition:     background var(--duration-fast), border-color var(--duration-fast);
+}
+.sdoa-playground__history-row:hover {
+  background:   rgba(255, 255, 255, 0.04);
+  border-color: var(--color-accent);
+}
+.sdoa-playground__history-row--error { opacity: 0.6; }
+
+.sdoa-playground__history-main {
+  font-family:   var(--font-mono);
+  font-size:     11px;
+  color:         var(--color-text-primary);
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+
+.sdoa-playground__history-meta {
+  font-family: var(--font-mono);
+  font-size:   10px;
+  color:       rgba(224, 224, 224, 0.3);
+}
+
+/* -- Shared Hint ------------------------------------------------- */
+.sdoa-playground__hint {
+  font-size:   var(--text-sm);
+  color:       rgba(224, 224, 224, 0.2);
+  font-style:  italic;
+  text-align:  center;
+  padding:     var(--space-lg);
+  margin:      0;
+}
+
+/* -- Reduced Motion --------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .sdoa-playground__spinner       { animation: none; opacity: 0.5; }
+  .sdoa-playground__run-btn,
+  .sdoa-playground__toolbar-btn,
+  .sdoa-playground__history-row,
+  .sdoa-playground__input         { transition: none; }
+}

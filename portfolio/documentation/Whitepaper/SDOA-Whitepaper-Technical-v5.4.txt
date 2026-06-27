@@ -1,0 +1,160 @@
+================================================================================
+SDOA WHITEPAPER — TECHNICAL EDITION
+Version: 5.4 — Sovereign Integration & Sleeve Amendment
+Date: 27 June 2026
+Classification: Internal — Development Team Reference
+Amendment Ribbon: v5.4 / 27-06-2026 / Sleeve Ratification
+================================================================================
+
+§1  ARCHITECTURE OVERVIEW
+────────────────────────────────────────────────────────────────────────────────
+SDOA is a three-layer sovereign module architecture. Every module carries a
+static MANIFEST describing its identity, layer, runtime, capabilities, events,
+and dependencies. The runtime derives all routing, validation, and discovery
+from manifests alone — no hand-written registries, no ambient globals.
+
+Layer model:  1 = Features (UI)  |  2 = Primitives (UI)  |  3 = Substrate
+
+v5.4 module taxonomy:
+  feature | primitive | adapter | service | workflow | engine | repository
+  + sleeve  (new, v5.4)
+
+§2  THE SLEEVE MODULE CLASS
+────────────────────────────────────────────────────────────────────────────────
+A sleeve is the only module class that may cross the boundary between internal
+SDOA state and an external system. It must declare:
+
+  external: {
+    system:    string     // "git" | "node-llama-cpp" | "tauri-ipc" | ...
+    transport: string     // "cli" | "https" | "node-module" | "http+spawn" |
+                          // "polyglot-bridge" | "window.__TAURI__"
+    path:      string     // "auto" (PathResolver resolves) or explicit
+    commands:  string[]   // exhaustive list of permitted external commands
+  }
+
+Forbidden inside a sleeve: fs.writeFileSync on peer modules, eval(),
+Function(), hardcoded [A-Za-z]:\\ paths, raw fetch() for an https transport.
+
+§3  MANIFEST SCHEMA (v5.4)
+────────────────────────────────────────────────────────────────────────────────
+Full SdoaManifest interface (Registry.service.ts):
+
+  id:              string
+  type:            "feature" | "primitive" | "adapter" | "service" |
+                   "workflow" | "engine" | "repository" | "sleeve"
+  layer:           1 | 2 | 3
+  runtime:         "NodeJS" | "Browser" | "Universal" | "Python" | "Rust"
+  version:         string          // semver
+  operationalRole: "savant" | "registrar" | "oracle" | "coach" |
+                   "probation-officer" | "triage"
+  requires:        string[]
+  dataFiles:       string[]
+  lifecycle:       string[]
+  actions: {
+    commands: Record<string, { description, input, output }>
+    events:   Record<string, { payload }>
+    accepts:  Record<string, { description }>
+    slots:    Record<string, any>
+  }
+  external?:       SleeveExternal  // required when type === "sleeve"
+  capabilities?:   string[]
+  optimization?:   { priority, assertionSuite }
+  docs:            { description, author, sdoa }
+
+SleeveExternal interface:
+  { system: string; transport: string; path: string; commands: string[] }
+
+§4  GOVERNANCE PIPELINE
+────────────────────────────────────────────────────────────────────────────────
+Every module traverses this pipeline before production use:
+
+  Synthesized → ProbationOfficer → Human Sign-off → Canonical
+
+ProbationOfficer rules (v5.1):
+  LINE_LIMIT, FORBIDDEN_GLOBALS, NO_EVAL, LAYER_ISOLATION
+  + SLEEVE_NO_MUTATION, SLEEVE_NO_EVAL, SLEEVE_NO_ABSOLUTE_PATHS,
+    SLEEVE_DECLARED_TRANSPORT_ONLY, SLEEVE_EXTERNAL_DECLARATION_REQUIRED
+
+Registrar (v5.1):
+  validateManifest() enforces mandatory fields and sleeve external block.
+  Emits registry:moduleRegistered → Oracle rebuilds index.
+
+Oracle (v5.2):
+  dumpSurface() emits surfaceType: "boundary" for sleeve external commands.
+  whoHasBoundary({ system }) returns sleeves by external.system.
+  Scoring: capability (+10/+2), events (+10/+2), runtime (+5), layer (+5),
+           externalSystem (+10/+2), sleeve latency (±3), error rate (−2/−5),
+           fault count (−1 each, cap −5).
+
+Triage (v5.1):
+  _buildRoutingTable() includes "boundary" entries → sleeves get circuit breakers.
+  triage:boundaryFault emitted on sleeve external failure.
+
+  Sole healing path:
+    AiSleeve.healTestFailure() → heal:patch-request (event bus) →
+    Coach.on_patch_request() → ProbationOfficer.run() [gate] →
+    coach:mutationReady → Registrar.fieldChampion(module)
+    No module other than Coach may write to a peer's source file.
+
+§5  SLEEVE LIFECYCLE CONTRACT
+────────────────────────────────────────────────────────────────────────────────
+Base class: portfolio/substrate/adapters/SleeveBase.module.js
+
+Subclass contract:
+  _callExternal(command, payload) → raw external result (required override)
+  _healthCheck()                  → throw if external unreachable (optional)
+  _teardown()                     → close connections (optional)
+
+Base class enforces:
+  init()    PathResolver path resolution + health check + healthCheckFailed event
+  run()     command validation → _callExternal → _normalize → telemetry emit
+  dispose() _teardown → sleeve:disposed event
+
+§6  BOUNDARY TOPOLOGY (SVG RENDERING)
+────────────────────────────────────────────────────────────────────────────────
+Cartographer (v5.2) renders:
+  Sleeve nodes:   ⟁ shape, amber fill (#f59e0b)
+  Ghost nodes:    ⬚ shape, amber dashed outline
+  Boundary edges: amber dashed (#f59e0b), 5,4 dash pattern
+  Internal edges: white/purple solid (requires = white, events = purple)
+
+Drift detection via Cartographer.boundaryDrift():
+  Reads Chronicle telemetry for sleeve:boundaryCall events.
+  Compares observed commands vs external.commands in manifest.
+  severity: critical (undeclared) | high (path mismatch) | medium | low
+
+§7  PHASE 5 CERTIFICATION
+────────────────────────────────────────────────────────────────────────────────
+Sleeve.tests.json (portfolio/substrate/tests/) defines 8 tests:
+  sleeve-cert-1 through sleeve-cert-5 (functional certification)
+  sleeve-chaos-6 through sleeve-chaos-8 (fault injection)
+
+Promotion to SDOA vNext requires:
+  - 26/26 TestCore tests pass.
+  - 8/8 Sleeve cert tests pass.
+  - ProbationOfficer: zero SLEEVE_* violations.
+  - Oracle.dumpSurface: no rogue boundary entries.
+  - Cartographer.boundaryDrift: severity none or low.
+
+§8  ENVIRONMENT VARIABLES
+────────────────────────────────────────────────────────────────────────────────
+All paths are resolved through PathResolver or environment variables.
+Hardcoded machine paths are a SLEEVE_NO_ABSOLUTE_PATHS violation.
+
+  PROTOAI_PORTFOLIO_ROOT    Portfolio watch root (Curator/Registrar)
+  PROTOAI_GGUF_MODEL        GGUF model file path (AiSleeve)
+  PROTOAI_SETTINGS          Settings JSON override (AiProvider)
+  SDOA_ANALYSIS_ROOT        InnovationDetector input files root
+  SDOA_PORTFOLIO_ROOT       Scaffold output root
+
+§9  QUICK REFERENCE
+────────────────────────────────────────────────────────────────────────────────
+Create a sleeve:   sdoa new sleeve --id GitSleeve.sleeve --system git --transport cli
+Query boundary:    oracle.whoHasBoundary({ system: "git" })
+Detect drift:      cartographer.boundaryDrift({ since: "2026-06-01T00:00:00Z" })
+Check violations:  probationOfficer.run({ moduleId: "GitSleeve.sleeve" })
+Suggest module:    innovationDetector.suggest({ description: "call the GitHub API" })
+
+================================================================================
+SDOA v5.4 — TECHNICAL EDITION — FROZEN 27 JUNE 2026
+================================================================================

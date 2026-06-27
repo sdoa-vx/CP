@@ -1,0 +1,222 @@
+================================================================================
+SDOA MANIFEST SPECIFICATION — VERSION 5.4
+Date: 27 June 2026
+Classification: Canonical — Machine-Readable + Human-Readable Reference
+Amendment Ribbon: v5.4 / 27-06-2026 / Sleeve Ratification
+================================================================================
+
+This specification is the authoritative source of truth for the SDOA MANIFEST
+block. Scaffold, Registrar, and ProbationOfficer all validate against these
+rules. Any deviation is a governance violation.
+
+§1  FIELD REFERENCE
+────────────────────────────────────────────────────────────────────────────────
+
+id
+  Type:     string
+  Required: yes
+  Pattern:  PascalCase segments separated by dots.
+  Examples: Oracle.service | Coach.workflow | GitSleeve.sleeve
+  Unique:   yes — collision is rejected by Registrar.
+
+type
+  Type:     string (enum)
+  Required: yes
+  Values:   feature | primitive | adapter | service |
+            workflow | engine | repository | sleeve
+  Notes:    "sleeve" is v5.4+. Requires external block.
+
+layer
+  Type:     number (enum)
+  Required: yes
+  Values:   1 | 2 | 3
+  Rules:    sleeve must be layer 3.
+            feature must be layer 1.
+            primitive must be layer 2.
+
+runtime
+  Type:     string (enum)
+  Required: yes
+  Values:   NodeJS | Browser | Universal | Python | Rust
+  Notes:    Layer 3 modules must not be "Browser".
+            Universal = runs in both NodeJS and Browser environments.
+
+version
+  Type:     string
+  Required: yes
+  Format:   Semantic version: "MAJOR.MINOR.PATCH"
+  Notes:    Increment patch for bug fixes, minor for features,
+            major for breaking interface changes.
+            Sleeve initial version: "1.0.0"
+
+operationalRole
+  Type:     string (enum)
+  Required: yes
+  Values:   savant | registrar | oracle | coach |
+            probation-officer | triage
+  Default:  "savant" for all non-sovereign modules.
+
+requires
+  Type:     string[]
+  Required: yes (may be empty array)
+  Content:  Module IDs that must be registered before this module inits.
+  Notes:    Sleeve must include "ResponseFormatter.service"
+            and "PathResolver.service".
+
+dataFiles
+  Type:     string[]
+  Required: yes (may be empty array)
+  Content:  Paths to JSON/config files owned exclusively by this module.
+
+lifecycle
+  Type:     string[]
+  Required: yes
+  Values:   init | run | mount | update | unmount | dispose | destroy
+  Standard: Layer 3: ["init", "run", "dispose"]
+            Layer 1/2: ["init", "mount", "update", "unmount", "destroy"]
+
+actions.commands
+  Type:     object (may be empty)
+  Schema:   { [commandId]: { description: string, input: object, output: string } }
+  Required: yes (key present, value may be {})
+
+actions.events
+  Type:     object (may be empty)
+  Schema:   { [eventName]: { payload: object, description?: string } }
+
+actions.accepts
+  Type:     object (may be empty)
+  Schema:   { [eventName]: { description: string } }
+
+actions.slots
+  Type:     object (may be empty)
+  Schema:   extension point for future slot-based composition.
+
+external (SLEEVE ONLY — REQUIRED when type === "sleeve")
+  Type:     object
+  Schema:
+    system:    string   Canonical external system name. Must be unique
+                        across all sleeves in the portfolio.
+    transport: string   One of: https | cli | node-module | http+spawn |
+                        polyglot-bridge | window.__TAURI__
+    path:      string   "auto" (PathResolver resolves at init) or explicit
+                        path (still validated by PathResolver — never raw).
+    commands:  string[] Complete list of permitted external commands.
+                        Any command invoked but not in this list is a
+                        critical boundary drift violation.
+
+capabilities (optional)
+  Type:     string[]
+  Content:  Dot-notation capability tokens. e.g. "git.status", "llm.complete"
+  Notes:    Oracle indexes these for capability-based routing.
+
+optimization (optional)
+  Type:     object
+  Schema:   { priority: "readability" | "performance", assertionSuite: string }
+
+docs
+  Type:     object
+  Required: yes
+  Schema:
+    description: string   Non-empty. Describes what the module does.
+    author:      string
+    sdoa:        string   SDOA version string. "5.4" for v5.4 modules.
+
+§2  VALIDATION RULES
+────────────────────────────────────────────────────────────────────────────────
+All rules enforced by ProbationOfficer.workflow.js and Registry.service.ts.
+
+  R1  id must be present and match PascalCase.Suffix pattern.
+  R2  type must be one of the eight enumerated values.
+  R3  layer must be 1, 2, or 3 and consistent with type (see §1 above).
+  R4  runtime must be one of the five enumerated values.
+  R5  version must be a valid semver string.
+  R6  operationalRole must be present and one of the six enumerated values.
+  R7  requires must be an array (may be empty).
+  R8  lifecycle must be an array with at least one phase.
+  R9  actions must be present with commands, events, accepts, slots keys.
+  R10 docs.description must be a non-empty string.
+  R11 [sleeve] external must be present.
+  R12 [sleeve] external.system must be a non-empty string.
+  R13 [sleeve] external.transport must be one of the six transport values.
+  R14 [sleeve] external.commands must be a non-empty string array.
+  R15 [sleeve] requires must include "ResponseFormatter.service".
+  R16 [sleeve] requires must include "PathResolver.service".
+  R17 [sleeve] layer must be 3.
+
+§3  EXAMPLE — STANDARD MODULE
+────────────────────────────────────────────────────────────────────────────────
+static MANIFEST = {
+  id:              "Chronicle.service",
+  type:            "service",
+  layer:           3,
+  runtime:         "NodeJS",
+  version:         "5.0.0",
+  operationalRole: "savant",
+  requires:        [],
+  dataFiles:       ["data/chronicle.log"],
+  lifecycle:       ["init", "run", "dispose"],
+  actions: {
+    commands: {
+      record: {
+        description: "Append a structured entry to the chronicle log.",
+        input:  { type: "string", source: "string", payload: "object?" },
+        output: "void"
+      }
+    },
+    events:  { "chronicle:entryRecorded": { payload: { type: "string" } } },
+    accepts: {},
+    slots:   {}
+  },
+  docs: {
+    description: "Persistent structured log for all significant system events.",
+    author: "ProtoAI Core Architecture Group",
+    sdoa:   "5.0.0"
+  }
+};
+
+§4  EXAMPLE — SLEEVE MODULE
+────────────────────────────────────────────────────────────────────────────────
+static MANIFEST = {
+  id:              "GitSleeve.sleeve",
+  type:            "sleeve",
+  layer:           3,
+  runtime:         "NodeJS",
+  version:         "1.0.0",
+  operationalRole: "savant",
+  requires:        ["ResponseFormatter.service", "PathResolver.service"],
+  external: {
+    system:    "git",
+    transport: "cli",
+    path:      "auto",
+    commands:  ["status", "commit", "push", "pull", "diff"]
+  },
+  capabilities: ["git.status", "git.commit", "git.push"],
+  dataFiles:    [],
+  lifecycle:    ["init", "run", "dispose"],
+  actions: {
+    commands: {
+      run: {
+        description: "Execute a git command via the CLI transport.",
+        input:  { command: "string", args: "string[]?" },
+        output: "object"
+      }
+    },
+    events: {
+      "sleeve:disposed":      { payload: { moduleId: "string" } },
+      "sleeve:boundaryCall":  { payload: { moduleId: "string", command: "string",
+                                           durationMs: "number", ok: "boolean" } }
+    },
+    accepts: {},
+    slots:   {}
+  },
+  docs: {
+    description: "Sleeve: wraps the git CLI. Only module permitted to invoke git commands.",
+    author: "ProtoAI Core Architecture Group",
+    sdoa:   "5.4"
+  }
+};
+
+================================================================================
+END OF MANIFEST SPECIFICATION v5.4
+================================================================================

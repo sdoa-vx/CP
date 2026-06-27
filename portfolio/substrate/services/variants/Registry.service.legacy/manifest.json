@@ -1,0 +1,7 @@
+{
+  "variant_of": "substrate/services/Registry.service.ts",
+  "variant_source": "_variances/SDOAvX/substrate/services/Registry.service.ts",
+  "reason": "Content differs from canonical — variance version includes PolyglotBridge import and registerPolyglot/getAll methods; same variant as authorities/registrar/Registry.service.ts variance",
+  "related_variant": "authorities/registrar/variants/Registry.service.legacy/Registry.service.ts",
+  "captured_at": "2026-06-17T00:00:00Z"
+}

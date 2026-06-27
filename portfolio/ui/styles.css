@@ -1,0 +1,26 @@
+/* Last modified: 2026-06-03 06:10 UTC
+   ============================================================
+   MANIFEST = {
+     "id": "ui.styles.css",
+     "type": "asset",
+     "layer": 3,
+     "runtime": "Browser",
+     "version": "5.0.0",
+     "operationalRole": "savant",
+     "requires": [],
+     "capabilities": [],
+     "dependencies": [],
+     "docs": {
+       "description": "Deprecated global styles stylesheet. Replaced by tokens.css and components CSS.",
+       "author": "ProtoAI team",
+       "sdoa": "5.0.0"
+     },
+     "Last modified": "2026-06-03 06:10 UTC"
+   };
+   ============================================================
+   styles.css — DEPRECATED (SDOA v4)
+   All styles have been migrated to:
+   - tokens.css (Base/Reset)
+   - primitives/*.prim.css
+   - features/*.feature.css
+*/

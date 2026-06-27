@@ -1,0 +1,663 @@
+// ──────────────────────────────────────────────────────────────────
+// File:    Router.service.js
+// Version: (legacy)
+// Updated: 2026-06-17T00:00:00Z
+// Changes: Relocated to canonical sdoavx/ structure (evolution/legacy)
+//          Superseded by authorities/router/Router.service.js
+// NOTE:    Internal require() paths reflect original server/ layout
+//          and are preserved here for historical reference only.
+// ──────────────────────────────────────────────────────────────────
+// Last modified: 2026-05-11 — restored missing methods, fixed error-return spread bug, added rename/duplicate/delete project handlers
+"use strict";
+
+const ResponseFormatter = require("./ResponseFormatter.service");
+const Middleware = require("./Middleware.service");
+
+class Router {
+    constructor(registry, dependencies) {
+        this.registry = registry;
+        this.deps = dependencies; // { projectRepo, profileRepo, settingsManager, paths, fs, path, triggerIngest }
+
+        this._buffer = "";
+        this._processing = false;
+        this._queue = [];
+
+        // Express lane: Fast read-only message types that never block the queue.
+        this._EXPRESS_TYPES = new Set([
+            "engine_status", "system_health", "projects", "history", "profiles", "settings",
+            "list_files", "search_history", "list_processes",
+            "vfs_list", "vfs_manifest", "vfs_permissions",
+            "qmd_search", "qmd_index",
+            "local_ai_status", "local_ai_health", "chat_session",
+            "PartnerCommentary.workflow"
+        ]);
+
+        // Track whether a provision is currently running (fire-and-forget)
+        this._provisionRunning = false;
+
+        // ── Global Event Forwarding ──────────────────────────────
+        const orchestrator = require("../orchestration/workflows/MultiModelOrchestrator");
+        const _evtTypes = [
+            "orchestrator:routing", "orchestrator:routed",
+            "orchestrator:engineering", "orchestrator:engineered",
+            "orchestrator:watching", "orchestrator:flagged",
+            "orchestrator:auditing", "orchestrator:audited",
+            "orchestrator:commentary_generating", "orchestrator:commentary",
+            "orchestrator:continuity_editor_rewrite", "orchestrator:error"
+        ];
+        _evtTypes.forEach(t => {
+            orchestrator.on(t, (data) => ResponseFormatter.writeEvent("global", t, data));
+        });
+    }
+
+    startListening() {
+        process.stdin.setEncoding("utf8");
+        process.stdin.on("data", chunk => {
+            this._buffer += chunk;
+            let index;
+            while ((index = this._buffer.indexOf("\n")) >= 0) {
+                const line = this._buffer.slice(0, index).trim();
+                this._buffer = this._buffer.slice(index + 1);
+                if (!line) continue;
+
+                const parsed = ResponseFormatter.safeJsonParse(line);
+                if (!parsed.ok) {
+                    Middleware.log("Failed to parse IPC line:", line.slice(0, 200));
+                    continue;
+                }
+                const msg = parsed.value;
+                const actualType = msg?.type === "engine_ipc" ? msg?.payload?.msgType : msg?.type;
+
+                if (this._EXPRESS_TYPES.has(actualType)) {
+                    this._dispatchExpress(msg);
+                } else {
+                    this._queue.push(msg);
+                }
+            }
+            this._drainQueue();
+        });
+
+        process.stdin.on("end", () => {
+            Middleware.log("stdin closed — sidecar staying alive for 30s to finish tasks...");
+            // Instead of immediate exit, we wait a bit to see if this was transient
+            // or if we have pending async work (like LLM streaming).
+            setTimeout(() => {
+                if (this._queue.length === 0 && !this._processing) {
+                    Middleware.log("Shutting down due to closed stdin.");
+                    process.exit(0);
+                } else {
+                    Middleware.log("Stdin closed but processing continues.");
+                }
+            }, 30000);
+        });
+    }
+
+    async _dispatchExpress(msg) {
+        try {
+            const response = await this.dispatchMessage(msg);
+            ResponseFormatter.writeResponse(response);
+        } catch (err) {
+            Middleware.log("IPC express error:", err.message);
+            if (msg?.id) ResponseFormatter.writeError(msg.id, "IPC dispatch error", String(err));
+        }
+    }
+
+    _drainQueue() {
+        if (this._processing || this._queue.length === 0) return;
+        this._processNext();
+    }
+
+    async _processNext() {
+        if (this._queue.length === 0) { this._processing = false; return; }
+        this._processing = true;
+
+        const msg = this._queue.shift();
+        try {
+            const response = await this.dispatchMessage(msg);
+            ResponseFormatter.writeResponse(response);
+        } catch (err) {
+            Middleware.log("IPC dispatch error:", err.message);
+            if (msg?.id) ResponseFormatter.writeError(msg.id, "IPC dispatch error", String(err));
+        }
+
+        setImmediate(() => this._processNext());
+    }
+
+    async dispatchMessage(msg) {
+        const { id, type, payload } = msg;
+
+        if (!id) {
+            Middleware.log("IPC message missing 'id' — cannot respond");
+            return null;
+        }
+        if (!type) {
+            return { id, ok: false, error: "Missing 'type' in IPC message" };
+        }
+
+        Middleware.log(`[dispatch] -> ${type} (id=${id.slice(0,8)}...)`);
+        let result;
+
+        try {
+            switch (type) {
+                case "engine_ipc":
+                    if (!payload?.msgType) return { ok: false, error: "Missing 'msgType' in engine_ipc wrapper" };
+                    // Re-dispatch with the unwrapped message
+                    const unwrapped = await this.dispatchMessage({ id, type: payload.msgType, payload: payload.payload });
+                    // Return the inner result directly to avoid double-wrapping
+                    return unwrapped;
+
+                // ── Legacy inline handlers ─────────────────────────────────
+                case "projects":
+                    result = { projects: this.deps.projectRepo.listProjects() || [] };
+                    break;
+                case "history":
+                    if (!payload?.project) return { ok: false, error: "Missing 'project'" };
+                    result = { history: this.deps.projectRepo.getHistory(payload.project) || [] };
+                    break;
+                case "profiles":
+                    result = { profiles: this.deps.profileRepo.listAllForUI() || {} };
+                    break;
+                case "upload":
+                    result = this._handleUploadIPC(payload);
+                    break;
+                case "ingest":
+                    result = this._handleIngestIPC(payload);
+                    break;
+                case "settings":
+                    result = await this._handleSettingsIPC(payload);
+                    break;
+                case "chat":
+                    result = await this._handleChatIPC(payload, id);
+                    break;
+                case "multi_model_send":
+                    result = await this._handleMultiModelSendIPC(payload, id);
+                    break;
+
+                // ── Local AI provision ────────────────────────────────────
+                case "provision":
+                    result = this._handleProvisionStart(payload);
+                    break;
+                case "local_ai_status":
+                    result = this._handleLocalAiStatus();
+                    break;
+                case "local_ai_health":
+                    result = await this._handleLocalAiHealth();
+                    break;
+
+                // ── Workflow Delegations ──────────────────────────────────
+                case "image_gen":
+                    if (!payload?.text) return { ok: false, error: "Missing 'text'" };
+                    result = await this._runWorkflow("ImageGen.workflow", { text: payload.text, project: payload.project });
+                    break;
+                case "deep_search":
+                    if (!payload?.query) return { ok: false, error: "Missing 'query'" };
+                    result = await this._runWorkflow("DeepSearch.workflow", { query: payload.query });
+                    break;
+                case "qmd_index":
+                    result = await this._handleQmdIndexIPC(payload);
+                    break;
+                case "qmd_search":
+                    result = await this._handleQmdSearchIPC(payload);
+                    break;
+                case "vfs_add":
+                    result = await this._runWorkflow("VfsAdd.workflow", payload, true);
+                    break;
+                case "vfs_list":
+                    result = await this._runWorkflow("VfsList.workflow", payload, true);
+                    break;
+                case "vfs_manifest":
+                    if (!payload?.project) return { ok: false, error: "Missing 'project'" };
+                    result = await this._runWorkflow("VfsManifest.workflow", { project: payload.project, id: payload.id || payload.entryId, realPath: payload.realPath, regenerate: payload.regenerate }, true);
+                    break;
+                case "vfs_permissions":
+                    if (!payload?.project || !payload?.id) return { ok: false, error: "Missing 'project' or 'id'" };
+                    result = await this._runWorkflow("VfsUpdatePermissions.workflow", { project: payload.project, id: payload.id, permissions: payload.permissions }, true);
+                    break;
+                case "vfs_remove":
+                    result = await this._handleVfsRemoveIPC(payload);
+                    break;
+                case "list_files":
+                    result = await this._runWorkflow("ListFiles.workflow", { project: payload?.project, path: payload?.path, realPath: payload?.realPath }, true);
+                    break;
+                case "search_history":
+                    if (!payload?.query) return { ok: false, error: "Missing 'query'" };
+                    result = await this._runWorkflow("SearchHistory.workflow", payload, true);
+                    break;
+                case "list_processes":
+                    result = await this._runWorkflow("ListProcesses.workflow", payload, true);
+                    break;
+                case "spawn_shell":
+                    result = await this._runWorkflow("SpawnShell.workflow", { shell: payload?.shell || "powershell" }, true);
+                    break;
+                case "auto_optimize":
+                    result = await this._handleAutoOptimizeIPC(payload);
+                    break;
+                case "google_drive":
+                    result = await this._handleGoogleDriveIPC(payload);
+                    break;
+
+                // ── Project Management ────────────────────────────────────
+                case "rename_project": {
+                    const { project: rp, newName: rn } = payload || {};
+                    if (!rp || !rn) return { id, ok: false, error: "Missing 'project' or 'newName'" };
+                    const fsExtra = require("fs-extra");
+                    const oldPath = this.deps.paths.projectDir(rp);
+                    const newPath = this.deps.paths.projectDir(rn.trim());
+                    if (!fsExtra.existsSync(oldPath)) return { id, ok: false, error: `Project "${rp}" not found` };
+                    if (fsExtra.existsSync(newPath)) return { id, ok: false, error: `Project "${rn}" already exists` };
+                    fsExtra.moveSync(oldPath, newPath);
+                    result = { renamed: true, from: rp, to: rn.trim() };
+                    break;
+                }
+                case "duplicate_project": {
+                    const { project: dp, newName: dn } = payload || {};
+                    if (!dp || !dn) return { id, ok: false, error: "Missing 'project' or 'newName'" };
+                    const fsExtra = require("fs-extra");
+                    const srcPath = this.deps.paths.projectDir(dp);
+                    const dstPath = this.deps.paths.projectDir(dn.trim());
+                    if (!fsExtra.existsSync(srcPath)) return { id, ok: false, error: `Project "${dp}" not found` };
+                    if (fsExtra.existsSync(dstPath)) return { id, ok: false, error: `Project "${dn}" already exists` };
+                    fsExtra.copySync(srcPath, dstPath);
+                    result = { duplicated: true, from: dp, to: dn.trim() };
+                    break;
+                }
+                case "delete_project": {
+                    const { project: delP } = payload || {};
+                    if (!delP) return { id, ok: false, error: "Missing 'project'" };
+                    if (delP.toLowerCase() === "default") return { id, ok: false, error: "Cannot delete the default project" };
+                    const fsExtra = require("fs-extra");
+                    const delPath = this.deps.paths.projectDir(delP);
+                    if (!fsExtra.existsSync(delPath)) return { id, ok: false, error: `Project "${delP}" not found` };
+                    fsExtra.removeSync(delPath);
+                    result = { deleted: true, project: delP };
+                    break;
+                }
+
+                case "save_profile": {
+                    const { id: profileId, data: profileData } = payload || {};
+                    if (!profileId || !profileData) return { id, ok: false, error: "Missing 'id' or 'data'" };
+                    try {
+                        this.deps.profileRepo.saveUserProfile(profileId, profileData);
+                        result = { saved: true, id: profileId };
+                    } catch (err) {
+                        return { id, ok: false, error: "Failed to save profile", detail: String(err) };
+                    }
+                    break;
+                }
+
+                case "delete_profile": {
+                    const { id: delProfileId } = payload || {};
+                    if (!delProfileId) return { id, ok: false, error: "Missing 'id'" };
+                    try {
+                        this.deps.profileRepo.deleteUserProfile(delProfileId);
+                        result = { deleted: true, id: delProfileId };
+                    } catch (err) {
+                        return { id, ok: false, error: "Failed to delete profile", detail: String(err) };
+                    }
+                    break;
+                }
+
+                case "list_profiles": {
+                    result = { profiles: this.deps.profileRepo.listAllForUI() || [] };
+                    break;
+                }
+
+                case "get_project_settings": {
+                    const { project: gpsP } = payload || {};
+                    if (!gpsP) return { id, ok: false, error: "Missing 'project'" };
+                    result = { settings: this.deps.projectRepo.getProjectSettings(gpsP) };
+                    break;
+                }
+
+                case "save_project_settings": {
+                    const { project: spsP, settings: spsSettings } = payload || {};
+                    if (!spsP || !spsSettings) return { id, ok: false, error: "Missing 'project' or 'settings'" };
+                    this.deps.projectRepo.saveProjectSettings(spsP, spsSettings);
+                    result = { saved: true };
+                    break;
+                }
+
+                case "chat_session": {
+                    const { action, project, chatId, name, entry } = payload;
+                    const wf = this.registry.get("ChatSession.workflow");
+                    if (!wf) { result = { ok: false, error: "ChatSession.workflow not registered" }; break; }
+                    const r = await wf.run({ action, project, chatId, name, entry });
+                    result = r.status === "ok"
+                        ? { ok: true,  data: r.data ?? r.value }
+                        : { ok: false, error: r.error || r.data?.error || "chat_session error" };
+                    break;
+                }
+
+                default:
+                    // SDOA v4 dynamic workflow routing
+                    const camelCaseType = type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('');
+                    const possibleWfId = `${camelCaseType}.workflow`;
+
+                    if (this.registry.has(possibleWfId)) {
+                        result = await this._runWorkflow(possibleWfId, payload, true);
+                    } else if (this.registry.has(type)) {
+                        result = await this._runWorkflow(type, payload, true);
+                    } else {
+                        return { id, ok: false, error: `Unknown message type or workflow: ${type}` };
+                    }
+                    break;
+            }
+        } catch (err) {
+            Middleware.log(`Unhandled error in handler for type "${type}":`, err.message);
+            return { id, ok: false, error: "Handler crashed", detail: String(err) };
+        }
+
+        if (result && result.ok === false) return { id, ...result };
+        return { id, ok: true, data: result };
+    }
+
+    // ── Helper ───────────────────────────────────────────────────────────────
+
+    async _runWorkflow(workflowId, args, unwrap = false) {
+        const wf = this.registry.get(workflowId);
+        if (!wf) return { ok: false, error: `${workflowId} not available` };
+        const r = await wf.run(args);
+        if (unwrap) {
+            return r.status === 'ok' ? r.data : { ok: false, error: r.error };
+        }
+        return r;
+    }
+
+    // ── Local AI Handlers ─────────────────────────────────────────────────────
+
+    _statusFilePath() {
+        const os   = require("os");
+        const path = require("path");
+        const appdata = process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming");
+        return path.join(appdata, "protoai", "provision_status.json");
+    }
+
+    _handleProvisionStart(payload = {}) {
+        if (this._provisionRunning) {
+            return { started: false, reason: "Provision already in progress" };
+        }
+
+        const statusFile = this._statusFilePath();
+        const fs   = require("fs");
+        const path = require("path");
+        const os   = require("os");
+
+        // Write initial status
+        const appdata = process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming");
+        fs.mkdirSync(path.join(appdata, "protoai"), { recursive: true });
+        fs.writeFileSync(statusFile, JSON.stringify({
+            state: "running", step: 0, total: 5,
+            label: "Starting setup...", pct: 0,
+            model: payload.model || "Qwen/Qwen2.5-Omni-7B",
+            startedAt: new Date().toISOString(), completedAt: null, error: null
+        }), "utf8");
+
+        this._provisionRunning = true;
+
+        const wf = this.registry.get("SysProvisionModel.workflow");
+        if (!wf) {
+            fs.writeFileSync(statusFile, JSON.stringify({ state: "error", error: "SysProvisionModel.workflow not registered" }), "utf8");
+            this._provisionRunning = false;
+            return { started: false, reason: "Workflow not available" };
+        }
+
+        // Fire and forget — runs concurrently with normal request queue
+        wf.run({ model: payload.model, cuda: !!payload.cuda, statusFile })
+            .then((res) => {
+                const final = res?.status === "ok"
+                    ? { state: "done", venv: res.data?.venv, model: res.data?.model, completedAt: new Date().toISOString(), error: null }
+                    : { state: "error", error: res?.error || "Unknown error", completedAt: new Date().toISOString() };
+                try { fs.writeFileSync(statusFile, JSON.stringify(final), "utf8"); } catch (_) {}
+            })
+            .catch((err) => {
+                try { fs.writeFileSync(statusFile, JSON.stringify({ state: "error", error: err.message, completedAt: new Date().toISOString() }), "utf8"); } catch (_) {}
+            })
+            .finally(() => { this._provisionRunning = false; });
+
+        return { started: true, statusFile };
+    }
+
+    _handleLocalAiStatus() {
+        const fs = require("fs");
+        const statusFile = this._statusFilePath();
+        try {
+            if (!fs.existsSync(statusFile)) return { state: "idle" };
+            return JSON.parse(fs.readFileSync(statusFile, "utf8"));
+        } catch (_) {
+            return { state: "idle" };
+        }
+    }
+
+    async _handleLocalAiHealth() {
+        return new Promise((resolve) => {
+            const http = require("http");
+            const req  = http.get(
+                { hostname: "127.0.0.1", port: 17892, path: "/health", timeout: 2000 },
+                (res) => {
+                    let body = "";
+                    res.on("data", d => body += d);
+                    res.on("end", () => {
+                        try { resolve({ ok: true, ...JSON.parse(body) }); }
+                        catch (_) { resolve({ ok: false, reason: "Invalid response" }); }
+                    });
+                }
+            );
+            req.on("error", () => resolve({ ok: false, reason: "Server not running" }));
+            req.on("timeout", () => { req.destroy(); resolve({ ok: false, reason: "Timeout" }); });
+        });
+    }
+
+    // ── Legacy Handlers ──────────────────────────────────────────────────────
+
+    _handleUploadIPC(payload) {
+        const { project, filename, content, encoding } = payload || {};
+        if (!project) return { ok: false, error: "Missing 'project'" };
+        if (!filename) return { ok: false, error: "Missing 'filename'" };
+        try {
+            const projectDir = this.deps.paths.projectDir(project);
+            const fullPath = this.deps.path.join(projectDir, filename);
+            const parentDir = this.deps.path.dirname(fullPath);
+
+            this.deps.fs.mkdirSync(parentDir, { recursive: true });
+
+            if (encoding === "base64") {
+                this.deps.fs.writeFileSync(fullPath, Buffer.from(content, "base64"));
+            } else {
+                this.deps.fs.writeFileSync(fullPath, content || "", "utf8");
+            }
+
+            if (this.deps.triggerIngest) this.deps.triggerIngest(project);
+            return { status: "ok" };
+        } catch (err) {
+            return { ok: false, error: "Upload failed", detail: err.message };
+        }
+    }
+
+    _handleIngestIPC(payload) {
+        const { project, withContents } = payload || {};
+        if (!project) return { ok: false, error: "Missing 'project'" };
+
+        const projectDir = this.deps.paths.projectDir(project);
+        if (!this.deps.fs.existsSync(projectDir)) return { files: [] };
+
+        try {
+            const files = this.deps.fs.readdirSync(projectDir).filter(f =>
+                this.deps.fs.statSync(this.deps.path.join(projectDir, f)).isFile()
+            );
+
+            if (!withContents) return { files: files.map(f => ({ filename: f })) };
+
+            const fileContents = [];
+            const MAX_BYTES = 524288;
+            let totalBytes = 0;
+
+            for (const f of files) {
+                if (totalBytes >= MAX_BYTES) {
+                    fileContents.push({ filename: f, truncated: true, error: "Size limit reached" });
+                    continue;
+                }
+                try {
+                    const content = this.deps.fs.readFileSync(this.deps.path.join(projectDir, f), "utf8");
+                    fileContents.push({ filename: f, content });
+                    totalBytes += content.length;
+                } catch (err) {
+                    Middleware.log(`Could not read "${f}":`, err.message);
+                    fileContents.push({ filename: f, error: err.message });
+                }
+            }
+
+            return { files: fileContents, totalBytes, fileCount: files.length };
+        } catch (err) {
+            return { ok: false, error: "Ingest failed", detail: err.message };
+        }
+    }
+
+    async _handleSettingsIPC(payload) {
+        const { action, key, value, provider } = payload || {};
+        try {
+            if (action === "get") return { settings: this.deps.settingsManager.exportAll() };
+            if (action === "set") {
+                if (key && value !== undefined) this.deps.settingsManager.set(key, value);
+                else if (value !== undefined) this.deps.settingsManager.importAll(value);
+                return { settings: this.deps.settingsManager.exportAll() };
+            }
+            if (action === "testKey") {
+                if (!provider) return { ok: false, error: "Missing 'provider'" };
+                return await this.deps.settingsManager.validateApiKey(provider, value);
+            }
+            return { ok: false, error: `Unknown settings action: ${action}` };
+        } catch (err) {
+            return { ok: false, error: "Settings operation failed", detail: err.message };
+        }
+    }
+
+    async _handleQmdIndexIPC(payload) {
+        if (!this.registry.has("Ingest.workflow")) return { ok: false, error: "QMD not available" };
+        const { project, deep_scan = false } = payload || {};
+        if (!project) return { ok: false, error: "Missing 'project'" };
+        return await this._runWorkflow("Ingest.workflow", { project, deep_scan });
+    }
+
+    async _handleQmdSearchIPC(payload) {
+        if (!this.registry.has("Ingest.workflow")) return { ok: false, error: "QMD not available" };
+        const { query, project, sql = false } = payload || {};
+        if (!query) return { ok: false, error: "Missing 'query'" };
+        const wf = this.registry.get("Ingest.workflow");
+        return await wf.search({ query, project, sql });
+    }
+
+    async _handleVfsRemoveIPC(payload) {
+        const { project, id, realPath } = payload || {};
+        if (!project) return { ok: false, error: "Missing 'project'" };
+        if (!id && !realPath) return { ok: false, error: "Missing 'id' or 'realPath'" };
+        try {
+            const FsVfsRepository = require('../access/fs/FsVfsRepository');
+            const repo = new FsVfsRepository(project);
+            if (id) {
+                repo.removeEntry(id);
+            } else {
+                const entries = repo.listEntries().filter(e => e.realPath === realPath);
+                entries.forEach(e => repo.removeEntry(e.id));
+            }
+            return { removed: true, project };
+        } catch (err) {
+            return { ok: false, error: 'VFS remove failed', detail: err.message };
+        }
+    }
+
+    async _handleAutoOptimizeIPC(payload) {
+        try {
+            let finalKey = payload?.apiKey;
+            if (!finalKey) {
+                const settings = this.deps.settingsManager.exportAll();
+                finalKey = settings.apiKeys?.openrouter;
+            }
+            return await this._runWorkflow("AutoOptimizeModels.workflow", { apiKey: finalKey }, true);
+        } catch (err) {
+            return { ok: false, error: 'Auto optimization failed', detail: err.message };
+        }
+    }
+
+    async _handleGoogleDriveIPC(payload) {
+        try {
+            const r = await this._runWorkflow("GoogleDrive.workflow", payload, false);
+            if (r.status === 'ok' && payload.action === 'download_file' && payload.params?.project) {
+                if (this.deps.triggerIngest) this.deps.triggerIngest(payload.params.project);
+            }
+            return r.status === 'ok' ? r.data : { ok: false, error: r.error };
+        } catch (err) {
+            return { ok: false, error: 'Google Drive operation failed', detail: err.message };
+        }
+    }
+
+    async _handleChatIPC(payload, requestId) {
+        const { project, message, profile, engine, stream } = payload || {};
+        if (!project || !message || !profile) return { ok: false, error: "Missing required fields" };
+
+        let fullStreamedReply = "";
+        const onChunk = stream ? (token) => {
+            fullStreamedReply += token;
+            ResponseFormatter.writeResponse({ id: requestId, ok: true, type: "stream", chunk: token });
+        } : null;
+
+        try {
+            const workflow = this.registry.get("SendMessage.workflow");
+            if (!workflow) throw new Error("SendMessage.workflow not available");
+            const result = await workflow.run({ project, message, profile, engine, onChunk });
+
+            // Fixed: spread bug — result.data may be non-null even on error
+            if (result.status === "error") return { ok: false, error: result.error || result.data?.error || "Workflow error" };
+
+            const reply = result.data?.streaming ? fullStreamedReply : result.data?.reply;
+
+            if (fullStreamedReply || reply) {
+                try {
+                    this.deps.projectRepo.appendToHistory(project, { timestamp: Date.now(), role: "user", message });
+                    this.deps.projectRepo.appendToHistory(project, { timestamp: Date.now(), role: "assistant", message: fullStreamedReply || reply });
+                } catch (err) { Middleware.log("History save failed:", err.message); }
+            }
+
+            return { response: reply || "" };
+        } catch (err) {
+            return { ok: false, error: "Chat workflow crashed", detail: String(err) };
+        }
+    }
+
+    async _handleMultiModelSendIPC(payload, requestId) {
+        const { project, message, profile, stream } = payload || {};
+        if (!project || !message) return { ok: false, error: "Missing required fields" };
+
+        let fullStreamedReply = "";
+        const onChunk = stream ? (token) => {
+            fullStreamedReply += token;
+            ResponseFormatter.writeResponse({ id: requestId, ok: true, type: "stream", chunk: token });
+        } : null;
+
+        const onEvent = (eventName, data) => {
+            ResponseFormatter.writeEvent(requestId, eventName, data);
+        };
+
+        try {
+            const workflow = this.registry.get("MultiModelSend.workflow");
+            if (!workflow) throw new Error("MultiModelSendWorkflow not available");
+            const result = await workflow.run({ project, message, profile, onChunk, onEvent, stream });
+
+            if (result.status === "error") return { ok: false, error: result.error || result.data?.error || "Orchestrator error" };
+
+            const reply = result.data?.streaming ? fullStreamedReply : result.data?.reply;
+
+            if (fullStreamedReply || reply) {
+                try {
+                    this.deps.projectRepo.appendToHistory(project, { timestamp: Date.now(), role: "user", message });
+                    this.deps.projectRepo.appendToHistory(project, { timestamp: Date.now(), role: "assistant", message: fullStreamedReply || reply });
+                } catch (err) { Middleware.log("History save failed:", err.message); }
+            }
+
+            return { response: reply || "", orchestrator: result.data?.orchestrator };
+        } catch (err) {
+            return { ok: false, error: err.message };
+        }
+    }
+}
+
+module.exports = Router;

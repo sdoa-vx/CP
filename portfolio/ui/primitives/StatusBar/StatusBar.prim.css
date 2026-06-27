@@ -1,0 +1,136 @@
+/* Last modified: 2026-06-01 00:00 UTC                         */
+/* StatusBar.prim.css — SDOA v5.0 Primitive Styles             */
+/* Scoped to .sdoa-statusbar — no global side-effects          */
+/* All values reference tokens.css — never hard-coded          */
+
+/* ── Root Strip ─────────────────────────────────────────────── */
+.sdoa-statusbar {
+  display:         flex;
+  align-items:     center;
+  height:          26px;
+  padding:         0 var(--space-sm);
+  background:      rgba(0, 0, 0, 0.55);
+  border-top:      var(----size-var(----size-var(----size-var(----size-1px)))) solid rgba(255, 255, 255, 0.06);
+  font-family:     var(--font-mono);
+  font-size:       var(----size-var(----size-var(----size-var(----size-11px))));
+  color:           rgba(224, 224, 224, 0.5);
+  flex-shrink:     0;
+  overflow:        hidden;
+  gap:             var(--space-xs);
+  user-select:     none;
+}
+
+/* ── Groups ─────────────────────────────────────────────────── */
+.sdoa-statusbar__group {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-xs);
+  flex-shrink: 0;
+}
+
+.sdoa-statusbar__group--right { margin-left: auto; }
+
+/* ── Section ─────────────────────────────────────────────────── */
+.sdoa-statusbar__section {
+  display:     flex;
+  align-items: center;
+  gap:         var(----size-var(----size-var(----size-var(----size-2px))));
+}
+
+.sdoa-statusbar__section--sovereigns {
+  gap: 1px;
+}
+
+.sdoa-statusbar__section--alerts {
+  flex:        1;
+  overflow:    hidden;
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-xs);
+  justify-content: center;
+}
+
+/* ── Divider ─────────────────────────────────────────────────── */
+.sdoa-statusbar__divider {
+  color:       rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+  padding:     0 2px;
+}
+
+/* ── Chip ────────────────────────────────────────────────────── */
+.sdoa-statusbar__chip {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           var(----size-var(----size-var(----size-var(----size-3px))));
+  padding:       1px var(----size-var(----size-var(----size-var(----size-5px))));
+  border-radius: var(--radius-sm);
+  white-space:   nowrap;
+  max-width:     var(----size-var(----size-var(----size-var(----size-220px))));
+  overflow:      hidden;
+}
+
+.sdoa-statusbar__chip-icon  { flex-shrink: 0; opacity: 0.8; }
+.sdoa-statusbar__chip-label {
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  white-space:   nowrap;
+}
+
+/* Color variants */
+.sdoa-statusbar__chip--neutral { color: rgba(224,224,224,0.45); }
+.sdoa-statusbar__chip--green   { color: var(--color-success);   background: rgba(34,197,94,0.1); }
+.sdoa-statusbar__chip--red     { color: var(--color-error);     background: rgba(239,68,68,0.12); }
+.sdoa-statusbar__chip--yellow  { color: #ca8a04;                background: rgba(202,138,4,0.1); }
+.sdoa-statusbar__chip--purple  { color: var(--color-accent);    background: rgba(124,58,237,0.12); }
+.sdoa-statusbar__chip--blue    { color: #60a5fa;                background: rgba(37,99,235,0.1); }
+.sdoa-statusbar__chip--dim     { color: rgba(224,224,224,0.2);  }
+
+/* Pulsing animation for active Coach */
+.sdoa-statusbar__chip--pulse {
+  animation: sdoa-statusbar-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes sdoa-statusbar-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1;   }
+}
+
+/* ── Sovereign Dots ──────────────────────────────────────────── */
+.sdoa-statusbar__sovereign {
+  display:       inline-flex;
+  align-items:   center;
+  justify-content: center;
+  width:         var(----size-var(----size-var(----size-var(----size-18px))));
+  height:        18px;
+  border-radius: var(--radius-sm);
+  border:        none;
+  background:    transparent;
+  font-size:     11px;
+  cursor:        pointer;
+  transition:    background var(--duration-fast), color var(--duration-fast);
+  padding:       0;
+}
+
+.sdoa-statusbar__sovereign:hover { background: rgba(255,255,255,0.06); }
+
+.sdoa-statusbar__sovereign--green   { color: var(--color-success); }
+.sdoa-statusbar__sovereign--purple  { color: var(--color-accent);  }
+.sdoa-statusbar__sovereign--red     { color: var(--color-error);   }
+.sdoa-statusbar__sovereign--yellow  { color: #ca8a04; }
+.sdoa-statusbar__sovereign--dim     { color: rgba(255,255,255,0.15); }
+
+/* ── Clock ───────────────────────────────────────────────────── */
+.sdoa-statusbar__time {
+  font-family:  var(--font-mono);
+  font-size:    11px;
+  color:        rgba(224, 224, 224, 0.25);
+  white-space:  nowrap;
+  flex-shrink:  0;
+  padding-left: var(--space-xs);
+}
+
+/* ── Reduced Motion ──────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .sdoa-statusbar__chip--pulse     { animation: none; opacity: 0.8; }
+  .sdoa-statusbar__sovereign       { transition: none; }
+}
