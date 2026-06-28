@@ -1,0 +1,218 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "SleeveTelemetry.schema.json",
+  "title": "SDOA v5.5 Sleeve Telemetry Standard — Amendment 3.1",
+  "description": "Canonical event shapes for all sleeve lifecycle telemetry. Every event emitted by a sleeve sovereign must conform to the base fields plus the event-specific fields defined here. Consumers (Triage, Cartographer, Chronicle, tracksdoa.us) must accept these shapes.",
+  "ratified": "2026-06-27",
+  "sdoaVersion": "5.5",
+
+  "baseFields": {
+    "description": "Required on every sleeve telemetry event.",
+    "fields": {
+      "moduleId":   { "type": "string", "description": "MANIFEST id of the emitting sleeve" },
+      "system":     { "type": "string", "description": "external.system from the sleeve MANIFEST" },
+      "transport":  { "type": "string", "description": "external.transport from the sleeve MANIFEST" },
+      "timestamp":  { "type": "string", "format": "date-time", "description": "ISO 8601 UTC emission time" },
+      "_sdoa":      { "type": "string", "enum": ["5.5"], "description": "Telemetry schema version" }
+    }
+  },
+
+  "events": {
+    "sleeve:init": {
+      "description": "Emitted at the end of init(). Signals that the sleeve has completed path resolution and health check. Healthy or not, init always emits this event.",
+      "extends": "baseFields",
+      "fields": {
+        "healthy":    { "type": "boolean", "description": "true if _healthCheck() passed, false if it threw" },
+        "resolvedPath": { "type": ["string", "null"], "description": "The path resolved by PathResolver, or null if path is auto" }
+      }
+    },
+
+    "sleeve:run": {
+      "description": "Emitted at the entry of run(), before _callExternal() is invoked. Allows tracing calls that never complete (timeouts, process crashes). Paired with sleeve:boundaryCall by correlationId.",
+      "extends": "baseFields",
+      "fields": {
+        "command":       { "type": "string", "description": "Command being dispatched" },
+        "correlationId": { "type": "string", "description": "UUID linking sleeve:run to its sleeve:boundaryCall outcome" }
+      }
+    },
+
+    "sleeve:boundaryCall": {
+      "description": "Emitted after run() completes (success or failure). The primary telemetry event for boundary latency, error rate, and drift analysis.",
+      "extends": "baseFields",
+      "fields": {
+        "command":       { "type": "string", "description": "Command that was executed" },
+        "durationMs":    { "type": "number", "description": "Wall-clock duration of the full run() call" },
+        "ok":            { "type": "boolean", "description": "true = normalized response returned successfully" },
+        "correlationId": { "type": "string", "description": "UUID matching the sleeve:run event that started this call" }
+      }
+    },
+
+    "sleeve:boundaryFault": {
+      "description": "Emitted when run() completes with ok=false. Distinct from sleeve:boundaryCall so fault consumers (Triage circuit breaker, Cartographer drift) can subscribe selectively without filtering.",
+      "extends": "baseFields",
+      "fields": {
+        "command":    { "type": "string", "description": "Command that faulted" },
+        "durationMs": { "type": "number", "description": "Duration before fault was determined" },
+        "error":      { "type": "string", "description": "Error message from the failed call or normalization" },
+        "correlationId": { "type": "string", "description": "UUID matching the sleeve:run that opened this call" }
+      }
+    },
+
+    "sleeve:health": {
+      "description": "Emitted by periodic health checks (not only on failure). Allows dashboards and Oracle to track health status over time without requiring a live call.",
+      "extends": "baseFields",
+      "fields": {
+        "healthy":   { "type": "boolean", "description": "true = external system responded to health probe" },
+        "latencyMs": { "type": ["number", "null"], "description": "Round-trip latency of the health probe, null if skipped" },
+        "detail":    { "type": ["string", "null"], "description": "Optional detail string, e.g. model version or endpoint status" }
+      }
+    },
+
+    "sleeve:disposed": {
+      "description": "Emitted at the end of dispose(). Signals that the sleeve has torn down external connections and is no longer active.",
+      "extends": "baseFields",
+      "fields": {
+        "reason": { "type": ["string", "null"], "description": "Optional reason for disposal (e.g. registry shutdown, hot-swap)" }
+      }
+    },
+
+    "sleeve:batchDispatched": {
+      "description": "Amendment 4.5 — emitted after batchExternalCalls() completes a chunk group. Replaces N individual sleeve:boundaryCall events with a single aggregate event when calls are batched. Carries total callCount, overall durationMs (wall clock for all chunks), and ok (false if any result failed). batchId links to the originating batchExternalCalls() invocation.",
+      "extends": "baseFields",
+      "fields": {
+        "batchId":   { "type": "string",  "description": "UUID identifying this batch dispatch" },
+        "callCount": { "type": "number",  "description": "Total number of individual calls in the batch" },
+        "durationMs":{ "type": "number",  "description": "Wall-clock duration of the full batch dispatch" },
+        "ok":        { "type": "boolean", "description": "false if any result in the batch failed" }
+      }
+    },
+    "sleeve:payloadCompressed": {
+      "description": "Amendment 4.5 — emitted when compressPayload() is called explicitly. Provides before/after byte counts and compression ratio for boundary traffic analysis. Not emitted for automatic compression inside run() — see sleeve:boundaryCall for that context.",
+      "extends": "baseFields",
+      "fields": {
+        "command":          { "type": ["string", "null"], "description": "Command context if compression was triggered within a run() call, else null" },
+        "originalBytes":    { "type": "number", "description": "Byte size of the JSON-serialised payload before compression" },
+        "compressedBytes":  { "type": "number", "description": "Byte size after deflate compression" },
+        "compressionRatio": { "type": "number", "description": "compressedBytes / originalBytes (lower is better)" }
+      }
+    },
+
+    "sleeve:loraTrainingStarted": {
+      "description": "Amendment 4.4 — emitted when trainLoRA() begins fine-tuning a LoRA adapter on a model sleeve. Long-running; may not complete for minutes. Paired with sleeve:loraTrainingComplete by adapterId.",
+      "extends": "baseFields",
+      "fields": {
+        "adapterId":        { "type": "string",  "description": "UUID identifying this training run and the resulting adapter" },
+        "trainingDataSize": { "type": "number",  "description": "Number of training examples supplied" },
+        "epochs":           { "type": "number",  "description": "Training epochs requested" },
+        "rank":             { "type": "number",  "description": "LoRA rank (dimensionality of adapter matrices)" }
+      }
+    },
+    "sleeve:loraTrainingComplete": {
+      "description": "Amendment 4.4 — emitted when trainLoRA() finishes. Carries training loss and duration. A low loss alone does not indicate the adapter is ready — validateLoRA() must pass before proposeModelUpgrade() is allowed.",
+      "extends": "baseFields",
+      "fields": {
+        "adapterId":  { "type": "string",  "description": "UUID matching sleeve:loraTrainingStarted" },
+        "loss":       { "type": ["number", "null"], "description": "Final training loss, null if the external system did not report it" },
+        "durationMs": { "type": "number",  "description": "Wall-clock training duration" },
+        "ok":         { "type": "boolean", "description": "false if training failed (loss diverged, OOM, etc.)" }
+      }
+    },
+    "sleeve:loraValidated": {
+      "description": "Amendment 4.4 — emitted after validateLoRA() runs test cases against a trained adapter. The adapter may only be proposed for governance approval when passed=true.",
+      "extends": "baseFields",
+      "fields": {
+        "adapterId":     { "type": "string",  "description": "Adapter under test" },
+        "passed":        { "type": "boolean", "description": "true if all required test cases passed at or above quality threshold" },
+        "score":         { "type": "number",  "description": "Normalized quality score 0–1 from the test suite" },
+        "testCaseCount": { "type": "number",  "description": "Number of test cases evaluated" }
+      }
+    },
+    "sleeve:modelUpgradeProposed": {
+      "description": "Amendment 4.4 — emitted by proposeModelUpgrade() after a validated adapter passes the pre-proposal gate. Routes to Coach for governance approval. The sleeve cannot self-approve — this is a proposal only.",
+      "extends": "baseFields",
+      "fields": {
+        "adapterId":       { "type": "string", "description": "Validated adapter being proposed" },
+        "proposalId":      { "type": "string", "description": "UUID for this proposal; paired with coach:modelUpgradeApproved or coach:modelUpgradeRejected" },
+        "validationScore": { "type": "number", "description": "Score from the most recent validateLoRA() run" },
+        "proposedReason":  { "type": ["string", "null"], "description": "Human-readable reason for proposing this upgrade" }
+      },
+      "constraints": { "selfApprovalForbidden": true }
+    },
+
+    "sleeve:transportNegotiated": {
+      "description": "Amendment 4.1 — emitted when negotiateTransport() selects a different transport than the one currently active. Carries the previous transport, the new selection, scoring reasons, and a per-transport score array so Cartographer can track transport stability over time. Not emitted if negotiation produces no change.",
+      "extends": "baseFields",
+      "fields": {
+        "previousTransport": { "type": "string",  "description": "Transport that was active before renegotiation" },
+        "selectedTransport": { "type": "string",  "description": "Transport chosen by negotiateTransport()" },
+        "trigger":           { "type": "string",  "description": "What triggered negotiation: 'init' | 'fault' | 'explicit'" },
+        "reason":            { "type": "string",  "description": "Comma-joined scoring factors for the winning transport" },
+        "scores":            { "type": "array",   "items": { "type": "object" }, "description": "Array of { transport, score, viable, reason } for all candidates" }
+      }
+    },
+
+    "sleeve:sandboxRun": {
+      "description": "Amendment 3.5 — emitted instead of sleeve:boundaryCall when the sleeve is in sandbox mode. Signals that the response came from a fixture or Chronicle replay, NOT from the real external system. Downstream consumers (Triage circuit breakers, Cartographer drift, Pulse scoring) must never act on this event — it is for Chronicle audit and test harness use only.",
+      "extends": "baseFields",
+      "fields": {
+        "command":    { "type": "string",  "description": "Command that was simulated" },
+        "durationMs": { "type": "number",  "description": "Wall-clock time of fixture lookup (will be near-zero)" },
+        "ok":         { "type": "boolean", "description": "Whether the fixture returned a success response" },
+        "replay":     { "type": "boolean", "description": "true if the fixture came from Chronicle replay, false if injected manually" },
+        "fixtureKey": { "type": ["string", "null"], "description": "The command key used to look up the fixture ('*' means wildcard)" }
+      }
+    },
+
+    "sleeve:modelInfo": {
+      "description": "Amendment 3.3 — emitted by model sleeves (AI inference boundaries) at init() and optionally after each health check. Provides model version, hash, and declared capabilities so Cartographer can detect version drift across deployments. Non-model sleeves never emit this event.",
+      "extends": "baseFields",
+      "fields": {
+        "modelVersion":      { "type": ["string", "null"], "description": "Model identifier, e.g. 'Qwen2.5-7B-Instruct-Q4_K_M' or API model name" },
+        "modelHash":         { "type": ["string", "null"], "description": "SHA-256 or provider-reported hash of the model weights, null if unavailable" },
+        "declaredCapabilities": { "type": "array", "items": { "type": "string" }, "description": "Capabilities the model reports it supports (from introspection or provider metadata)" }
+      }
+    },
+
+    "sleeve:commandDiscovered": {
+      "description": "Amendment 3.2 — emitted when runDiscovery() finds external commands not declared in MANIFEST external.commands. This is a PROPOSAL only — the sleeve cannot self-approve. Coach receives this event and routes a manifest amendment through ProbationOfficer → Registrar.fieldChampion(). If ProbationOfficer rejects the amended source, the proposal is silently dropped.",
+      "extends": "baseFields",
+      "fields": {
+        "currentCommands":     { "type": "array",  "items": { "type": "string" }, "description": "Commands currently declared in external.commands" },
+        "discoveredCommands":  { "type": "array",  "items": { "type": "string" }, "description": "All commands found on the external system" },
+        "undeclaredCommands":  { "type": "array",  "items": { "type": "string" }, "description": "Subset of discoveredCommands not in currentCommands — the proposed additions" },
+        "proposalId":          { "type": "string", "description": "UUID identifying this proposal; paired with coach:mutationReady or coach:patchRejected" }
+      },
+      "constraints": {
+        "maxUndeclaredPerProposal": 10,
+        "commandNamePattern": "^[a-zA-Z][a-zA-Z0-9_/.-]*$",
+        "selfApprovalForbidden": true
+      }
+    }
+  },
+
+  "deprecations": {
+    "sleeve:healthCheckFailed": {
+      "supersededBy": "sleeve:init (healthy: false) + sleeve:health (healthy: false)",
+      "removedIn": "5.5"
+    }
+  },
+
+  "consumedBy": {
+    "sleeve:init":          ["Chronicle.service", "tracksdoa.us"],
+    "sleeve:run":           ["Chronicle.service"],
+    "sleeve:boundaryCall":  ["Triage.workflow", "Cartographer.workflow", "Oracle.service", "Pulse.workflow", "Chronicle.service", "tracksdoa.us"],
+    "sleeve:boundaryFault": ["Triage.workflow", "Cartographer.workflow", "Chronicle.service", "tracksdoa.us"],
+    "sleeve:health":        ["Oracle.service", "Pulse.workflow", "Chronicle.service", "tracksdoa.us"],
+    "sleeve:disposed":         ["Chronicle.service", "Registrar.service"],
+    "sleeve:batchDispatched":       ["Triage.workflow", "Cartographer.workflow", "Chronicle.service", "Pulse.workflow"],
+    "sleeve:payloadCompressed":     ["Chronicle.service"],
+    "sleeve:loraTrainingStarted":   ["Chronicle.service", "Cartographer.workflow"],
+    "sleeve:loraTrainingComplete":  ["Chronicle.service", "Cartographer.workflow"],
+    "sleeve:loraValidated":         ["Chronicle.service", "Coach.workflow"],
+    "sleeve:modelUpgradeProposed":  ["Coach.workflow", "Chronicle.service"],
+    "sleeve:transportNegotiated":   ["Cartographer.workflow", "Chronicle.service", "tracksdoa.us"],
+    "sleeve:sandboxRun":          ["Chronicle.service"],
+    "sleeve:modelInfo":         ["Cartographer.workflow", "Oracle.service", "Chronicle.service"],
+    "sleeve:commandDiscovered": ["Coach.workflow", "Chronicle.service"]
+  }
+}

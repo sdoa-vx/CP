@@ -1,0 +1,12 @@
+{
+  "id": "sdoa-base.legacy",
+  "type": "primitive",
+  "version": "3.0.0",
+  "runtime": "NodeJS",
+  "capabilities": ["sdoa_module_base_classes"],
+  "dependencies": [],
+  "docs": { "description": "sdoa-base.js without 'use strict'. Retained as variant." },
+  "last_modified": "2026-06-03T06:10:00Z",
+  "compliance": "sdoa-v1.2",
+  "variant_of": "sdoa-base"
+}

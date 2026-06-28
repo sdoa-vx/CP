@@ -1,5 +1,22 @@
 import * as ts from 'typescript';
 
+export const MANIFEST = {
+  id: "uiPrimitiveDetector.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "UIPrimitiveDetector"
+  ],
+  dependencies: [
+    "typescript"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
 export class UIPrimitiveDetector {
   public run(cache: Map<string, any>) {
     const componentHashes = new Map<string, string[]>();
@@ -35,11 +52,23 @@ export class UIPrimitiveDetector {
     let counter = 1;
     for (const [hash, files] of componentHashes.entries()) {
       if (files.length >= 3) {
+        const name = `StandardPrimitive${counter}`;
+        const hits = files.map(filePath => ({
+          filePath,
+          jsxSnippet: hash,
+          name
+        }));
+        
+        // Auto-extract and queue
+        import('../../extraction/index').then(({ runExtraction }) => {
+          runExtraction('primitive', hits);
+        }).catch(err => console.error("Extraction error:", err));
+
         proposals.push({
-          id: `StandardPrimitive${counter}.prim`,
+          id: `${name}.prim`,
           type: "primitive",
           layer: 2,
-          suggestedFile: `ui/primitives/StandardPrimitive${counter}/StandardPrimitive${counter}.prim.js`,
+          suggestedFile: `ui/primitives/${name}/${name}.prim.js`,
           locations: files
         });
         counter++;

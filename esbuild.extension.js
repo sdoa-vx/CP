@@ -1,3 +1,22 @@
+
+const MANIFEST = {
+  id: "esbuild.extension.js",
+  type: "module",
+  layer: 4,
+  runtime: "JavaScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "build",
+    "bundle"
+  ],
+  dependencies: [
+    "esbuild"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
 const esbuild = require('esbuild');
 
 esbuild.build({

@@ -6,6 +6,32 @@ import { runComplianceSuite } from "./runComplianceSuite";
 import { openPrForProposal } from "../workers/prWorker";
 import { recordPipelineRun, recordPipelineStep } from "../utils/telemetry";
 
+export const MANIFEST = {
+  id: "CreationPipeline.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "[object Object]"
+  ],
+  dependencies: [
+    "../utils/logger",
+    "./planCanonicalPath",
+    "./writeCanonicalFile",
+    "./runComplianceSuite",
+    "../workers/prWorker",
+    "../utils/telemetry",
+    "../fisp/storeProposal",
+    "../utils/supabase"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export interface Proposal {
   id: string;
   type: string;
@@ -77,11 +103,21 @@ export async function runCreationPipeline(envelope: any): Promise<PipelineResult
     await recordPipelineStep(envelope.proposalId, "Probation Officer", "passed", { checks: compliance.errors?.length === 0 });
     await recordPipelineStep(envelope.proposalId, "Canonical Path Routing", "passed", { path: plannedPath });
 
-    const prUrl = await openPrForProposal(proposal, plannedPath);
+    const prUrl = await openPrForProposal(proposal, plannedPath, fileContent);
     if (prUrl) {
       logger.info(`PR opened for ${name}: ${prUrl}`);
       prUrls.push(prUrl);
       await recordPipelineStep(envelope.proposalId, "PR Worker", "passed", { prUrl });
+      
+      // Save metadata locally
+      const { savePRMetadataLocal } = require("../fisp/storeProposal");
+      savePRMetadataLocal(envelope.proposalId, prUrl);
+
+      // Save to Supabase if configured
+      try {
+        const { savePRMetadata } = require("../utils/supabase");
+        await savePRMetadata(envelope.proposalId, prUrl);
+      } catch (e) {}
     } else {
       await recordPipelineStep(envelope.proposalId, "PR Worker", "failed", { error: "Failed to open PR" });
     }

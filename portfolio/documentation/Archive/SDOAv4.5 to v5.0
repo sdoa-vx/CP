@@ -1,0 +1,125 @@
+SDOA Architecture Evolution Specification: v4.5 to v5.0
+Status: CANONICAL INTELLECTUAL ARTIFACTDomain: Dynamic Polyglot Orchestration, Evolutionary Software SystemsCore Standard: The Manifesto is the Contract. The Registrar is the Roster. The Registry is the Spine.  1. Executive Context & Architectural Paradigm ShiftTraditional system integration patterns view technical debt as an inevitability—a consequence of codebases becoming coupled to the operational compromises of the era in which they were written.SDOA v5.0 permanently breaks this cycle by transforming the architecture from a static, single-language compilation target into a Dynamic Evolutionary Ecosystem.Plaintext                                  ┌───────────────────────────┐
+                                  │   LAYER 1: FEATURES       │
+                                  │   Dashboard.feature.js    │
+                                  └─────────────┬─────────────┘
+                                                │
+                                                ▼
+                                  ┌───────────────────────────┐
+                                  │   LAYER 2: PRIMITIVES      │
+                                  │   Terminal.prim.js        │
+                                  └─────────────┬─────────────┘
+                                                │
+                                    (BackendConnector / IPC)
+                                                │
+                                                ▼
+┌───────────────────────────────────────────────────────────────────────────────────────────┐
+│                                  REGISTRY SPINE & REGISTRAR                               │
+│                                      Router.service.js                                    │
+└───────┬───────────────────────────────────────┼───────────────────────────────────┬───────┘
+        │                                       │                                   │
+        ▼ (Direct Memory V8)                    ▼ (Isolated Runtime Thread)         ▼ (Subprocess I/O)
+┌───────────────────────────┐       ┌───────────────────────────┐       ┌───────────────────────────┐
+│   LAYER 3: RUST           │       │   LAYER 3: PYTHON         │       │   LAYER 3: COBOL          │
+│   MathSolver.engine.rs    │       │   Coach.workflow.py       │       │   LegacyBilling.cbl       │
+└───────────────────────────┘       └───────────────────────────┘       └───────────────────────────┘
+By decoupling the functional interface (id, commands, events, accepts) from the executing runtime (runtime, version), SDOA v5.0 allows individual modules to grow, optimize, and shift languages independently. The system transitions away from human-hardwired configurations into an automated marketplace where the most optimal asset is selected dynamically by a system of architectural sovereigns.  2. SDOA v5.0 Sovereign Role DirectoryTo govern a polyglot portfolio, SDOA v5.0 formally expands its static schema classification beyond basic module types (primitive, feature, adapter, service, workflow, repository) to include System Operational Roles. These roles dictate system-level behaviors, constraints, and execution priorities.  System Sovereigns (Infrastructure Layer)registrar (Registrar.service.js)Domain: System Topology Arbitration.Responsibility: Monitors portfolio directories for structural changes, reads manifest profiles, and resolves naming collisions. When multiple components claim identical functional identity paths, the registrar evaluates compiler matrices to prioritize the most optimal asset.captain (Captain.service.js)Domain: System State Sovereignty.Responsibility: Dictates application state transitions, handles global initializations, and manages fallback containment protocols when a runtime component fails or encounters an unhandled exception.conductor (Conductor.service.js)Domain: Multi-Module Event Coordination.Responsibility: Intercepts cross-module message passing across the universal EventBus. Evaluates the actions.events and actions.accepts manifest blocks to prevent event storms or circular logical deadlocks.  Cognitive & Defensive Sovereigns (Automation Layer)coach (Coach.workflow.py)Domain: Code Mutation Synthesis.Responsibility: Executed within a Python runtime to leverage native Abstract Syntax Tree (AST) tools, data parsing frameworks, and LLM orchestration providers. Evaluates runtime performance gaps or test runner failures to synthesize standalone, micro-incremented source code corrections.probation-officer (ProbationOfficer.workflow.rs)Domain: Structural Compliance & Isolation.Responsibility: Compiled to high-performance, memory-safe Rust code. Intercepts newly synthesized files before they are accepted into the live portfolio. Executes them within sandboxed WebAssembly (Wasm) boundaries to verify manifest contracts, enforce anti-pattern constraints, and catch errors prior to hot-reloading.  Mechanical Sovereigns (Execution Layer)assembly-line (AssemblyLine.service.js)Domain: Direct In-Memory Interop.Responsibility: Manages near-zero-overhead polyglot bindings. Configures SharedArrayBuffer structures and maps V8 typed arrays directly to shared native binary heaps, avoiding network overhead for intense computational processing.triage (Triage.workflow.js)Domain: Telemetry-Driven Routing.Responsibility: Intercepts incoming execution requests, evaluating parameter complexity, input data sizes, and CPU thread health to instantly stream tasks to the most efficient operational lane.3. The Canonical v5.0 Manifest StandardEvery module in an SDOA v5.0 portfolio must explicitly declare its profile via an identical, machine-readable manifest layout—regardless of source language.JavaScript// Last modified: 2026-06-01 15:30 UTC
+// Formatted by Coach.workflow.py; Validated by ProbationOfficer.workflow.rs
+
+static MANIFEST = {
+  // ── Identity ──────────────────────────────
+  id:              "MathSolver.engine",
+  type:            "engine",
+  layer:           3,
+  runtime:         "Rust", // Browser | NodeJS | Universal | Rust | Python | C++ | COBOL | VB
+  version:         "5.0.0",
+  operationalRole: "savant", // registrar | captain | conductor | coach | probation-officer | assembly-line | triage | savant
+
+  // ── Evolutionary Constraints ──────────────
+  requires:        [], 
+  dataFiles:       [],
+  lifecycle:       ["init", "run", "dispose"],
+
+  // ── Action Surface ────────────────────────
+  actions: {
+    commands: {
+      transform: {
+        description: "Executes vectorized floating-point matrix transformations.",
+        input:  { matrix: "array" },
+        output: "array"
+      }
+    },
+    events:   {},
+    accepts:  {},
+    slots:    {}
+  },
+
+  // ── Metrics Optimization Target ───────────
+  optimization: {
+    priority: "speed", // speed | safety | readability | memory-footprint
+    assertionSuite: "MathSolver.tests.json"
+  },
+
+  // ── Documentation ─────────────────────────
+  docs: {
+    description: "High-performance Rust execution unit targeted to WebAssembly via direct shared memory arrays.",
+    author: "ProtoAI Core Architecture Group",
+    sdoa: "5.0.0"
+  }
+};
+4. Multi-Language Portfolio File StructurePlaintextsdoa-system-v5/
+├── ui/                              <-- Layer 1 (Features) & Layer 2 (Primitives)
+│   ├── tokens.css                   <-- Global Design Tokens [cite: 108]
+│   ├── primitives/                  <-- Pure presentation UI components [cite: 33, 34]
+│   │   └── Terminal/
+│   │       ├── Terminal.prim.js     <-- Presentation controller [cite: 38]
+│   │       └── Terminal.prim.css    <-- Scoped component layouts [cite: 38, 109]
+│   └── features/                    <-- Schema-driven structural modules [cite: 28]
+│       └── Workspace/
+│           └── Workspace.feature.js <-- Interacts with System Sovereigns [cite: 31]
+│
+├── server/                          <-- Layer 3 Platform Kernel [cite: 39]
+│   ├── main.js                      <-- Structural Application Bootstrap [cite: 179]
+│   ├── Router.service.js            <-- Dynamic Runtime Router [cite: 82, 103]
+│   ├── ResponseFormatter.service.js <-- Unified message shape wrapper [cite: 82, 141]
+│   │
+│   ├── services/                    <-- Infrastructure Sovereigns
+│   │   ├── Registrar.service.js     <-- Monitors portfolio mutations and swaps runtimes
+│   │   ├── Captain.service.js       <-- Controls global state and lifecycle constraints
+│   │   ├── Conductor.service.js     <-- Manages decoupling of the event mesh
+│   │   └── AssemblyLine.service.js  <-- In-memory V8 compilation and binary bridge
+│   │
+│   └── workflows/                   <-- Action Engine Sovereigns [cite: 52]
+│       ├── Coach.workflow.py        <-- Python-based evolutionary refactoring worker
+│       ├── ProbationOfficer.workflow.rs <-- Rust-based verification and sandbox guardrail
+│       └── Triage.workflow.js       <-- Performance router and balancing service
+│
+└── portfolio/                       <-- Evolution Repository (The Living Library)
+    ├── MathSolver.engine.js         <-- Original JavaScript implementation (High Readability)
+    ├── MathSolver.engine.rs         <-- Upgraded Rust translation (High Performance)
+    ├── LegacyBilling.engine.cbl     <-- Untouched Legacy Component (High Financial Precision)
+    └── LocalSync.service.bas        <-- Legacy Visual Basic File Interop System
+5. Phase-by-Phase Implementation ProtocolPlaintext┌────────────────────────────────────────────────────────┐
+│ PHASE 1: FOUNDATION METRICS (The Baseline Portfolio)   │
+└───────────────────────────┬────────────────────────────┘
+                            │
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 2: AUTOMATED HOOKS (The Registrar Architecture)  │
+└───────────────────────────┬────────────────────────────┘
+                            │
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 3: PARALLEL RUNTIMES (The Polyglot Roster)      │
+└───────────────────────────┬────────────────────────────┘
+                            │
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 4: EVOLUTION LOOP (Autonomous Optimization)      │
+└───────────────────────────┬────────────────────────────┘
+                            │
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 5: PRODUCTION FLIGHT (Total System Independence) │
+└────────────────────────────────────────────────────────┘
+Phase 1: Foundation Metrics & Portfolio SetupObjective: Establish the structural boundaries for the system.Execution:Migrate all functional backend modules into the centralized /portfolio library directory.Append structural SDOA v5.0 Manifest blocks to all modules, including explicit runtime, operationalRole, and optimization parameters.Deploy Captain.service.js to manage uniform application bootstrap initialization sequences.  Phase 2: Automated Hooks & The RegistrarObjective: Implement live portfolio observation and dynamic registration.Execution:Code the Registrar.service.js module using a file-watcher library (e.g., chokidar inside Node.js) to monitor the /portfolio folder path.Build internal dependency maps using incoming manifest metrics, completely replacing manual configuration entries or switch arrays with automated routing tables.  Wire up Conductor.service.js to track active event interactions, resolving logical paths dynamically via the core EventBus infrastructure.  Phase 3: Parallel Runtimes & In-Memory LinkingObjective: Establish immediate polyglot bridging without external serialization overhead.Execution:Deploy AssemblyLine.service.js to capture and instantiate compiled WebAssembly files using WebAssembly.instantiate() parameters.  Structure direct data-sharing capabilities by mapping SharedArrayBuffer spaces and typed array variables (e.g., Float64Array) right to target binary heaps.  Configure fallback sub-process channels inside the Router to route tasks to non-Wasm elements (such as native Python executions or local COBOL integrations) via standard streams (stdout/stdin).Phase 4: The Autonomous Mutation LoopObjective: Wire up self-healing code adjustment cycles.Execution:Construct Coach.workflow.py to watch for processing bottlenecks or failing test runner scenarios. When an execution anomaly is isolated, the workflow packages the error metrics and constructs optimization paths via an LLM processing connector.Code ProbationOfficer.workflow.rs to secure the compilation loop. Every script generated by the Coach must pass through the ProbationOfficer sandbox engine to check for malicious logic or code structural failures.If validation succeeds, the new module is saved with a patch version bump, and the Registrar updates system paths to point to the upgraded asset.  Phase 5: Production Flight & OptimizationObjective: Enforce performance boundaries and system longevity.Execution:Initialize the Triage.workflow.js balancer. Allow the engine to review continuous execution telemetry (like tracking processing latencies or calculating memory usage footprints) to choose the best available module for every request.Activate structural volume assertions. Ensure that files that cross configured bounds (such as an engine module hitting over 150 lines) are automatically flagged for decomposition by the evolutionary loop.  6. SDOA v5.0 Anti-Patterns (The Prohibited List)To protect system integrity, the ProbationOfficer sandboxing engine will instantly reject any asset that introduces any of the following technical behaviors:Prohibited Pattern 1: Hardcoded Cross-Language Internal ImportsViolation: A Python script attempting to directly parse a JavaScript file, or a C++ engine executing shell scripts to reach a sibling module.Correction: All interactions must travel through the declarative manifest layer via explicit requires arrays managed by the core Registrar.  Prohibited Pattern 2: Global Namespace State PollutionViolation: Using assignments like window.appState = ... or relying on globally accessible system variables to communicate across processing boundaries.  Correction: State storage metrics must pass explicitly through the standard StateStore interface methods (.get(), .set(), .watch()).  Prohibited Pattern 3: Monolithic Implementation GrowthViolation: Letting architectural components grow past structured file constraints (e.g., a primitive moving past 150 lines, or a workflow extending beyond 200 lines).  Correction: Large modules must be decomposed into sub-features or distinct adapters to maintain clarity for both human reviewers and automated processing engines.  Prohibited Pattern 4: Manual Exception Interception HacksViolation: Deploying unmanaged time delays (setTimeout) or configuring untracked background catch containers to intercept processing failures.  Correction: Life cycles must be governed using standard asynchronous methods, passing error arrays directly up to the Captain for state resolution.  

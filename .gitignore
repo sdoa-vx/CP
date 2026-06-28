@@ -31,9 +31,13 @@ cli/dist/
 cli/build/
 
 # VS Code extension build output
+*.vsix
 extension/*.vsix
 extension/out/
 extension/dist/
+
+# Release binaries
+release-binaries/
 
 # ---------------------------------------------------------
 # OS junk
@@ -83,3 +87,13 @@ temp/
 *.bak
 *.swp
 *.swo
+HANDOFF.md
+
+# ---------------------------------------------------------
+# Local engine state, rescue + verification artifacts
+# ---------------------------------------------------------
+.sdoa/
+**/.sdoa/
+rescue.log
+_verify_pipeline.js
+tsc_out.txt

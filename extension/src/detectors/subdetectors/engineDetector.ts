@@ -1,5 +1,24 @@
 import * as ts from 'typescript';
 
+export const MANIFEST = {
+  id: "engineDetector.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "EngineDetector"
+  ],
+  dependencies: [
+    "typescript"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export class EngineDetector {
   public run(cache: Map<string, any>) {
     const execSignatures = new Map<string, string[]>();
@@ -33,6 +52,16 @@ export class EngineDetector {
       if (files.length >= 2) {
         const name = bin.split(' ')[0].replace(/[^a-zA-Z]/g, '') || 'Engine';
         
+        const hits = files.map(filePath => ({
+          filePath,
+          spawnSnippet: bin,
+          name
+        }));
+        
+        import('../../extraction/index').then(({ runExtraction }) => {
+          runExtraction('engine', hits);
+        }).catch(err => console.error("Extraction error:", err));
+
         proposals.push({
           id: `${name}.engine.js`,
           type: "engine",

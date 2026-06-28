@@ -2,6 +2,27 @@ import { IncomingMessage, ServerResponse } from "http";
 import { parseJsonBody } from "../utils/parseJsonBody";
 import { recordPipelineStep } from "../utils/telemetry";
 
+export const MANIFEST = {
+  id: "telemetry.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "handleTelemetryReuse"
+  ],
+  dependencies: [
+    "http",
+    "../utils/parseJsonBody",
+    "../utils/telemetry"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export async function handleTelemetryReuse(req: IncomingMessage, res: ServerResponse) {
   try {
     const body = await parseJsonBody(req);

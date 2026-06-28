@@ -2,6 +2,27 @@ import { validateLayer } from "./layerValidator";
 import { validateType } from "./typeValidator";
 import { validateRole } from "./roleValidator";
 
+export const MANIFEST = {
+  id: "structureValidator.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "validateStructure"
+  ],
+  dependencies: [
+    "./layerValidator",
+    "./typeValidator",
+    "./roleValidator"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export function validateStructure(payload: any) {
   const errors: string[] = [];
 

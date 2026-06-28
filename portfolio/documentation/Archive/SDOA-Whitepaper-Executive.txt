@@ -1,0 +1,359 @@
+================================================================================
+SDOA WHITEPAPER — EXECUTIVE EDITION
+Version: 5.0
+Date: 2026-06-17
+Classification: Internal — Leadership & Project Stakeholders
+================================================================================
+
+--------------------------------------------------------------------------------
+SECTION 1 — WHAT IS SELF-DESCRIBING OBJECT ARCHITECTURE?
+--------------------------------------------------------------------------------
+
+Self-Describing Object Architecture (SDOA) is a design approach for building
+software in which every module declares its own identity, purpose, and
+relationships directly inside itself. Instead of maintaining a separate set of
+configuration files or registration steps, each piece of code carries its own
+"ID card" — a structured declaration called a manifest — that tells the system
+what it is, what it can do, what it needs, and when it was last updated.
+
+The practical result is a system that configures itself. When a new module is
+added, the system finds it automatically. When a module changes, only that
+module needs to be touched. Any developer familiar with the architecture can
+open any file in the project, read the manifest at the top, and immediately
+understand what that file does, how it fits into the system, and what it depends
+on — without reading a separate wiki, asking a teammate, or tracing through a
+central configuration.
+
+SDOA has been in active development on the SDOAvX project since March 2026 and
+as of June 2026 governs 147 registered modules across the full application stack.
+
+--------------------------------------------------------------------------------
+SECTION 2 — BUSINESS VALUE & STRATEGIC RATIONALE
+--------------------------------------------------------------------------------
+
+2.1 Reduced Onboarding Cost
+----------------------------
+Every SDOA-compliant module is self-explanatory. A new team member can start
+contributing to any part of the codebase without an orientation session because
+the code tells them everything they need to know.
+
+2.2 Lower Cost of Change
+--------------------------
+When modules declare all of their dependencies and capabilities explicitly, the
+impact of any change is immediately visible. There are no hidden connections,
+no undocumented side effects, and no surprise breakages when one module is
+updated. The architecture was specifically designed to prevent the accumulation
+of technical debt over time.
+
+2.3 Zero Configuration Drift
+------------------------------
+Traditional architectures require maintaining separate documentation, separate
+configuration files, and separate registration systems that must all be kept in
+sync with the code. SDOA eliminates this by making the code itself the
+documentation and the configuration. There is no separate document to go stale.
+
+2.4 Scalable Without Degradation
+----------------------------------
+The discipline built into SDOA — strict module boundaries, file size limits,
+declarative dependency management — means the codebase does not degrade as it
+grows. Adding the hundredth feature is structurally identical to adding the
+first. This is a documented goal of the architecture: a codebase where growth
+does not increase complexity.
+
+2.5 Polyglot Capability
+------------------------
+SDOA is language-agnostic by design. The same manifest contract works in
+JavaScript, TypeScript, Rust, Python, and C++. This allows the right tool to be
+chosen for each job without fragmenting the project into disconnected silos.
+Performance-critical components run in Rust. AI/ML workloads run in Python.
+User interface components run in JavaScript. The registry connects them all.
+
+2.6 AI-Ready Architecture
+---------------------------
+Because every module explicitly declares what it can do, what events it responds
+to, and what workflows it exposes, the system can be orchestrated by AI tools
+without the AI needing to read implementation code. This is a strategic advantage
+as AI-assisted development and AI-driven automation become standard practice.
+
+--------------------------------------------------------------------------------
+SECTION 3 — HOW IT WORKS (HIGH-LEVEL)
+--------------------------------------------------------------------------------
+
+The application is organized into three layers, like a well-structured
+organization:
+
+Layer 1 — Features (What the user sees)
+  These are the screens and areas of the application. Each feature is assembled
+  from reusable building blocks defined in Layer 2, following a description of
+  what to display stored in a separate data file. Features never talk directly
+  to the server — they delegate that to Layer 3.
+
+Layer 2 — Primitives (Reusable building blocks)
+  These are the atomic pieces of the user interface: buttons, forms, lists,
+  modals, tabs. They are generic and know nothing about the application's
+  specific domain. A button is just a button. A list is just a list. Their
+  appearance and behavior are determined by the configuration passed to them
+  by Layer 1. If a bug exists in a button, fixing it once in the button module
+  fixes it everywhere in the application.
+
+Layer 3 — Backend and Data Layer (Where work gets done)
+  All communication with the server, database, and external services happens
+  here. When Layer 1 needs data, it asks Layer 3 through a declared contract.
+  Layer 3 never reaches up into the user interface, and the user interface
+  never reaches down into Layer 3 except through the official contract.
+
+The rule is simple: information flows in one direction. Shortcuts and
+layer-skipping are structurally prohibited — not by policy, but by the way
+the system is built.
+
+--------------------------------------------------------------------------------
+SECTION 4 — KEY BENEFITS
+--------------------------------------------------------------------------------
+
+Modularity
+  Every piece of the application is independent. Modules can be developed,
+  tested, replaced, or versioned individually without affecting other modules.
+
+Discoverability
+  The system discovers all modules automatically at startup. No developer needs
+  to manually register, configure, or announce new work. Create the file and
+  it is immediately part of the system.
+
+Sovereignty
+  Every module owns its own code, its own styling, its own data, and its own
+  history. No module can directly modify another module's internals. Changes
+  to one part of the system cannot accidentally break an unrelated part.
+
+Maintainability
+  Strict file size limits (enforced by the v4.1 Line-Limit Amendment) prevent
+  any single file from growing into an unmanageable "god object." When a file
+  grows too large, the architecture requires it to be split into focused,
+  single-responsibility modules.
+
+Self-Documentation
+  Every module carries its own description, its version history, and its
+  declaration of what it depends on. The code is the documentation.
+
+--------------------------------------------------------------------------------
+SECTION 5 — ARCHITECTURE GOVERNANCE MODEL
+--------------------------------------------------------------------------------
+
+The Sovereignty Principle (in plain terms):
+  Each module is responsible for its own lineage. One module cannot reach into
+  another module and change its internals. They communicate only through
+  officially declared interfaces: published events, a shared state store, or
+  explicit dependency declarations.
+
+  Think of it like a well-run organization where each team owns its own work
+  product. Teams communicate through official channels, not by walking into
+  each other's offices and editing files on each other's desks.
+
+The Registrar:
+  A central registry scans the codebase at startup, reads every module's
+  manifest, validates all declared dependencies, and builds the system's
+  internal wiring. Modules that fail validation are rejected immediately —
+  there are no silent failures.
+
+The Line-Limit Amendment (v4.1):
+  No module may exceed 500 lines of code. Type-specific targets exist below
+  this hard limit. This is a structural governance rule, not a style preference.
+  Files that grow past their limit must be refactored before new work is added.
+
+--------------------------------------------------------------------------------
+SECTION 6 — VERSIONING & AMENDMENT PROCESS
+--------------------------------------------------------------------------------
+
+How SDOA evolves:
+  The architecture itself is versioned. The base specification was v1.0 in March
+  2026. The current standard is v5.0. Each version adds capabilities without
+  breaking earlier-compliant modules.
+
+  Amendments are formal changes to a specific aspect of the standard. The v4.1
+  Line-Limit Amendment is an example: it revised the per-type line count targets
+  to reflect operational reality while maintaining the hard 500-line ceiling.
+
+How individual modules version:
+  Every change to any file requires a version increment and an updated timestamp
+  in the file header. This creates a dense, traceable audit trail so that any
+  regression can be traced to a specific change at a specific time.
+
+The amendment process:
+  Architecture changes are proposed, discussed, and ratified as named amendments
+  with version increments. The canonical name resolution (Self-Describing Object
+  Architecture) was formalized as the C1 Resolution on 2026-06-17.
+
+--------------------------------------------------------------------------------
+SECTION 7 — COMPLIANCE & QUALITY STANDARDS
+--------------------------------------------------------------------------------
+
+Every module in the system must meet the following standards to be compliant:
+
+  Manifest completeness: All required fields (identity, version, dependencies,
+  capabilities, documentation, timestamp) must be present.
+
+  Layer compliance: The module must only communicate with the layers it is
+  permitted to communicate with.
+
+  Lifecycle implementation: The module must implement all required lifecycle
+  methods (initialization, mounting, updating, cleanup, destruction).
+
+  File size compliance: The module must stay within the line limits set by
+  the v4.1 Amendment.
+
+  File header presence: Every file must carry the standardized header showing
+  filename, version, last-modified timestamp, and change description.
+
+Non-compliant files: Files that cannot be made fully manifest-compliant (such
+as legacy files or third-party integrations) must declare their non-compliance
+explicitly in their manifest with the field "non-sdoa-compliant": true. This
+keeps the registry honest — unknown compliance is not acceptable.
+
+In v5.0, a sovereign called the ProbationOfficer (ProbationOfficer.workflow.rs)
+automatically validates newly synthesized modules against these standards in a
+sandboxed environment before they are accepted into the live system.
+
+--------------------------------------------------------------------------------
+SECTION 8 — MODULE LIFECYCLE MANAGEMENT
+--------------------------------------------------------------------------------
+
+Every module in the system follows a documented lifecycle. This is not optional —
+it is how the system knows when to initialize, render, update, and clean up
+after every module.
+
+Frontend modules follow five stages:
+  Initialization  — Module loads, registers event subscriptions, reads data
+  Mounting        — Module renders its content into the user interface
+  Updating        — Module responds to state changes by re-rendering
+  Unmounting      — Module is removed from view; listeners and requests are cleaned up
+  Destruction     — Module is permanently retired; all memory is released
+
+Backend modules follow three stages:
+  Initialization  — Module loads at server startup; registers itself
+  Execution       — Module processes one request and returns a result
+  Disposal        — Module is shut down gracefully at server shutdown
+
+Strict lifecycle discipline prevents the class of bugs known as "ghost listeners"
+and "memory leaks" — problems that accumulate in codebases where modules are
+initialized and torn down in ad-hoc ways.
+
+--------------------------------------------------------------------------------
+SECTION 9 — ROADMAP ALIGNMENT
+--------------------------------------------------------------------------------
+
+The migration from the previous monolithic architecture to full SDOA compliance
+follows nine defined phases:
+
+Phase 0 (Complete): Architecture specification and directory structure
+Phase 1: Core primitive library (reusable UI building blocks)
+Phase 2: Centralized state management (replacing scattered global variables)
+Phase 3: Settings migration (proof-of-concept for the full pattern)
+Phase 4: Remaining feature migrations; app.js reduction to a thin shell
+Phase 5: Backend decomposition (replacing the 778-line monolithic dispatcher)
+Phase 6: Data externalization (moving embedded datasets into JSON files)
+Phase 7: CSS architecture (extracting design tokens, co-locating component CSS)
+Phase 8: Feature roadmap integration (11 planned capabilities mapped to modules)
+Phase 9: Infrastructure and quality-of-life improvements
+
+Phase 8 contains eleven independently shippable sub-features including:
+  - Memory and user profiling (AI learns from conversations)
+  - Silent Partner persona dialogue (AI side-channel commentary)
+  - Google Drive integration (already partially built)
+  - VFS tier system (intelligent context window management)
+  - Multi-session chat UI
+  - Browser and terminal tabs
+  - Archetype and hybrid profile system
+  - Semantic search indexing
+  - Response caching
+  - System prompt injection (project-specific AI rules)
+
+Each sub-phase is independently deployable and can be prioritized according
+to business value.
+
+--------------------------------------------------------------------------------
+SECTION 10 — GLOSSARY OF KEY TERMS
+--------------------------------------------------------------------------------
+
+Adapter
+  A module in Layer 3 that handles frontend communication with the backend.
+  Declares which backend operations it needs in its manifest (backendDeps).
+
+Architecture Amendment
+  A formally ratified change to the SDOA standard that applies to all modules.
+  Example: the v4.1 Line-Limit Amendment.
+
+Canonical
+  The authoritative, active version of a module or specification. Supersedes
+  all prior or variant versions for general use.
+
+EventBus
+  A cross-module communication system that allows modules to broadcast and
+  subscribe to named events without direct coupling.
+
+Feature
+  A Layer 1 module that composes primitives into a complete screen or area of
+  the user interface. Features contain application logic; primitives do not.
+
+Hard Limit
+  The absolute maximum line count for any module (~500 lines). This is never
+  exceeded regardless of module type or complexity.
+
+Layer
+  One of three organizational tiers: Layer 1 (Features), Layer 2 (Primitives),
+  Layer 3 (Adapters/Workflows/Repositories). Governs what a module may call.
+
+Lifecycle
+  The sequence of states every module passes through: initialization, mounting,
+  updating, unmounting, destruction. Strict lifecycle discipline prevents memory
+  leaks and ghost listeners.
+
+Manifest
+  The structured declaration block at the top of every SDOA module. Contains
+  identity, type, version, runtime, capabilities, dependencies, and documentation.
+
+Module
+  Any self-contained, manifest-carrying unit of functionality in the system.
+  May be a UI primitive, a feature, an adapter, a workflow, a repository, or
+  a backend engine.
+
+Primitive
+  A Layer 2 module that is a generic, reusable UI building block (Button, Form,
+  List, Modal, etc.). Primitives have no knowledge of the application domain.
+
+Registry
+  The system component that scans for modules, reads their manifests, validates
+  their dependencies, and wires them together at startup.
+
+Repository
+  A Layer 3 module responsible for data persistence (reading and writing files,
+  databases, etc.). Called by workflows; never directly by the UI.
+
+Schema
+  A JSON data file that describes a UI structure (which primitives to use, in
+  what order, with what configuration). Features load schemas at runtime instead
+  of hard-coding their UI structure.
+
+SDOA
+  Self-Describing Object Architecture. The canonical name for this architecture.
+
+Sovereign
+  Any fully manifested SDOA module that owns its own lineage, code, and
+  associated files. Sovereignty is the module's independence from other modules.
+
+StateStore
+  The centralized reactive state store that replaces all global variables.
+  Provides get(), set(), and watch() API. All application state flows through
+  StateStore.
+
+Variant
+  An alternate implementation of a sovereign module (different optimization,
+  different deployment context). Lives in the parent sovereign's variants/
+  subdirectory. Has its own manifest with a variant_of field.
+
+Workflow
+  A Layer 3 backend module that handles one type of operation. Auto-discovered
+  by the Router. Creating a workflow file is all that is needed to add a new
+  backend capability — no registration required.
+
+================================================================================
+END OF SDOA WHITEPAPER — EXECUTIVE EDITION v5.0
+================================================================================

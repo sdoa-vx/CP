@@ -1,0 +1,561 @@
+################################################################################
+##                                                                            ##
+##   SDOA v5.4 — STANDALONE DOCUMENTATION BUNDLE                             ##
+##   Self-Describing Object Architecture                                      ##
+##   Edition: Sovereign Integration & Sleeve Amendment                        ##
+##   Date: 27 June 2026                                                       ##
+##   Amendment Ribbon: v5.4 / 27-06-2026 / Sleeve Ratification               ##
+##   Authority: ProtoAI Core Architecture Group                               ##
+##   Ecosystem State: 147 Active Modules · SDOAvX                             ##
+##                                                                            ##
+##   This bundle contains all canonical v5.4 documentation in a single       ##
+##   self-contained file. No external references required.                    ##
+##                                                                            ##
+################################################################################
+
+TABLE OF CONTENTS
+================================================================================
+  §A   Architecture & Module Taxonomy
+  §B   Governance & Gates
+  §C   The Sleeve Module Class
+  §D   Operations & Certification
+  §E   Manifest Specification
+  §F   Boundary Topology & Diagrams
+  §G   Release Notes Summary
+  §H   Version Lineage
+  §I   Freeze Reference
+================================================================================
+
+
+################################################################################
+##  §A  ARCHITECTURE & MODULE TAXONOMY
+##  Source: Compendium/Book-I-Architecture.txt
+################################################################################
+
+A.1  THE SDOA PRINCIPLE
+────────────────────────────────────────────────────────────────────────────────
+Every module in the SDOA ecosystem is self-describing. A module's identity,
+capabilities, dependencies, events, and governance metadata are embedded in a
+static MANIFEST block — not in a separate registry file, not in a build tool,
+not in a comment. The runtime reads the manifest; it does not ask the developer
+to maintain a separate routing table.
+
+Key invariants:
+  - No hidden dependencies.
+  - No ambient globals (window.*, process.env.* used outside declared boundaries).
+  - No inline hardcoded behaviours (behaviour = manifest + code, nothing else).
+  - No discretionary exceptions to governance rules.
+
+Ecosystem state: 147 Active Modules · SDOAvX
+
+A.2  THE THREE-LAYER MODEL
+────────────────────────────────────────────────────────────────────────────────
+  Layer 1 — Features       User-facing UI, sovereign over their own views.
+  Layer 2 — Primitives     Generic UI building blocks.
+  Layer 3 — Substrate      Backend: services, workflows, engines, sleeves.
+
+  Layer 3 modules may not reference window.* or any browser global.
+
+A.3  MODULE CLASS TAXONOMY (v5.4 — eight classes)
+────────────────────────────────────────────────────────────────────────────────
+  feature      Layer 1.  UI sovereign. lifecycle: init/mount/update/unmount/destroy.
+  primitive    Layer 2.  Generic UI block. lifecycle: init/mount/update/unmount/destroy.
+
+               Canonical primitive catalog (19 primitives, v5.4):
+                 Button      Input       Toggle      Select      Panel
+                 Modal       TabGroup    List        Tree        Form
+                 Toast       Badge       Toolbar     EmptyState  ScrollMap
+                 CodeEditor  ContextMenu Spinner     Markdown
+
+  adapter      Layer 3.  Internal bridge only (v5.4: external use → sleeve).
+  service      Layer 3.  Stateful shared utility. lifecycle: init/run/dispose.
+  workflow     Layer 3.  Stateless orchestration. lifecycle: init/run/dispose.
+  engine       Layer 3.  Heavy computation or inference.
+  repository   Layer 3.  Data persistence and query abstraction.
+  sleeve       Layer 3.  NEW v5.4 — boundary sovereign. Only class that contacts
+                         external systems. See §C for full specification.
+
+A.4  NAMING CONVENTIONS
+────────────────────────────────────────────────────────────────────────────────
+  Feature:    PascalCase.feature           Dashboard.feature
+  Primitive:  PascalCase.prim              Button.prim
+  Service:    PascalCase.service           Oracle.service
+  Workflow:   PascalCase.workflow          Coach.workflow
+  Engine:     PascalCase (bare)            LlmPolicyEngine
+  Adapter:    PascalCase.adapter           AiProvider.adapter
+  Repository: PascalCase.repository       Memory.repository
+  Sleeve:     PascalCaseSleeve.sleeve     GitSleeve.sleeve  ← v5.4
+
+  File extension: NodeJS → .js, TypeScript → .ts, Python → .py
+
+A.5  FOLDER LAYOUT
+────────────────────────────────────────────────────────────────────────────────
+  portfolio/
+  ├── authorities/registrar/      Registry.service.ts
+  ├── substrate/
+  │   ├── adapters/               Sleeve sovereigns, internal adapters
+  │   ├── bridges/                Cross-runtime bridges
+  │   ├── engines/                Inference engines
+  │   ├── services/               Oracle, Logger, ResponseFormatter
+  │   ├── tests/                  Sleeve.tests.json, cert suites
+  │   └── workflows/              Coach, ProbationOfficer, Triage, Scaffold
+  └── documentation/
+      ├── Bundle/                 This file
+      ├── Compendium/             Books I–IV
+      ├── Whitepaper/             Executive + Technical editions
+      ├── Manifest-Spec/          Manifest field specification
+      ├── Diagrams/               Topology + architecture diagrams
+      ├── Release-Notes/          Per-version release notes
+      ├── Freeze/                 SHA-256 checksums + Freeze Certificate
+      └── Archive/                Superseded editions (v4.x, v5.0)
+
+The constitution evolves only through governance — never through drift.
+
+
+################################################################################
+##  §B  GOVERNANCE & GATES
+##  Source: Compendium/Book-II-Governance.txt
+################################################################################
+
+B.1  THE STAGING PIPELINE
+────────────────────────────────────────────────────────────────────────────────
+Every new module must traverse this pipeline in order. No stage may be skipped.
+
+  [ Synthesized ]   Generated by AI (Coach/Scaffold) or developer
+         │
+         ▼
+  [ Gate 1 ]        ProbationOfficer — static analysis
+         │
+         ▼
+  [ Gate 2 ]        Human sign-off — developer reviews in IDE or CLI
+         │
+         ▼
+  [ Gate 3 ]        Registrar — structural validation + dependency resolution
+         │
+         ▼
+  [ Gate 4 ]        Oracle — capability mesh indexing
+         │
+         ▼
+  [ Runtime ]       Triage — continuous circuit-breaker monitoring
+         │
+         ▼
+  [ Canonical ]     Sealed into portfolio/
+
+B.2  PROBATIONOFFICER — GATE 1 RULES
+────────────────────────────────────────────────────────────────────────────────
+All modules:
+  LINE_LIMIT          Adapter/service/workflow: 200 lines max.
+                      Primitive: 150 lines max.  Sleeve: 500 lines max.
+  FORBIDDEN_GLOBALS   No window.* write from Layer 3.
+  NO_EVAL             eval() and dynamic Function() constructors banned.
+  LAYER_ISOLATION     L1 may not import L3; L2 may not import L3.
+
+Sleeve rule pack (all five must pass):
+  SLEEVE_NO_MUTATION                  No fs.writeFileSync to peer module source files.
+  SLEEVE_NO_EVAL                      No eval() or Function() constructors.
+  SLEEVE_NO_ABSOLUTE_PATHS            No [A-Za-z]:\\ hard-coded paths.
+  SLEEVE_DECLARED_TRANSPORT_ONLY      No raw fetch() when transport is declared "https".
+  SLEEVE_EXTERNAL_DECLARATION_REQUIRED Sleeve MANIFEST must contain external block.
+
+B.3  REGISTRAR — GATE 3 RULES
+────────────────────────────────────────────────────────────────────────────────
+  validateManifest() checks all mandatory MANIFEST fields.
+  Sleeve: validates external block has system, transport, path, commands.
+  Resolves requires[] — fails if any dependency is absent.
+  Emits registry:moduleRegistered → Oracle rebuilds index.
+
+B.4  ORACLE — GATE 4 RULES
+────────────────────────────────────────────────────────────────────────────────
+  Indexes commands, events, accepts, capabilities.
+  Sleeves: external.commands indexed as surfaceType: "boundary".
+  whoHasBoundary({ system }) → sleeve by external.system.
+  Scoring: capability match (+10/+2), events (+10/+2), runtime/layer (+5 each),
+           sleeve latency (+3/−3), error rate (−2/−5), fault count (−1 each, cap −5).
+
+B.5  TRIAGE — RUNTIME
+────────────────────────────────────────────────────────────────────────────────
+  Circuit breaker: CLOSED → OPEN (on threshold) → HALF_OPEN (after 30 s).
+  Routing table includes surfaceType: "boundary" entries → sleeves get coverage.
+  triage:boundaryFault emitted on sleeve external failure.
+  Chronicle logs every boundary fault for Cartographer drift analysis.
+
+B.6  COACH — SOLE HEALING PATH
+────────────────────────────────────────────────────────────────────────────────
+  AiSleeve.healTestFailure()
+    └─► heal:patch-request
+          └─► Coach.on_patch_request()
+                ├─► ProbationOfficer.run()  [must pass]
+                └─► coach:mutationReady → Registrar.fieldChampion(module)
+
+  NO MODULE OTHER THAN COACH MAY WRITE TO A PEER'S SOURCE FILE.
+
+B.7  CARTOGRAPHER — DRIFT DETECTION
+────────────────────────────────────────────────────────────────────────────────
+  Command: boundaryDrift({ since? })
+  Compares external.commands vs Chronicle sleeve:boundaryCall telemetry.
+  missingCommands (undeclared) → severity: critical
+  extraCommands (stale declared) → severity: medium/low
+  pathMismatch (>50% fault rate) → severity: high
+  Emits cartographer:boundaryDrift.
+
+B.8  CONSTITUTIONAL AMENDMENT PROCESS
+────────────────────────────────────────────────────────────────────────────────
+Rules are absolute. One-off exceptions are structural violations.
+When an engineering need conflicts with a constraint, a formal amendment is
+required.
+
+Amendment lifecycle:
+  1. Identification        — cite the section and rule to be modified.
+  2. Impact Analysis       — list all affected modules, schemas, interfaces.
+  3. Migration Engineering — design a phased protocol maintaining full uptime.
+  4. Ratification          — project lead signature; written to canonical ledger.
+  5. Ledger Entry          — record in canonical amendment ledger; increment
+                             SDOA version; update all documentation.
+
+The constitution evolves only through governance — never through drift.
+
+
+################################################################################
+##  §C  THE SLEEVE MODULE CLASS
+##  Source: Compendium/Book-III-Sleeve-Amendment.txt
+################################################################################
+
+C.1  RATIONALE
+────────────────────────────────────────────────────────────────────────────────
+Prior to v5.4, adapters and workflows directly contacted external systems
+without declaring those contacts in any manifest field. Five violation classes
+were identified:
+
+  V1  Source mutation via fs.writeFileSync from within adapters.
+  V2  Missing await on async external calls.
+  V3  Duplicate port conflicts between sibling engines.
+  V4  Synchronous calls to async external adapters.
+  V5  Dependency on a Browser-only module from a NodeJS runtime.
+
+The Sleeve Amendment resolves all five.
+
+C.2  THE SLEEVE DEFINITION
+────────────────────────────────────────────────────────────────────────────────
+A Sleeve is a Layer 3 module that:
+  1. Wraps exactly one external system.
+  2. Declares system, transport, path, and commands in its MANIFEST.
+  3. Is the only module permitted to contact that external system.
+  4. Normalises all external responses through ResponseFormatter.
+  5. Resolves all paths through PathResolver.
+  6. Emits sleeve:boundaryCall and sleeve:disposed telemetry.
+
+C.3  MANIFEST EXTERNAL BLOCK (required on every sleeve)
+────────────────────────────────────────────────────────────────────────────────
+  external: {
+    system:    string    // canonical external system name (unique per portfolio)
+    transport: string    // cli | https | node-module | http+spawn |
+                         //   polyglot-bridge | window.__TAURI__
+    path:      string    // "auto" = PathResolver resolves at init()
+    commands:  string[]  // complete allowed command surface
+  }
+
+C.4  THE FIVE FORBIDDEN ACTS
+────────────────────────────────────────────────────────────────────────────────
+A sleeve MUST NEVER:
+  1. Mutate source files      — no fs.writeFileSync on peer module *.js / *.ts.
+  2. Modify global state      — no window.* assignment, no process.env.* mutation.
+  3. Monkey-patch             — no runtime modification of live registry instances.
+  4. Use eval() or Function() — no dynamic code construction of any kind.
+  5. Perform untracked writes — any file write must be declared in dataFiles[].
+
+C.5  THE LIFECYCLE CONTRACT
+────────────────────────────────────────────────────────────────────────────────
+All sleeves extend SleeveBase.module.js and implement:
+
+  init(registry)
+    Resolve PathResolver → resolve path (if not "auto") → _healthCheck().
+
+  run({ command, payload })
+    Reject undeclared commands → _callExternal() → _normalize() →
+    emit sleeve:boundaryCall telemetry → notify Pulse.
+
+  dispose()
+    _teardown() → emit sleeve:disposed.
+
+Subclass must implement: _callExternal(), _healthCheck() [optional], _teardown() [optional].
+
+C.6  THE FIVE CANONICAL SLEEVE SOVEREIGNS (v5.4)
+────────────────────────────────────────────────────────────────────────────────
+  AiSleeve.module.ts      node-llama-cpp   node-module     getLlama, LlamaChatSession
+  QwenSleeve.module.js    LocalLlmServer   http+spawn      /generate, /health
+  PolicySleeve.module.js  LLM APIs         https           complete, stream
+  ContextSleeve.module.py QmdAdapter       polyglot-bridge search, query
+  BrowserSleeve.module.js Tauri IPC        window.__TAURI__ engine_chat, engine_projects,
+                                                           engine_status, run_workflow
+
+  Note: These five were created before the naming convention was finalised.
+  They use the legacy .module.* suffix. All new sleeves use .sleeve.js / .sleeve.ts.
+
+C.7  BOUNDARY TOPOLOGY
+────────────────────────────────────────────────────────────────────────────────
+
+  ┌──────────────────── SDOA Sovereign Layer ──────────────────────┐
+  │  Registry ─── Oracle ─── ProbationOfficer ─── Triage          │
+  │                                                                │
+  │  AiSleeve  QwenSleeve  PolicySleeve  ContextSleeve  BrowserSleeve │
+  └────⟁──────────⟁──────────⟁─────────────⟁──────────────⟁────────┘
+       │           │           │             │             │
+  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ BOUNDARY ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+       │           │           │             │             │
+  ⬚ node-llama ⬚ http+   ⬚ HTTPS APIs ⬚ QmdAdapter  ⬚ Tauri IPC
+     (ghost)   spawn(ghost)  (ghost)      (ghost)       (ghost)
+
+  ⟁  Sleeve boundary node  (amber fill #f59e0b)
+  ⬚  External ghost node   (amber dashed — not an SDOA module)
+
+The constitution evolves only through governance — never through drift.
+
+
+################################################################################
+##  §D  OPERATIONS & CERTIFICATION
+##  Source: Compendium/Book-IV-Operations.txt
+################################################################################
+
+D.1  TESTCORE SUITE
+────────────────────────────────────────────────────────────────────────────────
+  Runner:  TestCore.workflow.ts → AlgosimTest.workflow → test_core.exe
+  Current: 26/26 passing across four suites:
+    SDOA Model Contract Tests (8)
+    SDOA Pipeline Contract Tests (3)
+    SDOA Execution Tests (9)
+    SDOA Phase 4 Tests (6)
+
+D.2  SLEEVE CERTIFICATION SUITE (8 tests — Sleeve.tests.json)
+────────────────────────────────────────────────────────────────────────────────
+  sleeve-cert-1  Boundary fault injection → triage:boundaryFault + OPEN circuit
+  sleeve-cert-2  Transport normalization → { ok, data } or { ok: false, error }
+  sleeve-cert-3  PathResolver enforcement → SLEEVE_NO_ABSOLUTE_PATHS fired
+  sleeve-cert-4  Capability exposure → Oracle.whoHasBoundary returns AiSleeve only
+  sleeve-cert-5  Line limit → LINE_LIMIT_EXCEEDED fired
+  sleeve-chaos-6 Daemon crash under load → circuit opens, Chronicle logs all faults
+  sleeve-chaos-7 Corrupted response (50% rate) → all conform to { ok: boolean }
+  sleeve-chaos-8 Timeout (10 s delay) → { ok: false, error: "timeout" }
+
+D.3  DRIFT DETECTION (Cartographer.boundaryDrift)
+────────────────────────────────────────────────────────────────────────────────
+  missingCommands (in telemetry, not declared) → severity: critical
+  extraCommands   (declared, never observed)   → severity: medium/low
+  pathMismatch    (>50% fault rate)            → severity: high
+
+D.4  ORACLE CAPABILITY NORMALIZATION
+────────────────────────────────────────────────────────────────────────────────
+  All sleeve commands indexed as surfaceType: "boundary".
+  Responses: { ok: true, data: {...} } or { ok: false, error: "..." }
+  Latency:  p95 < 200 ms → +3  |  p95 > 2000 ms → −3
+  Error:    > 5% → −2         |  > 20% → −5
+  Faults:   −1 each (cap −5)
+
+D.5  PROMOTION GATE (SDOA vNext)
+────────────────────────────────────────────────────────────────────────────────
+  1. 26/26 TestCore assertions pass.
+  2. 8/8 Sleeve cert tests pass.
+  3. ProbationOfficer: zero SLEEVE_* violations.
+  4. Oracle.dumpSurface: no rogue boundary entries.
+  5. Cartographer.boundaryDrift: severity none or low.
+  Recorded in portfolio/sdoa-vnext.lock.json.
+
+The constitution evolves only through governance — never through drift.
+
+
+################################################################################
+##  §E  MANIFEST SPECIFICATION
+##  Source: Manifest-Spec/SDOA-Manifest-Spec-v5.4.txt
+################################################################################
+
+E.1  REQUIRED FIELDS (all modules)
+────────────────────────────────────────────────────────────────────────────────
+  id              string      Unique dot-notation. "Oracle.service"
+  type            enum        feature|primitive|adapter|service|workflow|
+                              engine|repository|sleeve
+  layer           1|2|3       Sleeve: must be 3.
+  runtime         enum        NodeJS|Browser|Universal|Python|Rust
+                              (Layer 3 must not be "Browser")
+  version         string      Semver "MAJOR.MINOR.PATCH"
+  operationalRole enum        savant|registrar|oracle|coach|
+                              probation-officer|triage
+  requires        string[]    Module ID dependencies.
+  dataFiles       string[]    JSON/config files owned by this module.
+  lifecycle       string[]    At least one of: init|run|mount|update|
+                              unmount|dispose|destroy
+  actions         object      { commands: {}, events: {}, accepts: {}, slots: {} }
+  docs            object      { description: string (non-empty), author, sdoa }
+
+E.2  SLEEVE-ONLY FIELDS (required when type === "sleeve")
+────────────────────────────────────────────────────────────────────────────────
+  external        object      {
+    system:    string         Canonical external system name. Unique per portfolio.
+    transport: string         cli|https|node-module|http+spawn|
+                              polyglot-bridge|window.__TAURI__
+    path:      string         "auto" or explicit (PathResolver validates both)
+    commands:  string[]       Exhaustive list of permitted external commands.
+  }
+  requires        (must include "ResponseFormatter.service" and "PathResolver.service")
+
+E.3  VALIDATION RULES
+────────────────────────────────────────────────────────────────────────────────
+  R1–R10  (all modules): id pattern, type/layer/runtime/version/role enums,
+           requires array, lifecycle array, actions keys, docs.description non-empty.
+  R11  [sleeve] external must be present.
+  R12  [sleeve] external.system must be non-empty string.
+  R13  [sleeve] external.transport must be one of six transport values.
+  R14  [sleeve] external.commands must be non-empty string array.
+  R15  [sleeve] requires includes "ResponseFormatter.service".
+  R16  [sleeve] requires includes "PathResolver.service".
+  R17  [sleeve] layer must be 3.
+
+E.4  ENVIRONMENT VARIABLES
+────────────────────────────────────────────────────────────────────────────────
+  PROTOAI_PORTFOLIO_ROOT    Portfolio watch root (Curator/Registrar)
+  PROTOAI_GGUF_MODEL        GGUF model file path (AiSleeve)
+  PROTOAI_SETTINGS          Settings JSON override (AiProvider)
+  SDOA_ANALYSIS_ROOT        InnovationDetector input root
+  SDOA_PORTFOLIO_ROOT       Scaffold output root
+
+
+################################################################################
+##  §F  BOUNDARY TOPOLOGY & DIAGRAMS
+##  Source: Diagrams/SDOA-Boundary-Topology-v5.4.txt
+################################################################################
+
+F.1  GOVERNANCE GATE DIAGRAM
+────────────────────────────────────────────────────────────────────────────────
+  ┌─────────────┐
+  │ Synthesized │
+  └──────┬──────┘
+         ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │ Gate 1 — ProbationOfficer (static analysis)                         │
+  │  LINE_LIMIT  NO_EVAL  FORBIDDEN_GLOBALS  LAYER_ISOLATION            │
+  │  [sleeve] SLEEVE_NO_MUTATION                                        │
+  │  [sleeve] SLEEVE_NO_EVAL                                            │
+  │  [sleeve] SLEEVE_NO_ABSOLUTE_PATHS                                  │
+  │  [sleeve] SLEEVE_DECLARED_TRANSPORT_ONLY                            │
+  │  [sleeve] SLEEVE_EXTERNAL_DECLARATION_REQUIRED                      │
+  └──────┬──────────────────────────────────────────────────────────────┘
+         ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │ Gate 2 — Human Sign-off                                             │
+  └──────┬──────────────────────────────────────────────────────────────┘
+         ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │ Gate 3 — Registrar (structural alignment)                           │
+  │  validateManifest() + resolve requires[] + emit registry:registered │
+  └──────┬──────────────────────────────────────────────────────────────┘
+         ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │ Gate 4 — Oracle (capability mesh)                                   │
+  │  Index surface + [sleeve] index boundary entries + whoHasBoundary() │
+  └──────┬──────────────────────────────────────────────────────────────┘
+         ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │ Runtime — Triage monitoring                                         │
+  │  [sleeve] triage:boundaryFault + Chronicle logging                  │
+  └──────┬──────────────────────────────────────────────────────────────┘
+         ▼
+  ┌─────────────┐
+  │  Canonical  │
+  └─────────────┘
+
+F.2  HEALING PATH DIAGRAM
+────────────────────────────────────────────────────────────────────────────────
+  AlgosimTest.workflow (TestCore — test fails)
+    │
+    ▼
+  AiSleeve.healTestFailure()     ← only sleeve contacts node-llama-cpp
+    │  emits heal:patch-request
+    ▼
+  Registry event bus
+    │  routes to Coach.on_patch_request()
+    ▼
+  Coach.on_patch_request()
+    │  reads target source → applies patch
+    ├─► ProbationOfficer.run()   [GATE — reject if fails]
+    └─► emits coach:mutationReady → Registrar.fieldChampion(module)
+
+  ═══ NO MODULE OTHER THAN COACH MAY WRITE TO A PEER'S SOURCE FILE ═══
+
+F.3  SVG RENDERING COLOURS (Cartographer)
+────────────────────────────────────────────────────────────────────────────────
+  Sleeve nodes:    ⟁  amber fill #f59e0b
+  Ghost nodes:     ⬚  amber dashed outline #f59e0b
+  Boundary edges:  amber dashed, 5,4 dash pattern
+  Requires edges:  white solid
+  Event edges:     purple solid
+
+
+################################################################################
+##  §G  RELEASE NOTES SUMMARY
+##  Source: Release-Notes/SDOA-v5.4-Release-Notes.txt
+################################################################################
+
+G.1  NEW IN v5.4
+────────────────────────────────────────────────────────────────────────────────
+  Sleeve Module Class ratified (type: "sleeve", layer 3, 500-line ceiling)
+  Five sleeve sovereigns: AiSleeve, QwenSleeve, PolicySleeve, ContextSleeve,
+                          BrowserSleeve
+  Ten Fix-It violations repaired (V1–V10)
+  SLEEVE_* rule pack added to ProbationOfficer (5 rules)
+  Registrar: SleeveExternal interface + external block validation
+  Oracle: whoHasBoundary(), boundary surface indexing, sleeve scoring
+  Triage: boundary circuit breaker, triage:boundaryFault
+  Coach: on_patch_request() — sole healing path locked
+  Cartographer: ghost nodes, boundary edges, boundaryDrift command
+  InnovationDetector: sleeve detection and sleeveRequired events
+  Scaffold: sleeve type, .sleeve.js suffix, external block stub generation
+  SleeveBase.module.js: abstract base enforcing lifecycle contract
+  Sleeve.tests.json: 5 cert tests + 3 chaos tests
+  blueprint.schema.json: 5 ghost nodes, boundary edges regenerated
+  sdoa-vnext.lock.json: v5.4 system lock created
+  Documentation freeze: Compendium I–IV, Whitepapers, Manifest-Spec, Diagrams
+
+
+################################################################################
+##  §H  VERSION LINEAGE
+################################################################################
+
+  v1.0.0  Genesis — SDOA Multi-Agent Framework first release.
+  v4.0    Core SDOA architecture. Layer model. Manifest contract.
+  v4.5    Polyglot Bridge. Cross-runtime Python↔NodeJS support.
+  v5.0    Registry v2. Coach, ProbationOfficer, Oracle, Cartographer.
+          Triage circuit breaker. Chronicle. InnovationDetector spec.
+  v5.4    Sleeve Amendment. Boundary sovereignty formalised.
+          Five sleeve sovereigns. Ten violations repaired.
+          Governance gates updated (SLEEVE_* rules).
+          Phase 5: Certification suite, drift detection, lifecycle contract.
+  vNext   Pending Phase 6 — SDOA v6.0.0.
+          Requirements in portfolio/sdoa-vnext.lock.json.
+
+
+################################################################################
+##  §I  FREEZE REFERENCE
+################################################################################
+
+  Freeze tag:    SDOA-v5.4-Canonical-Freeze
+  Freeze date:   27 June 2026
+  Lock file:     portfolio/sdoa-vnext.lock.json
+  Checksum file: documentation/Freeze/SDOA-v5.4.checksum
+  Certificate:   documentation/Freeze/SDOA-v5.4-Freeze-Certificate.txt
+  Algorithm:     SHA-256
+
+  To verify file integrity:
+    Get-FileHash <file> -Algorithm SHA256
+    Compare against documentation/Freeze/SDOA-v5.4.checksum
+
+  Frozen directories (no edits until v5.5/v6.0 ratification):
+    documentation/Compendium/     documentation/Whitepaper/
+    documentation/Manifest-Spec/  documentation/Diagrams/
+    documentation/Release-Notes/
+
+  Cross-edition consistency pass complete (Phase 7 — 27 June 2026)
+  Remaining flags resolved (Phase 7b — 27 June 2026)
+  Next: Phase 6 → SDOA v6.0.0
+
+################################################################################
+##  END OF SDOA v5.4 STANDALONE BUNDLE
+##  FROZEN 27 JUNE 2026
+################################################################################

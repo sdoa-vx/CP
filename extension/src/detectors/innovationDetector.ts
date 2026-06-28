@@ -6,6 +6,29 @@ import { SchemaDetector } from "./subdetectors/schemaDetector";
 import { TokenDetector } from "./subdetectors/tokenDetector";
 import { EngineDetector } from "./subdetectors/engineDetector";
 
+export const MANIFEST = {
+  id: "innovationDetector.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "detectInnovation"
+  ],
+  dependencies: [
+    "vscode",
+    "./astClusteringEngine",
+    "./subdetectors/uiPrimitiveDetector",
+    "./subdetectors/workflowDetector",
+    "./subdetectors/schemaDetector",
+    "./subdetectors/tokenDetector",
+    "./subdetectors/engineDetector"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
 const uiDetector = new UIPrimitiveDetector();
 const workflowDetector = new WorkflowDetector();
 const schemaDetector = new SchemaDetector();
@@ -54,8 +77,8 @@ export async function detectInnovation(doc: vscode.TextDocument): Promise<any | 
     name,
     version: "1.0.0",
     source: {
-      language: "json",
-      content: JSON.stringify(ledger, null, 2),
+      language: "typescript",
+      content: doc.getText(),
       path: doc.uri.fsPath
     },
     sdoa: {

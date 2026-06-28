@@ -1,6 +1,27 @@
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import { db } from "../fisp/database";
+
+export const MANIFEST = {
+  id: "telemetry.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "telemetry"
+  ],
+  dependencies: [
+    "node:fs",
+    "node:path",
+    "../fisp/database"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
 
 export type EngineState = "idle" | "scanning" | "syncing" | "error";
 
@@ -10,6 +31,16 @@ export interface DetectorHits {
   schema: number;
   token: number;
   engine: number;
+  sdoaPrimitive: number;
+  sdoaWorkflow: number;
+  sdoaSchema: number;
+  sdoaToken: number;
+  sdoaEngine: number;
+  // Recognized SDOA modules are bucketed by their declared type (sdoaService,
+  // sdoaAdapter, sdoaFeature, sdoaAuthority, ...). The portfolio is dominated by
+  // these, so they must be first-class — not silently dropped because they
+  // aren't one of the five fixed detectors above.
+  [key: string]: number;
 }
 
 export interface TelemetrySnapshot {
@@ -37,12 +68,17 @@ let lastSeriesAt = 0;
 
 const state: TelemetrySnapshot = {
   engineState: "idle",
-  lastScan: null,
+  lastScan: (() => {
+    try {
+      const row = db.prepare("SELECT value FROM metadata_store WHERE key = 'lastScan'").get() as { value: string };
+      return row ? row.value : null;
+    } catch { return null; }
+  })(),
   queueDepth: 0,
   astCacheSize: 0,
   sqliteSize: 0,
   pendingSync: 0,
-  detectorHits: { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0 },
+  detectorHits: { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0, sdoaPrimitive: 0, sdoaWorkflow: 0, sdoaSchema: 0, sdoaToken: 0, sdoaEngine: 0 },
   syncStatus: "idle",
   uptime: 0,
 };
@@ -94,8 +130,14 @@ export const telemetry = {
   },
 
   recordScan() {
-    state.lastScan = new Date().toISOString();
+    const timestamp = new Date().toISOString();
+    state.lastScan = timestamp;
     state.engineState = "idle";
+    try {
+      db.prepare("INSERT OR REPLACE INTO metadata_store (key, value) VALUES ('lastScan', ?)").run(timestamp);
+    } catch (err) {
+      console.warn("[Telemetry] Failed to persist lastScan to DB:", err);
+    }
   },
 
   setAstCacheSize(n: number) {
@@ -106,7 +148,7 @@ export const telemetry = {
     state.syncStatus = s;
   },
 
-  hitDetector(name: keyof DetectorHits) {
+  hitDetector(name: string) {
     state.detectorHits[name] = (state.detectorHits[name] || 0) + 1;
   },
 
@@ -116,15 +158,15 @@ export const telemetry = {
   },
 
   resetDetectorHits() {
-    state.detectorHits = { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0 };
+    state.detectorHits = { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0, sdoaPrimitive: 0, sdoaWorkflow: 0, sdoaSchema: 0, sdoaToken: 0, sdoaEngine: 0 };
   },
 
   reset() {
     Object.assign(state, {
-      engineState: "idle" as EngineState,
+      engineState: "idle",
       lastScan: null,
       astCacheSize: 0,
-      detectorHits: { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0 },
+      detectorHits: { uiPrimitive: 0, workflow: 0, schema: 0, token: 0, engine: 0, sdoaPrimitive: 0, sdoaWorkflow: 0, sdoaSchema: 0, sdoaToken: 0, sdoaEngine: 0 },
       syncStatus: "idle" as const,
     });
   },

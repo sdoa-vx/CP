@@ -1,0 +1,169 @@
+================================================================================
+SDOA v5.4 — CANONICAL FREEZE CERTIFICATE
+================================================================================
+
+version:        5.4.0
+edition:        Sovereign Integration & Sleeve Amendment
+freeze-date:    27 June 2026
+freeze-tag:     SDOA-v5.4-Canonical-Freeze
+freeze-seal:    SDOA v5.4 — Sovereign Integration & Sleeve Amendment
+                Canonical Edition — Frozen 27 June 2026
+
+phase-7-date:   27 June 2026 (Cross-Edition Consistency Pass completed)
+
+================================================================================
+EDITION LIST
+================================================================================
+
+Compendium (Books I–IV):
+  Book I   — Architecture & Module Taxonomy
+  Book II  — Governance & Gates
+  Book III — The Sleeve Module Class (The Amendment)
+  Book IV  — Operations & Certification
+
+Whitepaper:
+  Executive Edition  — Leadership & Project Stakeholders
+  Technical Edition  — Development Team Reference
+
+Manifest Specification:
+  SDOA-Manifest-Spec-v5.4.txt
+
+Diagrams:
+  SDOA-Boundary-Topology-v5.4.txt
+  SDOA-Architecture-Map.drawio.txt
+
+Release Notes:
+  SDOA-v5.4-Release-Notes.txt
+
+Bundle (Standalone):
+  SDOA-v5.4-Standalone-Bundle.txt
+
+================================================================================
+CHECKSUMS (SHA-256)
+Phase 7 checksums — supersede original freeze checksums
+================================================================================
+
+A850A82E273619BF1889147AD4856CAE8F8CC7E723DFCB448B88C2405A7D31FF  Compendium\Book-I-Architecture.txt
+7851EF102A4CB3B9248FAE3798C40093CA20DDFECE0519CDC04E7F1FE25C91CB  Compendium\Book-II-Governance.txt
+95065D6851A40D5086A3DFC79601344C7C533773151805E3F76EF086D7317352  Compendium\Book-III-Sleeve-Amendment.txt
+88C74D9113B6C3A2203CB8CD78266EC86A7FC187074AEB2D36A6FA333673C92A  Compendium\Book-IV-Operations.txt
+1C99DBDC083F62CA60B3E108F8D8DE86159D698CDF7DF1D8D826AAB40CF6D94E  Whitepaper\SDOA-Whitepaper-Executive-v5.4.txt
+17D69AC97A23215872FC5B51E0097FE40D569A928AFACADB2A886C9820BA5158  Whitepaper\SDOA-Whitepaper-Technical-v5.4.txt
+36DD224ACF716D148D8909D43CD99825D036D7BDDAB82151E45BEB3F70BD7A2C  Manifest-Spec\SDOA-Manifest-Spec-v5.4.txt
+40D6548AAD61186F1B511ACD55A0F91F655E30A1A79649947640014669D9D0B3  Diagrams\SDOA-Boundary-Topology-v5.4.txt
+A8F1CA394E77ED0E50345D73337E0F139385FB88C735BFF0AD812FD0F26EDB44  Diagrams\SDOA-Architecture-Map.drawio.txt
+4ADC5EB45CE2EBC15E870DE549E65228E6A72B3FC0E34E7B16141E10F830B989  Release-Notes\SDOA-v5.4-Release-Notes.txt
+848F9472397C3468787B793F79BC334FCFCFD58397C2A6BA419AC08AB38603FA  Bundle\SDOA-v5.4-Standalone-Bundle.txt
+
+================================================================================
+PRE-FREEZE VALIDATION RESULTS
+================================================================================
+
+1.1  Phase 5 artifacts:
+     [OK] Sleeve.tests.json
+     [OK] Cartographer.workflow.js (drift detection v5.2)
+     [OK] SleeveBase.module.js (lifecycle contract)
+     [OK] Scaffold.workflow.js (sleeve template v5.1)
+     [OK] Oracle.service.js (capability normalization v5.2)
+     [OK] InnovationDetector.workflow.js
+
+1.2  Governance gates:
+     [OK] ProbationOfficer — 5 SLEEVE_* rules present
+     [OK] Registry.service — SleeveExternal interface, validateManifest()
+     [OK] Oracle.service — whoHasBoundary(), boundary surface indexing
+     [OK] Triage.workflow — boundary circuit breaker, triage:boundaryFault
+
+1.3  Diagrams:
+     [OK] Boundary topology diagram
+     [OK] Governance gates diagram
+     [OK] Architecture map (drawio + txt)
+     [OK] Cartographer SVG ghost nodes / boundary edges (v5.1+)
+
+1.4  Version badges:
+     [OK] README — v5.4
+     [OK] Whitepaper Executive — v5.4
+     [OK] Whitepaper Technical — v5.4
+     [OK] Compendium Books I–IV — Edition 5.4
+     [OK] Manifest Spec — v5.4
+     [OK] Release Notes — v5.4
+     [OK] Freeze Certificate — v5.4
+     [OK] Standalone Bundle — v5.4
+
+================================================================================
+PHASE 7 — CROSS-EDITION CONSISTENCY PASS
+Completed: 27 June 2026
+================================================================================
+
+Editions checked:
+  Interactive App   README.md
+  Print Edition     Whitepaper Executive + Technical
+  Standalone Bundle Bundle/SDOA-v5.4-Standalone-Bundle.txt (created this pass)
+
+Dimensions checked:
+  Structural  Module taxonomy, directory structure, governance pipeline
+  Semantic    Rule names, sleeve naming convention, version lineage,
+              healing path description
+  Visual      Topology diagrams, ghost node symbols, colour specs
+  Version     Amendment ribbons, version badges, lineage tables
+
+Issues found and resolved (12 total):
+
+  [FIXED] Semantic — SLEEVE_DECLARED_TRANSPORT_ONLY abbreviated in 4 files:
+          Book II, Book IV, Technical Whitepaper, Diagrams
+  [FIXED] Semantic — SLEEVE_EXTERNAL_DECLARATION_REQUIRED abbreviated in 4 files:
+          Book II, Book IV, Technical Whitepaper, Diagrams
+  [FIXED] Structural — README Module Taxonomy missing "repository" type (7→8 rows)
+  [FIXED] Structural — README directory structure showed pre-Phase 4 layout
+  [FIXED] Semantic — README MANIFEST example id "MyThing.module" → "MyThing.sleeve"
+  [FIXED] Semantic — README Quick Reference --id MyApi.module → --id MyApi.sleeve
+  [FIXED] Semantic — README sleeve naming header clarified legacy vs new convention
+  [FIXED] Visual — README topology diagram missing QwenSleeve (showed 4/5 sleeves)
+  [FIXED] Visual — README MANIFEST example transport list missing "cli"
+  [FIXED] Visual — Book III §6 topology diagram missing QwenSleeve (showed 4/5)
+  [FIXED] Version — Executive Whitepaper version lineage missing v4.5
+  [FIXED] Semantic — Technical Whitepaper missing healing path description in §4
+  [FIXED] Semantic — Release Notes §1 sleeve naming language clarified
+  [CREATED] Standalone Bundle — SDOA-v5.4-Standalone-Bundle.txt
+
+================================================================================
+FREEZE RULES
+================================================================================
+
+From this date forward, the following directories are FROZEN at v5.4:
+
+  documentation/Compendium/
+  documentation/Whitepaper/
+  documentation/Manifest-Spec/
+  documentation/Diagrams/
+  documentation/Release-Notes/
+  documentation/Bundle/
+
+No edits are permitted until SDOA v5.5 or v6.0 is formally ratified.
+Any proposed change must follow the Constitutional Amendment Process
+(Compendium Book II §8).
+
+To verify a file has not been silently modified:
+  Get-FileHash <file> -Algorithm SHA256
+  Compare against SDOA-v5.4.checksum
+
+================================================================================
+DEFERRED
+================================================================================
+
+Cross-edition consistency pass — COMPLETE (Phase 7, 27 June 2026).
+Next: Phase 6 → SDOA v6.0.0.
+
+================================================================================
+FREEZE SIGNATURE
+================================================================================
+
+  frozen:    true
+  version:   SDOA v5.4
+  date:      27 June 2026
+  tag:       SDOA-v5.4-Canonical-Freeze
+  lock-file: portfolio/sdoa-vnext.lock.json
+  authority: ProtoAI Core Architecture Group
+
+================================================================================
+END OF FREEZE CERTIFICATE
+================================================================================

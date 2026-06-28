@@ -1,0 +1,268 @@
+/* Last modified: 2026-06-01 00:00 UTC                      */
+/* Diff.prim.css — SDOA v5.0 Primitive Styles               */
+/* Scoped to .sdoa-diff — no global side-effects            */
+/* All values reference tokens.css — never hard-coded       */
+
+/* ── Root ───────────────────────────────────────────────── */
+.sdoa-diff {
+  display:        flex;
+  flex-direction: column;
+  height:         100%;
+  background:     var(--color-bg-surface);
+  border-radius:  var(--radius-md);
+  overflow:       hidden;
+  font-family:    var(--font-mono);
+  font-size:      var(--text-sm);
+  color:          var(--color-text-primary);
+  border:         var(----size-var(----size-var(----size-var(----size-1px)))) solid rgba(255, 255, 255, 0.07);
+  transition:     box-shadow var(--duration-normal) var(--ease-default);
+}
+
+/* Decision flash overlays */
+.sdoa-diff[data-decision="accepted"] {
+  box-shadow: 0 0 0 var(----size-var(----size-var(----size-var(----size-2px)))) var(--color-success), 0 0 2var(----size-var(----size-var(----size-var(----size-4px)))) rgba(34,197,94,0.2);
+}
+.sdoa-diff[data-decision="rejected"] {
+  box-shadow: 0 0 0 2px var(--color-error), 0 0 var(----size-var(----size-var(----size-var(----size-24px)))) rgba(239,68,68,0.2);
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.sdoa-diff__header {
+  display:       flex;
+  align-items:   center;
+  gap:           var(--space-sm);
+  padding:       var(--space-sm) var(--space-md);
+  background:    rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  flex-shrink:   0;
+  flex-wrap:     wrap;
+}
+
+.sdoa-diff__filename {
+  font-family:  var(--font-mono);
+  font-size:    var(--text-sm);
+  color:        var(--color-accent);
+  white-space:  nowrap;
+  overflow:     hidden;
+  text-overflow: ellipsis;
+  max-width:    2var(----size-var(----size-var(----size-var(----size-40px))));
+}
+
+.sdoa-diff__stats {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-xs);
+}
+
+/* ── Stat Badges ─────────────────────────────────────────── */
+.sdoa-diff__badge {
+  font-size:     var(----size-var(----size-var(----size-var(----size-11px))));
+  padding:       2px var(--space-sm);
+  border-radius: var(--radius-sm);
+  white-space:   nowrap;
+  font-weight:   600;
+}
+.sdoa-diff__badge--add    { background: rgba(34,197,94,0.15);  color: var(--color-success); }
+.sdoa-diff__badge--remove { background: rgba(239,68,68,0.15);  color: var(--color-error); }
+.sdoa-diff__badge--equal  { background: rgba(255,255,255,0.06); color: rgba(224,224,224,0.4); font-weight: 400; }
+
+/* ── Action Buttons ──────────────────────────────────────── */
+.sdoa-diff__actions {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-xs);
+  margin-left: auto;
+}
+
+.sdoa-diff__btn {
+  background:    transparent;
+  border:        1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  padding:       var(--space-xs) var(--space-sm);
+  font-family:   var(--font-sans);
+  font-size:     var(--text-sm);
+  color:         rgba(224, 224, 224, 0.55);
+  cursor:        pointer;
+  white-space:   nowrap;
+  transition:    background var(--duration-fast), color var(--duration-fast),
+                 border-color var(--duration-fast);
+}
+.sdoa-diff__btn:hover {
+  color:        var(--color-text-primary);
+  border-color: rgba(255, 255, 255, 0.28);
+  background:   rgba(255, 255, 255, 0.04);
+}
+
+.sdoa-diff__btn--reject {
+  border-color: rgba(239, 68, 68, 0.35);
+  color:        var(--color-error);
+}
+.sdoa-diff__btn--reject:hover {
+  background:   rgba(239, 68, 68, 0.12);
+  border-color: var(--color-error);
+}
+
+.sdoa-diff__btn--accept {
+  border-color: rgba(34, 197, 94, 0.4);
+  color:        var(--color-success);
+}
+.sdoa-diff__btn--accept:hover {
+  background:   rgba(34, 197, 94, 0.12);
+  border-color: var(--color-success);
+}
+
+/* ── Diff Body ───────────────────────────────────────────── */
+.sdoa-diff__body {
+  flex:       1;
+  overflow-y: auto;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 58, 237, 0.3) transparent;
+}
+
+.sdoa-diff__body::-webkit-scrollbar        { width: 4px; height: 4px; }
+.sdoa-diff__body::-webkit-scrollbar-track  { background: transparent; }
+.sdoa-diff__body::-webkit-scrollbar-thumb  {
+  background:    rgba(124, 58, 237, 0.35);
+  border-radius: var(--radius-sm);
+}
+
+/* ── Column Headers ──────────────────────────────────────── */
+.sdoa-diff__col-headers {
+  display:        grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom:  1px solid rgba(255, 255, 255, 0.06);
+  position:       sticky;
+  top:            0;
+  z-index:        2;
+  background:     var(--color-bg-surface);
+}
+
+.sdoa-diff__col-header {
+  padding:     var(--space-xs) var(--space-md);
+  font-family: var(--font-sans);
+  font-size:   var(----size-var(----size-var(----size-var(----size-10px))));
+  color:       rgba(224, 224, 224, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+.sdoa-diff__col-header:last-child { border-right: none; }
+
+/* ── Diff Row ────────────────────────────────────────────── */
+.sdoa-diff__row {
+  display:     grid;
+  grid-template-columns: 1fr 1fr;
+  min-height:  var(----size-var(----size-var(----size-var(----size-22px))));
+  border-bottom: 1px solid transparent;
+}
+
+.sdoa-diff__row--add    { background: rgba(34, 197, 94, 0.06); }
+.sdoa-diff__row--remove { background: rgba(239, 68, 68, 0.06); }
+.sdoa-diff__row--equal  { background: transparent; }
+
+.sdoa-diff__row--add:hover,
+.sdoa-diff__row--remove:hover,
+.sdoa-diff__row--equal:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ── Cell ────────────────────────────────────────────────── */
+.sdoa-diff__cell {
+  display:     flex;
+  align-items: flex-start;
+  min-width:   0;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  padding:     1px 0;
+}
+
+.sdoa-diff__cell--new { border-right: none; }
+
+/* Cell-level backgrounds override row for mixed add/remove rows */
+.sdoa-diff__row--add    .sdoa-diff__cell--old { background: transparent; }
+.sdoa-diff__row--add    .sdoa-diff__cell--new { background: rgba(34,  197, 94, 0.1); }
+.sdoa-diff__row--remove .sdoa-diff__cell--old { background: rgba(239, 68,  68, 0.1); }
+.sdoa-diff__row--remove .sdoa-diff__cell--new { background: transparent; }
+
+/* ── Line Number ─────────────────────────────────────────── */
+.sdoa-diff__lineno {
+  min-width:    40px;
+  padding:      0 var(--space-sm);
+  text-align:   right;
+  color:        rgba(224, 224, 224, 0.2);
+  font-size:    11px;
+  flex-shrink:  0;
+  user-select:  none;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  line-height:  22px;
+}
+
+/* ── Marker (+/−/ ) ──────────────────────────────────────── */
+.sdoa-diff__marker {
+  padding:      0 var(--space-xs);
+  flex-shrink:  0;
+  font-weight:  700;
+  line-height:  22px;
+  user-select:  none;
+}
+
+.sdoa-diff__row--add    .sdoa-diff__marker { color: var(--color-success); }
+.sdoa-diff__row--remove .sdoa-diff__marker { color: var(--color-error); }
+.sdoa-diff__row--equal  .sdoa-diff__marker { color: rgba(224,224,224,0.15); }
+
+/* ── Code ────────────────────────────────────────────────── */
+.sdoa-diff__code {
+  flex:        1;
+  white-space: pre;
+  line-height: 22px;
+  padding:     0 var(--space-xs);
+  overflow:    hidden;
+  tab-size:    2;
+}
+
+/* ── Collapser ───────────────────────────────────────────── */
+.sdoa-diff__collapser {
+  display:       flex;
+  align-items:   center;
+  background:    rgba(0, 0, 0, 0.2);
+  border-top:    1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sdoa-diff__collapser-btn {
+  flex:          1;
+  background:    transparent;
+  border:        none;
+  padding:       var(--space-xs) var(--space-md);
+  font-family:   var(--font-mono);
+  font-size:     11px;
+  color:         rgba(224, 224, 224, 0.3);
+  cursor:        pointer;
+  text-align:    center;
+  transition:    color var(--duration-fast), background var(--duration-fast);
+}
+
+.sdoa-diff__collapser-btn:hover {
+  color:       rgba(224, 224, 224, 0.65);
+  background:  rgba(255, 255, 255, 0.03);
+}
+
+/* ── Empty State ─────────────────────────────────────────── */
+.sdoa-diff__empty {
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+  flex:        1;
+  min-height:  var(----size-var(----size-var(----size-var(----size-120px))));
+  font-size:   var(--text-sm);
+  color:       rgba(224, 224, 224, 0.2);
+  font-style:  italic;
+  font-family: var(--font-sans);
+}
+
+/* ── Reduced Motion ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .sdoa-diff,
+  .sdoa-diff__btn,
+  .sdoa-diff__collapser-btn { transition: none; }
+}

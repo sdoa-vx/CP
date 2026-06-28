@@ -1,3 +1,20 @@
+
+export const MANIFEST = {
+  id: "tokenDetector.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "TokenDetector"
+  ],
+  dependencies: [],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
 export class TokenDetector {
   public run(cache: Map<string, any>) {
     const hexRegex = /#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})\b/g;
@@ -27,8 +44,21 @@ export class TokenDetector {
     const proposals = [];
     for (const [val, files] of tokenSignatures.entries()) {
       if (files.length >= 3) {
+        const name = val.startsWith('#') ? `--color-${val.replace('#', '')}` : `--size-${val}`;
+        
+        const hits = files.map(filePath => ({
+          filePath,
+          tokenName: name,
+          value: val,
+          originalSnippet: val
+        }));
+        
+        import('../../extraction/index').then(({ runExtraction }) => {
+          runExtraction('token', hits);
+        }).catch(err => console.error("Extraction error:", err));
+
         proposals.push({
-          name: val.startsWith('#') ? `--color-${val.replace('#', '')}` : `--size-${val}`,
+          name,
           value: val,
           usedIn: files
         });

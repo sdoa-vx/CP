@@ -1,3 +1,24 @@
+
+const MANIFEST = {
+  id: "dependencies.js",
+  type: "module",
+  layer: 4,
+  runtime: "JavaScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "DECLARE_dependency",
+    "INIT_ORDER_RESOLUTION",
+    "CIRCULAR_DEPENDENCY",
+    "LAYER_DEPENDENCIES"
+  ],
+  dependencies: [
+    "dependencies.js"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
 "use strict";
 
 /**
