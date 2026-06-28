@@ -1,0 +1,12 @@
+{
+  "id": "ResponseFormatter.legacy",
+  "type": "service",
+  "version": "4.0.0",
+  "runtime": "NodeJS",
+  "capabilities": ["response_formatting"],
+  "dependencies": [],
+  "docs": { "description": "Pre-v5 ResponseFormatter without SDOA MANIFEST block. Retained as variant." },
+  "last_modified": "2026-05-04T03:11:00Z",
+  "compliance": "sdoa-v1.2",
+  "variant_of": "ResponseFormatter.service"
+}

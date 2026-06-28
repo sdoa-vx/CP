@@ -1,3 +1,23 @@
+
+const MANIFEST = {
+  id: "line-limits.js",
+  type: "module",
+  layer: 4,
+  runtime: "JavaScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "LINTER_LIMITS_V4",
+    "AMENDMENT_V4_1",
+    "PROBATION_OFFICER_LIMITS",
+    "EFFECTIVE_LIMITS",
+    "RATIONALE"
+  ],
+  dependencies: [],
+  docs: "Auto-generated enriched SDOA manifest via static analysis for line limit rules and guidelines"
+};
+
 "use strict";
 
 /**

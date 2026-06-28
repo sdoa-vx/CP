@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<!-- Last modified: 2026-06-03 05:40 UTC -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="color-scheme" content="dark" />
+  <title>ProtoAI – Dev Console</title>
+  <style>
+    #boot-status { position: fixed; top: 10px; right: 10px; font-size: 10px; font-family: monospace; color: #4f8cff; z-index: 9999; pointer-events: none; }
+    #app.booting { display: none !important; }
+  </style>
+
+  <!-- SDOA v4: Design Tokens & Base -->
+  <link rel="stylesheet" href="/tokens.css" />
+
+  <!-- SDOA v4: Primitive Styles -->
+  <link rel="stylesheet" href="/primitives/Button/Button.prim.css" />
+  <link rel="stylesheet" href="/primitives/Toast/Toast.prim.css" />
+  <link rel="stylesheet" href="/primitives/Input/Input.prim.css" />
+  <link rel="stylesheet" href="/primitives/Panel/Panel.prim.css" />
+  <link rel="stylesheet" href="/primitives/Modal/Modal.prim.css" />
+  <link rel="stylesheet" href="/primitives/TabGroup/TabGroup.prim.css" />
+  <link rel="stylesheet" href="/primitives/List/List.prim.css" />
+  <link rel="stylesheet" href="/primitives/Form/Form.prim.css" />
+  <link rel="stylesheet" href="/primitives/Badge/Badge.prim.css" />
+  <link rel="stylesheet" href="/primitives/Spinner/Spinner.prim.css" />
+  <link rel="stylesheet" href="/primitives/EmptyState/EmptyState.prim.css" />
+  <link rel="stylesheet" href="/primitives/Toolbar/Toolbar.prim.css" />
+  <link rel="stylesheet" href="/primitives/ContextMenu/ContextMenu.prim.css" />
+  <link rel="stylesheet" href="/primitives/Toggle/Toggle.prim.css" />
+  <link rel="stylesheet" href="/primitives/Select/Select.prim.css" />
+
+  <!-- SDOA v4: Feature Styles -->
+  <link rel="stylesheet" href="/features/ModelManager/ModelManager.feature.css" />
+  <link rel="stylesheet" href="/features/Chat/Chat.feature.css" />
+  <link rel="stylesheet" href="/features/AppShell/AppShell.feature.css" />
+  <link rel="stylesheet" href="/features/Settings/Settings.feature.css" />
+  <link rel="stylesheet" href="/features/ProjectManager/ProjectManager.feature.css" />
+  <link rel="stylesheet" href="/features/FileExplorer/FileExplorer.feature.css" />
+  <link rel="stylesheet" href="/features/PartnerTicker/PartnerTicker.feature.css" />
+  <link rel="stylesheet" href="/features/SplashScreen/SplashScreen.feature.css" />
+  <link rel="stylesheet" href="/features/Terminal/Terminal.feature.css" />
+
+  <script>
+    // MANIFEST = {
+    //   id: "ui.index.html",
+    //   type: "feature",
+    //   layer: 3,
+    //   runtime: "Browser",
+    //   version: "5.0.0",
+    //   operationalRole: "savant",
+    //   requires: [],
+    //   capabilities: ["dev_console_frontend"],
+    //   dependencies: [],
+    //   docs: {
+    //     description: "ProtoAI Main Dev Console HTML front-end entry point inside UI folder.",
+    //     author: "ProtoAI team",
+    //     sdoa: "5.0.0"
+    //   },
+    //   "Last modified": "2026-06-03 06:10 UTC"
+    // };
+    const MANIFEST_JSON = {
+      "MANIFEST": {
+        "id": "ui.index.html",
+        "type": "feature",
+        "layer": 3,
+        "runtime": "Browser",
+        "version": "5.0.0",
+        "operationalRole": "savant",
+        "requires": [],
+        "capabilities": ["dev_console_frontend"],
+        "dependencies": [],
+        "docs": {
+          "description": "ProtoAI Main Dev Console HTML front-end entry point inside UI folder.",
+          "author": "ProtoAI team",
+          "sdoa": "5.0.0"
+        },
+        "Last modified": "2026-06-03 06:10 UTC"
+      }
+    };
+    var APP_VERSION="5.0.0";
+  </script>
+</head>
+
+<body>
+  <div id="boot-status">Booting…</div>
+  <div id="app" class="booting">
+
+    <!-- LEFT SIDEBAR (Assistant Panel) -->
+    <aside id="sidebar-left" style="display: flex; flex-direction: column; height: 100%;">
+      <div class="sidebar-header" style="padding: 12px; flex-shrink: 0;">
+        <div style="display:flex; align-items:center; gap:var(--space-sm);">
+          <div style="background:var(--accent); width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 15px rgba(79, 140, 255, 0.4);">
+            <span style="color:#fff; font-weight:900; font-size:20px;">P</span>
+          </div>
+          <div>
+            <h1 style="margin: 0; font-size: 18px;">ProtoAI</h1>
+          </div>
+        </div>
+        <div class="tagline" style="font-size: 11px; margin-top: 6px; line-height: 1.3; color: var(--text-dim); font-style: italic;">
+          If Anthropic and Leonardo da Vinci's baby and Nikola Tesla and Google's baby had a baby (but way cooler than that, even)
+        </div>
+
+        <!-- Assistant Status Bar -->
+        <div id="assistantStatusBar" style="display: flex; gap: 8px; margin-top: 12px; align-items: center;">
+            <button id="statusModel1" class="sdoa-button sdoa-button--icon" title="Frontline Fast Model (Ready)">
+               <span style="color: var(--success); font-size: 14px;">●</span> 🧠
+            </button>
+            <button id="statusModel2" class="sdoa-button sdoa-button--icon" title="Housekeeper Model (Ready)">
+               <span style="color: var(--success); font-size: 14px;">●</span> 🛠️
+            </button>
+            <button id="statusModel3" class="sdoa-button sdoa-button--icon" title="OpenRouter APIs (Ready)">
+               <span style="color: var(--success); font-size: 14px;">●</span> 🌐
+            </button>
+            <div style="flex-grow: 1;"></div>
+            <button id="assistantSettingsBtn" class="sdoa-button sdoa-button--icon" title="Assistant Settings">⚙</button>
+        </div>
+      </div>
+
+      <!-- Partner Ticker Host -->
+      <div id="partnerTickerHost" style="flex: 1; display: flex; flex-direction: column; min-height: 0; border-top: 1px solid var(--border-subtle);"></div>
+
+      <!-- Isolated Assistant Input -->
+      <div style="padding: 8px; border-top: 1px solid var(--border-subtle); background: var(--bg-surface); flex-shrink: 0;">
+          <div style="display: flex; gap: 4px;">
+              <textarea id="assistantInput" class="sdoa-input" rows="1" placeholder="Whisper to the assistant..." style="flex: 1; resize: none; overflow-y: hidden; min-height: 32px; font-size: 12px; padding: 6px;"></textarea>
+              <button id="assistantSendBtn" class="sdoa-button sdoa-button--primary sdoa-button--sm" title="Send or Ask for observation">➤</button>
+          </div>
+      </div>
+
+      <div class="resizer resizer-left" id="resizer-left"></div>
+    </aside>
+
+    <!-- MAIN AREA -->
+    <main id="main">
+      <header id="main-header">
+        <div class="main-title">
+          <span id="currentProjectName">No project selected</span>
+          <span id="currentProfileName" class="sdoa-badge">No profile</span>
+        </div>
+        <div class="main-controls">
+          <button id="openModelsButton" class="sdoa-button sdoa-button--icon" title="Model Manager">🧠</button>
+          <button id="openSettingsButton" class="sdoa-button sdoa-button--icon" title="Settings (Ctrl+Shift+S)">⚙</button>
+          <button id="splitToggleBtn" class="sdoa-button sdoa-button--icon" title="Toggle split view">⧉</button>
+          <button id="toggleCanvasBtn" class="sdoa-button sdoa-button--icon" title="Collapse/Expand Canvas">⤢</button>
+        </div>
+      </header>
+
+      <section id="workspace">
+        <div id="pane-left"></div>
+        <div id="pane-right">
+          <div id="rightModeTabs" class="sdoa-tabgroup__bar"></div>
+          <div id="rightPaneContent"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside id="sidebar-right">
+      <div class="resizer resizer-right" id="resizer-right"></div>
+
+      <div class="sidebar-header" style="padding: 12px; border-bottom: 1px solid var(--border-subtle);">
+         <button id="newProjectBtn" class="sdoa-button sdoa-button--primary sdoa-button--md" style="width:100%;">+ New Project</button>
+      </div>
+
+      <div class="sdoa-panel__section">
+        <div class="sdoa-panel__section-title">
+          <span><span style="font-size:14px;">📁</span> PROJECTS</span>
+          <span class="sdoa-badge" id="projectCount">0</span>
+        </div>
+        <div id="projectListContainer" class="sdoa-list sdoa-list--sm" style="max-height: 25vh;">
+          <ul id="projectList" class="sdoa-list__items"></ul>
+          <div id="projectListEmpty" class="sdoa-list__empty hidden" style="padding:12px; font-size:12px; color:var(--text-dim);">No projects found</div>
+        </div>
+        <div style="display:flex; gap:6px; margin-top:12px;">
+          <button id="refreshProjectsBtn" class="sdoa-button sdoa-button--ghost sdoa-button--sm" style="flex:1;">Refresh</button>
+          <button id="manageProjectsBtn" class="sdoa-button sdoa-button--ghost sdoa-button--sm" style="flex:1;">Manage</button>
+        </div>
+      </div>
+
+      <!-- History Section — collapsible, wired to ChatSession.workflow -->
+      <div class="sdoa-panel__section" id="historySection">
+        <div class="sdoa-panel__section-title" id="historyToggle" style="cursor:pointer; user-select:none;">
+          <span><span style="font-size:14px;">🕒</span> RECENT SESSIONS</span>
+          <span id="historyChevron" class="sdoa-badge">▶</span>
+        </div>
+        <div id="historyContent" style="display:none;">
+          <div id="historyListContainer" style="max-height: 22vh; overflow-y: auto;">
+            <ul id="historyList" class="sdoa-list__items" style="padding:0; margin:0; list-style:none;"></ul>
+            <div id="historyListEmpty" style="padding:10px 12px; font-size:11px; color:var(--text-dim); display:none;">No sessions yet</div>
+          </div>
+          <button id="refreshHistoryBtn" class="sdoa-button sdoa-button--ghost sdoa-button--sm" style="width:100%; margin-top:6px; font-size:11px;">↺ Refresh</button>
+        </div>
+      </div>
+
+      <div class="sdoa-panel__section" style="background:rgba(79, 140, 255, 0.03);">
+        <button id="autoOptimizeBtn" class="sdoa-button sdoa-button--primary sdoa-button--lg" style="width:100%; box-shadow:0 0 20px rgba(79, 140, 255, 0.2);">🪄 Optimize Models</button>
+      </div>
+
+      <div class="sdoa-panel__section">
+        <div class="sdoa-panel__section-title">
+          <span><span style="font-size:14px;">⚡</span> QUICK SWAP</span>
+        </div>
+        <div id="otfmsPanel" style="display:flex; flex-direction:column; gap:8px;">
+          <select id="otfmsEngineSelect" class="sdoa-select" style="width:100%;"></select>
+          <button id="applyEngineBtn" class="sdoa-button sdoa-button--secondary sdoa-button--md">Apply to Chat</button>
+        </div>
+      </div>
+
+      <div class="sdoa-panel__section">
+        <div class="sdoa-panel__section-title">
+          <span><span style="font-size:14px;">🛠</span> QUICK ACTIONS</span>
+        </div>
+        <div class="action-list" style="display:flex; flex-direction:column; gap:6px;">
+          <button class="sdoa-button sdoa-button--ghost sdoa-button--sm" style="justify-content:flex-start; color:var(--text-muted);" data-action="image">🖼 Prompt Creator</button>
+          <button class="sdoa-button sdoa-button--ghost sdoa-button--sm" style="justify-content:flex-start; color:var(--text-muted);" data-action="image_gen">🖼️ Generate Image</button>
+          <button class="sdoa-button sdoa-button--ghost sdoa-button--sm" style="justify-content:flex-start; color:var(--text-muted);" data-action="deepsearch">🔎 Research Assistant</button>
+          <button class="sdoa-button sdoa-button--ghost sdoa-button--sm" style="justify-content:flex-start; color:var(--text-muted);" data-action="gdrive">📁 Google Drive</button>
+        </div>
+      </div>
+
+      <div class="sdoa-panel__section">
+        <div class="sdoa-panel__section-title">
+          <span><span style="font-size:14px;">📡</span> SYSTEM STATUS</span>
+        </div>
+        <div class="status-row" id="statusRow" style="display:flex; align-items:center; gap:8px; font-size:12px; padding:4px 0;">
+          <span class="sdoa-status-dot taury" id="statusDot"></span>
+          <span id="sidebarStatusText" style="color:var(--text-muted);">Tauri IPC</span>
+        </div>
+
+        <div id="routingModeContainer" style="margin-top:16px;">
+          <div style="font-size:10px; color:var(--text-dim); margin-bottom:6px; text-transform:uppercase; font-weight:700;">Routing Mode</div>
+          <div style="display:flex; border:1px solid var(--border-subtle); border-radius:8px; overflow:hidden; background:rgba(0,0,0,0.2);">
+            <button id="sidebarModeSingle" class="sdoa-button sdoa-button--ghost sdoa-button--sm" style="flex:1; border-radius:0; padding:8px;">Single</button>
+            <button id="sidebarModeMulti" class="sdoa-button sdoa-button--ghost sdoa-button--sm" style="flex:1; border-radius:0; border-left:1px solid var(--border-subtle); padding:8px;">Multi</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:6px;">
+          <button id="sidebarRestartBackend" class="sdoa-button sdoa-button--secondary sdoa-button--sm" style="flex:1;">↺ Sidecar</button>
+          <button id="sidebarReloadUI" class="sdoa-button sdoa-button--secondary sdoa-button--sm" style="flex:1;">↺ UI</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- OVERLAYS -->
+    <div id="newProjectOverlay" class="sdoa-modal-overlay hidden">
+        <div class="sdoa-modal sdoa-modal--sm">
+            <div class="sdoa-modal__header">
+                <h2 class="sdoa-modal__title">New Project</h2>
+                <button class="sdoa-modal__close" id="npCloseBtn">×</button>
+            </div>
+            <div class="sdoa-modal__body">
+                <div class="sdoa-input-group">
+                    <label class="sdoa-input__label">Project Name</label>
+                    <input type="text" id="npName" class="sdoa-input" placeholder="e.g. My Website" />
+                </div>
+            </div>
+            <div class="sdoa-modal__footer">
+                <button id="npCancelBtn" class="sdoa-button sdoa-button--ghost sdoa-button--md">Cancel</button>
+                <button id="npCreateBtn" class="sdoa-button sdoa-button--primary sdoa-button--md">Create Project</button>
+            </div>
+        </div>
+    </div>
+
+  </div>
+
+  <!-- SDOA v4: Core Infrastructure -->
+  <script src="/lib/tauri-utils.js"></script>
+  <script src="/lib/EventBus.ui.js"></script>
+  <script src="/adapters/StateStore.adapter.js"></script>
+  <script src="/services/ModuleLoader.service.js"></script>
+
+  <!-- SDOA v4: Primitives -->
+  <script src="/primitives/Button/Button.prim.js"></script>
+  <script src="/primitives/Toast/Toast.prim.js"></script>
+  <script src="/primitives/Input/Input.prim.js"></script>
+  <script src="/primitives/Panel/Panel.prim.js"></script>
+  <script src="/primitives/Modal/Modal.prim.js"></script>
+  <script src="/primitives/TabGroup/TabGroup.prim.js"></script>
+  <script src="/primitives/List/List.prim.js"></script>
+  <script src="/primitives/Form/Form.prim.js"></script>
+  <script src="/primitives/Badge/Badge.prim.js"></script>
+  <script src="/primitives/Spinner/Spinner.prim.js"></script>
+  <script src="/primitives/EmptyState/EmptyState.prim.js"></script>
+  <script src="/primitives/Toolbar/Toolbar.prim.js"></script>
+  <script src="/primitives/ContextMenu/ContextMenu.prim.js"></script>
+  <script src="/primitives/Toggle/Toggle.prim.js"></script>
+  <script src="/primitives/Select/Select.prim.js"></script>
+
+  <!-- SDOA v4: Adapters & Bridges -->
+  <script src="/adapters/BackendConnector.ui.js"></script>
+  <script src="/adapters/LlmPolicyEngine.ui.js"></script>
+  <script src="/adapters/QmdAdapter.ui.js"></script>
+  <script src="/adapters/LlmBridge.ui.js"></script>
+
+  <!-- SDOA v4: Components (must load before Features that reference them) -->
+  <script src="/primitives/FileTree/FileTree.ui.js"></script>
+  <script src="/primitives/FileList/FileList.ui.js"></script>
+  <script src="/primitives/ManifestPanel/ManifestPanel.ui.js"></script>
+  <script src="/adapters/GoogleDrive.adapter.js"></script>
+  <script src="/features/GoogleDriveConnector/GoogleDriveConnector.feature.js"></script>
+
+  <!-- SDOA v4: Features -->
+  <script src="/features/FileExplorer/FileExplorer.feature.js"></script>
+  <script src="/features/Settings/Settings.feature.js"></script>
+  <script src="/features/ProjectManager/ProjectManager.feature.js"></script>
+  <script src="/features/ModelManager/ModelManager.feature.js"></script>
+  <script src="/features/Chat/Chat.feature.js"></script>
+  <script src="/features/PartnerTicker/PartnerTicker.feature.js"></script>
+  <script src="/features/SplashScreen/SplashScreen.feature.js"></script>
+  <script src="/features/Terminal/Terminal.feature.js"></script>
+  <script src="/features/AppShell/AppShell.feature.js"></script>
+
+  <!-- External Deps -->
+  <script src="/lib/marked.min.js"></script>
+  <script src="/app.js"></script>
+  <script src="/lib/monaco/vs/loader.js"></script>
+
+</body>
+</html>

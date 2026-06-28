@@ -1,9 +1,11 @@
 {
   "name": "sdoa-mcp-extension",
-  "displayName": "SDOA Migration Engine",
-  "version": "1.1.0",
+  "displayName": "1.1 SDOA MCE",
+  "version": "1.2.0",
+  "description": "SDOA Architecture AI Companion",
+  "icon": "extension/assets/seal.png",
   "bin": {
-    "mcp-proposals": "./server/bin/mcp-proposals.js"
+    "sdoa-mcp-extension": "./dist/server/index.js"
   },
   "engines": {
     "vscode": "^1.90.0"
@@ -23,16 +25,20 @@
         {
           "id": "sdoa-explorer",
           "title": "SDOA Engine",
-          "icon": "$(plug)"
+          "icon": "SDOA.seal.outline.svg"
         }
       ]
     },
     "views": {
       "sdoa-explorer": [
         {
+          "id": "sdoaCognizancePanel",
+          "name": "SDOA Cognizance",
+          "type": "webview"
+        },
+        {
           "id": "sdoa-control-panel",
           "name": "SDOA Control Panel",
-          "type": "tree",
           "icon": "$(settings-gear)"
         }
       ]
@@ -48,7 +54,13 @@
       },
       {
         "command": "sdoa.scanActiveFile",
-        "title": "Scan Active File for SDOA Innovation"
+        "title": "Scan Active File for SDOA Innovation",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "sdoa.scanProject",
+        "title": "Scan Project for Innovations",
+        "icon": "$(search-view-icon)"
       },
       {
         "command": "sdoa.scanFile",
@@ -99,16 +111,61 @@
     "menus": {
       "view/title": [
         {
-          "command": "sdoa.scanWorkspace",
+          "command": "sdoa.scanFolder",
           "when": "view == sdoa-control-panel",
-          "group": "navigation"
+          "group": "navigation@1"
+        },
+        {
+          "command": "sdoa.scanActiveFile",
+          "when": "view == sdoa-control-panel",
+          "group": "navigation@2"
+        },
+        {
+          "command": "sdoa.openDashboardLocal",
+          "when": "view == sdoa-control-panel",
+          "group": "navigation@3"
+        },
+        {
+          "command": "sdoa.openReleases",
+          "when": "view == sdoa-control-panel",
+          "group": "navigation@4"
         },
         {
           "command": "sdoa.restartEngine",
           "when": "view == sdoa-control-panel",
-          "group": "navigation"
+          "group": "navigation@5"
         }
       ]
+    },
+    "configuration": {
+      "title": "SDOA MCP Settings",
+      "properties": {
+        "sdoaMcp.fispEndpoint": {
+          "type": "string",
+          "default": "http://localhost:8080",
+          "description": "The backend SDOA Engine URL"
+        },
+        "sdoaMcp.adminUser": {
+          "type": "string",
+          "default": "admin",
+          "description": "Admin username for the SDOA Engine"
+        },
+        "sdoaMcp.adminPass": {
+          "type": "string",
+          "default": "admin",
+          "description": "Admin password for the SDOA Engine"
+        },
+        "sdoaMcp.supabaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Supabase URL for cloud sync"
+        },
+        "sdoaMcp.supabaseKey": {
+          "type": "string",
+          "default": "",
+          "description": "Supabase Key for cloud sync"
+        }
+      }
     }
   },
   "mcpServers": [
@@ -124,6 +181,7 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/vscode": "^1.90.0",
     "esbuild": "^0.25.0",
+    "sharp": "^0.35.2",
     "typescript": "^5.9.3"
   },
   "scripts": {
@@ -135,9 +193,20 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@supabase/supabase-js": "^2.108.2",
+    "@types/diff": "^7.0.2",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/ws": "^8.18.1",
     "better-sqlite3": "^12.11.1",
+    "diff": "^9.0.0",
+    "dotenv": "^17.4.2",
+    "jsonwebtoken": "^9.0.3",
+    "koffi": "^3.0.2",
     "ws": "^8.21.0",
     "zod": "^4.4.3"
+  },
+  "pkg": {
+    "assets": [
+      "server/public/**/*"
+    ]
   }
 }

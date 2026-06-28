@@ -1,3 +1,3 @@
 # SDOA Core Platform
 
-Welcome to the SDOA MCP Extension.
+SDOA Migration and Creation Engine

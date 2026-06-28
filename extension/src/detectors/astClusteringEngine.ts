@@ -1,6 +1,28 @@
 import * as ts from 'typescript';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as http from 'http';
+
+export const MANIFEST = {
+  id: "astClusteringEngine.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "ASTClusteringEngine",
+    "globalAstEngine"
+  ],
+  dependencies: [
+    "typescript",
+    "vscode",
+    "fs",
+    "http"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
 
 export class ASTClusteringEngine {
   private cache: Map<string, any> = new Map();
@@ -17,6 +39,7 @@ export class ASTClusteringEngine {
           this.cacheFile(file.fsPath);
         }
         console.log(`[SDOA] Cached ${this.cache.size} files for AST clustering.`);
+        this.syncToBackend();
       } catch (e) {
         console.error("AST cache error", e);
       }
@@ -37,10 +60,59 @@ export class ASTClusteringEngine {
         ts.ScriptTarget.Latest,
         true
       );
-      this.cache.set(filePath, { type: 'ast', sourceFile });
+      
+      let nodeCount = 0;
+      let complexity = 0;
+      
+      const visit = (node: ts.Node) => {
+        nodeCount++;
+        if (ts.isIfStatement(node) || ts.isSwitchStatement(node) || ts.isForStatement(node) || ts.isWhileStatement(node) || ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) {
+          complexity++;
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(sourceFile);
+      
+      this.cache.set(filePath, { type: 'ast', sourceFile, nodeCount, complexity });
+      this.debouncedSync();
     } catch (e) {
       // silent
     }
+  }
+
+  private syncTimeout: NodeJS.Timeout | null = null;
+  private debouncedSync() {
+    if (this.syncTimeout) clearTimeout(this.syncTimeout);
+    this.syncTimeout = setTimeout(() => this.syncToBackend(), 2000);
+  }
+
+  private syncToBackend() {
+    const payload: Record<string, number> = {};
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
+    
+    for (const [filePath, data] of this.cache.entries()) {
+      if (data.type !== 'ast') continue;
+      // Normalizing score: highly complex/dense files approach 1.0, simpler files approach 0.0
+      // Assume 2000 nodes or 50 complexity points is 'max' heat (1.0)
+      const heat = Math.min(1.0, (data.nodeCount / 2000) + (data.complexity / 50));
+      const relPath = filePath.replace(workspaceRoot, '').replace(/^[\\\/]/, '').replaceAll('\\', '/');
+      payload[relPath] = heat;
+    }
+
+    const config = vscode.workspace.getConfiguration("sdoaMcp");
+    const ep = config.get<string>("fispEndpoint") || "http://127.0.0.1:8080";
+    const u = config.get<string>("adminUser") || "admin";
+    const p = config.get<string>("adminPass") || "admin";
+    const auth = Buffer.from(`${u}:${p}`).toString('base64');
+
+    fetch(`${ep}/dashboard/api/actions/ast-heatmap`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${auth}`
+      },
+      body: JSON.stringify(payload)
+    }).catch(() => { /* Server might be down, ignore */ });
   }
 
   public getCache() {

@@ -1,5 +1,24 @@
 import { db } from './database';
 
+export const MANIFEST = {
+  id: "semanticSimilarity.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "checkSemanticSimilarity"
+  ],
+  dependencies: [
+    "/database"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 function getTokens(code: string): Set<string> {
   const clean = code.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '').replace(/[^\w\s]/g, ' ');
   const words = clean.split(/\s+/).filter(w => w.length > 2).map(w => w.toLowerCase());

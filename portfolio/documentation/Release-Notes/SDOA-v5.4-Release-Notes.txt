@@ -1,0 +1,210 @@
+================================================================================
+SDOA RELEASE NOTES — VERSION 5.4
+Date: 2026-06-27
+Classification: Canonical — Public-Facing Summary
+Edition Label: Sovereign Integration & Sleeve Amendment
+================================================================================
+
+OVERVIEW
+────────
+Edition 5.4 introduces the Sleeve Module Class, a new category of boundary
+sovereign that is the only class permitted to bridge internal SDOA state to
+external systems. All ten Fix-It Engine violations are repaired. The governance
+pipeline (ProbationOfficer, Registrar, Oracle, Triage) is extended with
+sleeve-specific rules and capability indexing. The topology map (Cartographer)
+is extended with ghost nodes for external systems.
+
+================================================================================
+SECTION 1 — SLEEVE MODULE CLASS RATIFIED
+================================================================================
+
+The Sleeve Module Class (*.sleeve.js) is formally ratified under
+SDOA §4. Key properties:
+
+  - type: "sleeve" — new first-class module type in SdoaManifest
+  - Must declare external: { system, transport, path, commands[] }
+  - Layer 3 only
+  - 500-line ceiling (enforced by ProbationOfficer)
+  - FORBIDDEN: fs.writeFileSync to peer modules, eval(), Function(),
+    hardcoded absolute paths, raw fetch() when transport = https
+  - Must require ResponseFormatter.service and PathResolver.service
+  - Sole healing path: AiSleeve → heal:patch-request → Coach → ProbationOfficer
+
+CANONICAL SLEEVE SOVEREIGNS (five added):
+  AiSleeve.module.ts        — node-llama-cpp (node-module transport)
+  QwenSleeve.module.js      — LocalLlmServer.engine.py (http+spawn transport)
+  PolicySleeve.module.js    — LLM provider APIs (https transport)
+  ContextSleeve.module.py   — QmdAdapter/NodeJS (polyglot-bridge transport)
+  BrowserSleeve.module.js   — Tauri IPC (window.__TAURI__ transport)
+
+================================================================================
+SECTION 2 — BOUNDARY TOPOLOGY FORMALIZED
+================================================================================
+
+External systems are now modelled as "ghost nodes" in the blueprint and
+Cartographer SVG:
+
+  - Ghost nodes: type = "external", amber color (#f59e0b), dashed outline
+  - Boundary edges: amber dashed lines connecting sleeves to ghost nodes
+  - Sleeve nodes: rendered with ⟁ shape; ghost nodes with ⬚ shape
+  - Drift detection: Cartographer warns when a sleeve manifest's external
+    system version diverges from what is discovered at runtime
+
+================================================================================
+SECTION 3 — GOVERNANCE GATES UPDATED
+================================================================================
+
+ProbationOfficer.workflow.js — v5.1.0
+  Five new SLEEVE_* rules added:
+  - SLEEVE_NO_MUTATION: no fs.writeFileSync to service/module files
+  - SLEEVE_NO_EVAL: no Function() or eval()
+  - SLEEVE_NO_ABSOLUTE_PATHS: no [A-Za-z]:\\ patterns
+  - SLEEVE_DECLARED_TRANSPORT_ONLY: no raw fetch() for https transport sleeves
+  - SLEEVE_EXTERNAL_DECLARATION_REQUIRED: sleeve must have external block
+  Sleeve line limit: 500 (separate from adapter 200-line limit)
+
+Registrar / Registry.service.ts — v5.1.0
+  - SleeveExternal interface added
+  - type union extended to include "sleeve"
+  - runtime union extended to include "Python" | "Rust"
+  - validateManifest() enforces external block for sleeves
+
+Oracle.service.js — v5.1.0
+  - whoHasBoundary({ system }) command added
+  - dumpSurface() emits surfaceType: "boundary" entries for sleeve externals
+  - externalSystem scoring criterion in _score() (+10 exact, +2 fuzzy)
+  - describeModule() includes externalSystem, externalTransport, externalCommands
+
+Triage.workflow.js — v5.1.0
+  - _buildRoutingTable() now includes "boundary" surface entries
+  - triage:boundaryFault event added for sleeve external failures
+  - Chronicle logging on boundary fault
+
+================================================================================
+SECTION 4 — MANIFEST SCHEMA EXPANDED
+================================================================================
+
+blueprint.schema.json regenerated. New fields:
+
+  type: "sleeve"                     — new type value
+  external.system:    string         — canonical external system name
+  external.transport: string         — https | node-module | http+spawn | ...
+  external.path:      string         — resolved at runtime via PathResolver
+  external.commands:  string[]       — allowed command surface
+
+Ghost node schema:
+  ghostNode: true
+  type: "external"
+  system: string
+  transport: string
+
+================================================================================
+SECTION 5 — TEN VIOLATIONS REPAIRED
+================================================================================
+
+V1  AiBroker.adapter        — fs.writeFileSync, monkey-patch, Function(), paths removed → AiSleeve
+V2  LlmBridge.js            — await on resolveRoute(), ollama/llama3 fallback removed
+V3  qwen_server.py          — duplicate port conflict resolved; file moved to variants/
+V4  ContextEngine.py        — async QmdAdapter calls, SQL parameterised
+V5  LlmPolicyEngine.js      — BackendConnector removed, direct fs I/O via PathResolver
+V6  Curator.service         — C:\Projects\SDOAvX watchPath → env var
+V7  AiProvider.adapter.js   — C:\protoai\data\settings.json removed
+V8  Middleware.service.js   — MANIFEST block added (now registry-discoverable)
+V9  blueprint.schema.json   — regenerated with current module set + sleeve nodes
+V10 Registry.service        — duplicate advisory noted; legacy in variants/
+
+================================================================================
+SECTION 6 — NEW MODULES ADDED
+================================================================================
+
+Sleeve sovereigns (5):
+  AiSleeve.module.ts, QwenSleeve.module.js, PolicySleeve.module.js,
+  ContextSleeve.module.py, BrowserSleeve.module.js
+
+Governance support:
+  InnovationDetector.workflow.js — sleeve-aware pattern detection
+
+================================================================================
+SECTION 7 — CARTOGRAPHER & BLUEPRINT UPDATED
+================================================================================
+
+Cartographer.workflow.js (v5.1.0):
+  - Ghost external-system nodes for each sleeve in _buildGraph()
+  - Boundary edges (amber dashed) between sleeves and ghost nodes
+  - SVG: ⟁ sleeve shape, ⬚ ghost shape, amber boundary edge color
+  - Stats: sleeveCount, ghostNodes
+
+blueprint.schema.json (regenerated 2026-06-27):
+  - 19 sovereign modules documented
+  - 5 sleeve boundary sovereigns
+  - 5 ghost external-system nodes
+  - Boundary edges and requires edges
+
+================================================================================
+SECTION 8 — REGISTRAR + PROBATIONOFFICER + ORACLE UPDATED
+================================================================================
+
+See Section 3 above for full details.
+
+================================================================================
+SECTION 9 — HEALING PATH LOCKED
+================================================================================
+
+The sole healing path from v5.4 forward:
+
+  AiSleeve.healTestFailure()
+    └─► heal:patch-request (registry broadcast)
+          └─► Coach.on_patch_request()
+                └─► ProbationOfficer.run() [gate]
+                      └─► coach:mutationReady
+                            └─► Registrar re-fields module
+
+AlgosimTest.workflow (formerly TestCore.workflow) updated from AiBroker
+to AiSleeve dependency. Coach.workflow.py updated with accepts:
+heal:patch-request and on_patch_request() handler.
+
+================================================================================
+SECTION 10 — SCAFFOLD UPDATED
+================================================================================
+
+Scaffold.workflow.js (v5.1.0):
+  - sleeve module type added to DEFAULT_TEMPLATES (500-line ceiling)
+  - _stubGenerate() emits full external: {} block for sleeves
+  - _staticValidate() checks for external block on sleeve type
+  - MANIFEST_SKELETON updated with sleeve example
+  - SCAFFOLD_SYSTEM_PROMPT updated with sleeve rules
+
+CLI usage:
+  sdoa new sleeve --id MyApi.module --system "my-api" --transport https
+
+================================================================================
+SECTION 11 — DOCUMENTATION ARCHIVE
+================================================================================
+
+The following superseded editions have been moved to documentation/Archive/:
+  SDOA-Governance-Outline.txt       (v5.0, 2026-06-17)
+  SDOA-Whitepaper-Executive.txt     (v5.0, 2026-06-17)
+  SDOA-Whitepaper-Technical.txt     (v5.0, 2026-06-17)
+  SDOA-Violation-Audit-Map.drawio   (violations now resolved)
+
+Active front-layer documentation (v5.4):
+  portfolio/README.md                    — engine README with v5.4 badge
+  documentation/SDOA-Architecture-Map.drawio — current topology
+  documentation/SDOA-Historical-Timeline.txt — version lineage
+  documentation/SDOA-v5.4-Release-Notes.txt  — this file
+
+================================================================================
+SYSTEM LOCK
+================================================================================
+
+sdoa-vnext.lock.json records the frozen module inventory, capability surfaces,
+routing tables, and external system declarations for this ratified edition.
+
+Promotion to SDOA v6.0.0 requires:
+  - All TestCore assertions passing (currently 26/26 ✓)
+  - ProbationOfficer: zero SLEEVE_* violations
+  - Oracle.dumpSurface: no rogue boundary entries
+
+================================================================================
+END OF RELEASE NOTES — SDOA v5.4
+================================================================================

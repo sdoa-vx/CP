@@ -1,3 +1,24 @@
+
+export const MANIFEST = {
+  id: "engine.js",
+  type: "module",
+  layer: 4,
+  runtime: "JavaScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "CapabilityGraph"
+  ],
+  dependencies: [
+    "graphology",
+    "graphology-utils",
+    "graphology-dag",
+    "graphology-shortest-path"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
 // ───────────────────────────
 // File:    graph/engine.js
 // Version: 1.0.00

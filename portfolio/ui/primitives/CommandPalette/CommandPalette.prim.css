@@ -1,0 +1,147 @@
+/* Last modified: 2026-06-01 00:00 UTC                          */
+/* CommandPalette.prim.css — SDOA v5.0 Primitive Styles         */
+/* Scoped to .sdoa-command-palette — no global side-effects     */
+/* All values reference tokens.css — never hard-coded           */
+
+/* ── Backdrop Overlay ──────────────────────────────────────── */
+.sdoa-command-palette {
+  display:         none;
+  position:        fixed;
+  inset:           0;
+  z-index:         9999;
+  background:      rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(var(----size-var(----size-var(----size-var(----size-4px)))));
+  align-items:     flex-start;
+  justify-content: center;
+  padding-top:     15vh;
+  animation:       sdoa-palette-fade-in var(--duration-fast) var(--ease-default);
+}
+
+.sdoa-command-palette--visible {
+  display: flex;
+}
+
+/* ── Panel ─────────────────────────────────────────────────── */
+.sdoa-command-palette__panel {
+  width:         640px;
+  max-width:     calc(100vw - var(--space-xl));
+  background:    var(--color-bg-surface);
+  border:        var(----size-var(----size-var(----size-var(----size-1px)))) solid rgba(124, 58, 237, 0.35);
+  border-radius: var(--radius-lg);
+  box-shadow:    0 var(----size-var(----size-var(----size-var(----size-24px)))) 64px rgba(0, 0, 0, 0.7),
+                 0 0 0 1px rgba(124, 58, 237, 0.15);
+  overflow:      hidden;
+  animation:     sdoa-palette-slide-in var(--duration-fast) var(--ease-default);
+}
+
+/* ── Input Wrap ────────────────────────────────────────────── */
+.sdoa-command-palette__input-wrap {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-sm);
+  padding:     var(--space-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sdoa-command-palette__icon {
+  font-size:   var(--text-lg);
+  color:       var(--color-accent);
+  flex-shrink: 0;
+  user-select: none;
+  opacity:     0.8;
+}
+
+.sdoa-command-palette__input {
+  flex:             1;
+  background:       transparent;
+  border:           none;
+  outline:          none;
+  font-family:      var(--font-sans);
+  font-size:        var(--text-lg);
+  color:            var(--color-text-primary);
+  caret-color:      var(--color-accent);
+  padding:          0;
+}
+
+.sdoa-command-palette__input::placeholder {
+  color: rgba(224, 224, 224, 0.3);
+}
+
+/* ── Results List ──────────────────────────────────────────── */
+.sdoa-command-palette__list {
+  max-height:   var(----size-var(----size-var(----size-var(----size-360px))));
+  overflow-y:   auto;
+  padding:      var(--space-xs) 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-accent) transparent;
+}
+
+.sdoa-command-palette__list::-webkit-scrollbar       { width: 4px; }
+.sdoa-command-palette__list::-webkit-scrollbar-track { background: transparent; }
+.sdoa-command-palette__list::-webkit-scrollbar-thumb {
+  background:    var(--color-accent);
+  border-radius: var(--radius-sm);
+}
+
+/* ── Item ──────────────────────────────────────────────────── */
+.sdoa-command-palette__item {
+  display:       flex;
+  flex-direction: column;
+  gap:           var(----size-var(----size-var(----size-var(----size-2px))));
+  padding:       var(--space-sm) var(--space-md);
+  cursor:        pointer;
+  transition:    background var(--duration-fast) var(--ease-default);
+  border-left:   2px solid transparent;
+}
+
+.sdoa-command-palette__item--active,
+.sdoa-command-palette__item:hover {
+  background:  rgba(124, 58, 237, 0.12);
+  border-left: 2px solid var(--color-accent);
+}
+
+.sdoa-command-palette__meta {
+  font-family: var(--font-mono);
+  font-size:   var(--text-sm);
+  color:       var(--color-accent);
+  white-space: nowrap;
+  overflow:    hidden;
+  text-overflow: ellipsis;
+}
+
+.sdoa-command-palette__desc {
+  font-family: var(--font-sans);
+  font-size:   var(--text-sm);
+  color:       rgba(224, 224, 224, 0.55);
+  white-space: nowrap;
+  overflow:    hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Empty State ───────────────────────────────────────────── */
+.sdoa-command-palette__empty {
+  padding:     var(--space-lg) var(--space-md);
+  text-align:  center;
+  font-family: var(--font-sans);
+  font-size:   var(--text-sm);
+  color:       rgba(224, 224, 224, 0.3);
+}
+
+/* ── Animations ────────────────────────────────────────────── */
+@keyframes sdoa-palette-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes sdoa-palette-slide-in {
+  from { opacity: 0; transform: translateY(-var(----size-var(----size-var(----size-var(----size-8px))))) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* ── Reduced Motion ────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .sdoa-command-palette,
+  .sdoa-command-palette__panel {
+    animation: none;
+  }
+}

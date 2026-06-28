@@ -1,3 +1,22 @@
+
+export const MANIFEST = {
+  id: "init-schema.js",
+  type: "module",
+  layer: 4,
+  runtime: "JavaScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "Database",
+    "schema creation"
+  ],
+  dependencies: [
+    "better-sqlite3"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
 // ───────────────────────────
 // File:    migrations/init-schema.js
 // Version: 1.0.00

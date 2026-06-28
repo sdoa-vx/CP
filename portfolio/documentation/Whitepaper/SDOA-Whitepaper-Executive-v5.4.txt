@@ -1,0 +1,85 @@
+================================================================================
+SDOA WHITEPAPER — EXECUTIVE EDITION
+Version: 5.4 — Sovereign Integration & Sleeve Amendment
+Date: 27 June 2026
+Classification: Internal — Leadership & Project Stakeholders
+Amendment Ribbon: v5.4 / 27-06-2026 / Sleeve Ratification
+================================================================================
+
+EXECUTIVE SUMMARY
+────────────────────────────────────────────────────────────────────────────────
+Self-Describing Object Architecture (SDOA) version 5.4 introduces the Sleeve
+Module Class — a formally governed boundary layer between the SDOA ecosystem
+and external systems. This amendment resolves ten pre-existing architectural
+violations, formalises how AI inference, IPC channels, and remote APIs are
+accessed, and introduces a certification pipeline that proves boundary safety
+under stress.
+
+WHY THIS MATTERS
+────────────────────────────────────────────────────────────────────────────────
+Before v5.4, the codebase contained hidden dependencies: modules writing
+directly to peer source files, hardcoded machine paths, undeclared async calls,
+and browser-only modules imported from server processes. These were invisible
+at code review time and caused silent failures in production.
+
+v5.4 makes every external system contact explicit, declared, and governed.
+Any attempt to contact an undeclared external system — or to use an undeclared
+transport — is rejected by the build gate before the code can run.
+
+WHAT CHANGED IN v5.4
+────────────────────────────────────────────────────────────────────────────────
+  Sleeve Module Class ratified
+    A new module class — the Sleeve — is the only class permitted to bridge
+    internal code to external systems. Five sleeve sovereigns were created to
+    own every current external boundary.
+
+  Ten violations repaired
+    V1–V10 identified in the Fix-It Engine audit were fully resolved. The
+    codebase no longer contains any source-rewriting, monkey-patching, hardcoded
+    paths, or browser/server coupling violations.
+
+  Governance gates updated
+    The four governance gates (ProbationOfficer, Registrar, Oracle, Triage) now
+    enforce sleeve-specific rules. A sleeve cannot register without declaring its
+    external system, transport, and allowed command surface.
+
+  Certification suite added (Phase 5)
+    Eight tests in Sleeve.tests.json prove boundary safety under fault injection,
+    payload corruption, and timeout stress.
+
+  Blueprint and topology updated
+    External systems now appear as "ghost nodes" in the topology map — visually
+    separated from SDOA sovereigns and connected only through amber boundary edges.
+
+  Healing path locked
+    Only the Coach workflow may apply code mutations. No module may write to a
+    peer's source file. The healing path is: AI sleeve → event bus → Coach →
+    ProbationOfficer gate → registry.
+
+WHAT THIS MEANS FOR THE TEAM
+────────────────────────────────────────────────────────────────────────────────
+  Developers:  Use `sdoa new sleeve` to create boundary modules. The Scaffold
+               generates the correct MANIFEST, lifecycle stubs, and formatter
+               wiring. A sleeve that violates any rule is rejected before it
+               reaches the portfolio.
+
+  Reviewers:   The topology map now shows every external dependency as a named,
+               typed ghost node. Any new external contact that does not have a
+               corresponding sleeve is immediately visible as a governance gap.
+
+  Leads:       The sdoa-vnext.lock.json file records the frozen module inventory,
+               healing path, and capability surfaces. Promotion to v6.0 requires
+               all certification tests to pass.
+
+VERSION LINEAGE
+────────────────────────────────────────────────────────────────────────────────
+  v1.0.0  Genesis — SDOA Multi-Agent Framework first release.
+  v4.0   Core SDOA layer model and manifest contract.
+  v4.5   Polyglot Bridge added. Cross-runtime Python↔NodeJS support.
+  v5.0   Runtime governance: Coach, ProbationOfficer, Oracle, Triage.
+  v5.4   Sleeve Amendment: boundary sovereignty formalised.
+  vNext  Pending Phase 6 — SDOA v6.0.0.
+
+================================================================================
+SDOA v5.4 — EXECUTIVE EDITION — FROZEN 27 JUNE 2026
+================================================================================

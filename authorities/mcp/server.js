@@ -1,3 +1,28 @@
+
+export const MANIFEST = {
+  id: "server.js",
+  type: "module",
+  layer: 4,
+  runtime: "JavaScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "@modelcontextprotocol/sdk/server",
+    "better-sqlite3",
+    "./PortfolioManager.service.js",
+    "./graph/engine.js",
+    "./RunManager.service.js",
+    "./ConstraintSolver.service.js",
+    "./PipelineStateMachine.js"
+  ],
+  dependencies: [
+    "zod",
+    "@modelcontextprotocol/sdk/server"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
 // ───────────────────────────
 // File:    server.js
 // Version: 1.1.00

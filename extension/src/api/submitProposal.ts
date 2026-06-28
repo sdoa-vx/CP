@@ -1,4 +1,22 @@
 import * as vscode from "vscode";
+
+export const MANIFEST = {
+  id: "submitProposal.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "submitProposal"
+  ],
+  dependencies: [
+    "vscode"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
 export interface InnovationPayload {
   componentName?: string;
   astSignature?: string;
@@ -6,6 +24,18 @@ export interface InnovationPayload {
   proposedPath?: string;
   codeSnippet?: string;
   metadata?: Record<string, any>;
+  type?: string;
+  name?: string;
+  source?: {
+    language?: string;
+    content?: string;
+    path?: string;
+  };
+  sdoa?: {
+    layer?: number;
+    placement?: string;
+    manifest?: any;
+  };
 }
 
 export interface FispProposalEnvelope {
@@ -28,11 +58,7 @@ export async function submitProposal(
   try {
     const endpoint = vscode.workspace
       .getConfiguration("sdoaMcp")
-      .get<string>("fispEndpoint");
-
-    if (!endpoint) {
-      throw new Error("Missing MCP FISP endpoint in settings.");
-    }
+      .get<string>("fispEndpoint") || "http://localhost:8080";
 
     const envelope: FispProposalEnvelope = {
       proposalId: `prop-${Date.now()}`,

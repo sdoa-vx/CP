@@ -1,0 +1,396 @@
+this is the approved file directory structure for SDOA components:
+sdoavx/
+├── ui/
+│   ├── primitives/
+│   ├── features/
+│   └── dashboards/
+│
+├── substrate/
+│   ├── services/
+│   ├── adapters/
+│   ├── bridges/
+│   ├── engines/
+│   └── workflows/
+│
+├── evolution/
+│   ├── engines/
+│   │   ├── Solvers/
+│   │   ├── Billing/
+│   │   ├── Sync/
+│   │   └── …
+│   ├── legacy/
+│   ├── experimental/
+│   └── translations/
+│
+└── authorities/
+│   ├── bootstrap/
+│   ├── router/
+│   ├── conductor/
+│   ├── registrar/
+│   └── captain/
+│
+└── documentation/
+│
+└── environment/
+
+What belongs inside sdoavx/environment/
+
+.env templates, shell scripts, bootstrap scripts, OS‑level helpers, dev environment configs, etc.
+
+Example:
+```
+environment/
+    setup.sh
+    teardown.sh
+    dev.env
+    prod.env
+    docker-compose.yaml```
+
+Why?
+This keeps environment concerns separate from sovereign runtime concerns.
+
+~~
+
+about CSS
+CSS belongs to UI sovereigns
+so 
+```
+ui/
+    primitives/
+        Button/
+            Button.prim.css
+        Terminal/
+            Terminal.prim.css
+    features/
+        Workspace/
+            Workspace.feature.css
+    dashboards/
+        AdminDashboard/
+            AdminDashboard.css```
+
+Global tokens?
+```
+ui/tokens.css```
+
+Why?
+CSS is presentation.
+Presentation belongs to UI.
+UI is sovereign over its own styling.
+
+~~
+
+about .bin files (binary assets, models, wasm, compiled artifacts)
+These belong to the engine or substrate module that consumes them.
+
+If it’s an evolutionary engine (e.g., a model, solver, compiled wasm):
+```
+evolution/
+    engines/
+        Solvers/
+            SolverV3/
+                solver.wasm
+                weights.bin```
+
+If it’s runtime machinery (e.g., a substrate worker needs a wasm blob):
+```
+substrate/
+    engines/
+        wasm-runner/
+            runner.wasm
+            memory.bin```
+
+Why?
+Binary artifacts are part of the implementation of a sovereign capability.
+They live with the engine or substrate module that uses them.
+
+~~
+
+about .jsn (JSON) files
+JSON files fall into three categories:
+
+A. Configuration JSON
+Authority-owned → goes under authorities/
+
+Example:
+```
+authorities/
+    registrar/
+        registry.jsn
+    router/
+        routes.jsn```
+
+B. Schema JSON
+UI or substrate-owned → goes with the module that uses it
+
+Example:
+```
+ui/features/Workspace/schema.jsn
+substrate/services/Queue/schema.jsn```
+
+C. Engine data / model metadata
+Evolution-owned → goes inside the engine folder
+
+Example:
+```
+evolution/engines/TextClassifier/v2/metadata.jsn```
+
+Why?
+JSON is not “global data.”
+It is configuration or schema, and sovereignty applies.
+
+~~
+
+about other dependency files (.txt, .cfg, .yaml, .proto, etc.)
+Same rule:
+
+The file lives with the sovereign that consumes it.
+
+Examples:
+
+Protocol buffers:
+```
+substrate/bridges/grpc/messages.proto```
+
+Engine-specific configs:
+```
+evolution/engines/Billing/v3/config.yaml```
+
+UI data:
+```
+ui/features/Projects/strings.json```
+
+Authority policies:
+```
+authorities/captain/policy.yaml```
+
+~~
+
+***Where NOT to put them
+
+You should NOT create:
+
+/assets/
+
+/static/
+
+/deps/
+
+/resources/
+
+/misc/
+
+/global/
+
+These would violate sovereignty and create a dumping ground.
+
+~~
+
+Variants belong inside the sovereign that owns them, under a dedicated variants/ directory, with each variant being its own fully‑manifested SDOA module.
+
+Not in /legacy/, not in /experimental/, not in /global/, not in /misc/.
+
+Where variants go (the rule)
+Every variant is still a sovereign module.
+That means:
+
+It has its own folder
+
+It has its own SDOA v1.2 Manifest
+
+It declares its own version, capabilities, dependencies
+
+It declares whether it is compliant or non‑compliant
+
+It declares its relationship to the parent module
+
+Therefore, variants live here:
+UI variants
+Code
+ui/features/Workspace/
+    Workspace.feature.js
+    Workspace.feature.css
+    manifest.jsn
+    variants/
+        compact/
+            manifest.jsn
+            Workspace.compact.feature.js
+        mobile/
+            manifest.jsn
+            Workspace.mobile.feature.js
+Substrate variants
+Code
+substrate/services/Queue/
+    Queue.service.js
+    manifest.jsn
+    variants/
+        redis/
+            manifest.jsn
+            Queue.redis.service.js
+        memory/
+            manifest.jsn
+            Queue.memory.service.js
+Evolution engine variants
+Code
+evolution/engines/TextClassifier/
+    v2/
+        manifest.jsn
+        engine.js
+    variants/
+        distilled/
+            manifest.jsn
+            weights.bin
+            engine.js
+        quantized/
+            manifest.jsn
+            weights.q8.bin
+            engine.js
+Authority variants
+Code
+authorities/router/
+    manifest.jsn
+    routes.jsn
+    variants/
+        debug/
+            manifest.jsn
+            routes.debug.jsn
+        hardened/
+            manifest.jsn
+            routes.hardened.jsn
+📘 Why variants belong inside the sovereign
+Because:
+
+Sovereignty — a module owns its own lineage, not the system.
+
+Discoverability — the registrar can auto‑discover variants by scanning variants/.
+
+Version lineage clarity — variants are not versions; they are branches.
+
+No dumping grounds — variants do not go into /experimental/ or /legacy/ unless they are truly deprecated.
+
+🧬 How variants are documented (Manifest rules)
+Every variant must have a full SDOA v1.2 Manifest, with:
+
+id — unique, e.g. "Workspace.feature.compact"
+
+type — same type as parent (feature, service, engine, etc.)
+
+version — variant version, not parent version
+
+runtime — JS, WASM, Python, etc.
+
+capabilities — what this variant provides
+
+dependencies — what it needs
+
+docs — description of what makes this variant different
+
+last_modified
+
+compliance — "non-sdoa-compliant": true if needed
+
+variant_of — NEW FIELD (recommended)
+
+Example variant manifest
+Code
+{
+  "id": "Workspace.feature.compact",
+  "type": "feature",
+  "version": "1.0.0",
+  "runtime": "js",
+  "variant_of": "Workspace.feature",
+  "capabilities": ["ui:workspace:compact"],
+  "dependencies": [],
+  "docs": "Compact variant optimized for small screens and dense layouts.",
+  "last_modified": "2026-06-17T15:14:00Z"
+}
+🧠 Where do deprecated or abandoned variants go?
+Only when a variant is no longer sovereign:
+
+Code
+evolution/legacy/
+ui/legacy/
+substrate/legacy/
+But only after:
+
+It is marked deprecated in its manifest
+
+It is removed from the registrar’s active registry
+
+Legacy is a graveyard, not a workspace.
+
+🧪 Where do experimental variants go?
+If the variant is experimental but still sovereign:
+
+Code
+evolution/engines/TextClassifier/variants/experimental/
+If it is system‑wide experimental (rare):
+
+Code
+evolution/experimental/
+But the preferred pattern is:
+
+Variants stay with their parent sovereign unless they are system‑level experiments.
+
+🏛️ Final structure with variants included
+Code
+sdoavx/
+├── ui/
+│   ├── primitives/
+│   ├── features/
+│   │   └── Workspace/
+│   │       ├── manifest.jsn
+│   │       ├── Workspace.feature.js
+│   │       └── variants/
+│   │           ├── compact/
+│   │           └── mobile/
+│   └── dashboards/
+│
+├── substrate/
+│   ├── services/
+│   │   └── Queue/
+│   │       ├── manifest.jsn
+│   │       └── variants/
+│   │           ├── redis/
+│   │           └── memory/
+│
+├── evolution/
+│   ├── engines/
+│   │   └── TextClassifier/
+│   │       ├── v2/
+│   │       └── variants/
+│   │           ├── distilled/
+│   │           └── quantized/
+│   ├── legacy/
+│   ├── experimental/
+│   └── translations/
+│
+├── authorities/
+│   ├── router/
+│   │   ├── manifest.jsn
+│   │   └── variants/
+│   │       ├── debug/
+│   │       └── hardened/
+│
+├── documentation/
+└── environment/
+
+Final takeaway
+Every file belongs to the sovereign that uses it.
+CSS → UI
+Binary → Engine or Substrate
+JSON → Authority / UI / Substrate / Engine
+Configs → Same rule
+Scripts → environment/
+Variants are sovereign.
+Variants live with their parent.
+Variants have their own manifests.
+Variants declare their lineage.
+
+This keeps SDOA clean, discoverable, and infinitely scalable.
+
+To be a compliant SDOA module or component, a file must contain an authoritative MANIFEST declaration containing at least the mandatory v1.2 fields.  if there are fields missing... add them. 
+(id, type, version, runtime, capabilities, dependencies, docs, Last modified).
+
+host environment & shell components should also have an SDOAv1.2 Manifest
+all files that we touch, always (forward and backward), should have an SDOAv1.2 Manifest
+(if the file is non-sdoa compliant... put it (that it is not SDOA compliant) in the manifest!

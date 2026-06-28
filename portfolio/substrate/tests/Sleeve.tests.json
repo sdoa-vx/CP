@@ -1,0 +1,191 @@
+{
+  "suite":       "Sleeve Certification Suite",
+  "version":     "5.4.0",
+  "generatedAt": "2026-06-27T00:00:00.000Z",
+  "note":        "Phase 5 Track A — certification tests that every sleeve sovereign must pass before promotion to SDOA vNext.",
+  "runner":      "TestCore.workflow.js",
+
+  "tests": [
+
+    {
+      "id":          "sleeve-cert-1",
+      "track":       "A",
+      "name":        "Boundary fault injection",
+      "description": "Kill the external daemon mid-call. Expect: triage:boundaryFault emitted, Triage circuit opens, no IDE thread lock.",
+      "setup": {
+        "target":    "QwenSleeve.module",
+        "action":    "kill-external-daemon",
+        "daemon":    "LocalLlmServer.engine"
+      },
+      "invoke": {
+        "module":    "QwenSleeve.module",
+        "command":   "generate",
+        "payload":   { "prompt": "hello" }
+      },
+      "expect": {
+        "response":  { "ok": false },
+        "events":    ["triage:boundaryFault"],
+        "circuitState": { "module": "QwenSleeve.module", "state": "OPEN" },
+        "noDeadlock": true
+      }
+    },
+
+    {
+      "id":          "sleeve-cert-2",
+      "track":       "A",
+      "name":        "Transport normalization",
+      "description": "Sleeve receives a malformed or unexpected external payload. Expect: ResponseFormatter normalizes to { ok: false, error: '...' } — no raw blobs escape.",
+      "setup": {
+        "target":    "PolicySleeve.module",
+        "action":    "inject-malformed-response",
+        "payload":   "NOT_JSON_GARBAGE_<<<>>>"
+      },
+      "invoke": {
+        "module":    "PolicySleeve.module",
+        "command":   "generate",
+        "payload":   { "prompt": "test", "tier": 1 }
+      },
+      "expect": {
+        "response":  {
+          "schema":  "{ ok: boolean, data?: object, error?: string }",
+          "noRawBlob": true,
+          "noUndefined": true
+        }
+      }
+    },
+
+    {
+      "id":          "sleeve-cert-3",
+      "track":       "A",
+      "name":        "PathResolver enforcement",
+      "description": "Sleeve attempts to reference a raw absolute path. Expect: ProbationOfficer SLEEVE_NO_ABSOLUTE_PATHS rule fires before execution.",
+      "setup": {
+        "target":    "AiSleeve.module",
+        "action":    "probation-static-scan",
+        "injectSource": "const modelPath = 'C:\\\\protoai\\\\models\\\\qwen.gguf';"
+      },
+      "invoke": {
+        "workflow":  "ProbationOfficer.workflow",
+        "command":   "run",
+        "payload":   { "moduleId": "AiSleeve.module" }
+      },
+      "expect": {
+        "response":  { "ok": false },
+        "violations": ["SLEEVE_NO_ABSOLUTE_PATHS"]
+      }
+    },
+
+    {
+      "id":          "sleeve-cert-4",
+      "track":       "A",
+      "name":        "Capability exposure",
+      "description": "Oracle whoHasBoundary must return the correct sleeve sovereign for a declared external system — no rogue modules.",
+      "invoke": {
+        "module":    "Oracle.service",
+        "command":   "whoHasBoundary",
+        "payload":   { "system": "node-llama-cpp" }
+      },
+      "expect": {
+        "response":  { "ok": true },
+        "data": {
+          "minLength":    1,
+          "allMatch":     { "type": "sleeve" },
+          "containsId":   "AiSleeve.module",
+          "noRogueTypes": ["adapter", "workflow", "service"]
+        }
+      }
+    },
+
+    {
+      "id":          "sleeve-cert-5",
+      "track":       "A",
+      "name":        "Line limit enforcement",
+      "description": "A sleeve over 500 lines must be rejected by ProbationOfficer.",
+      "setup": {
+        "action":    "generate-oversized-sleeve",
+        "lines":     520
+      },
+      "invoke": {
+        "workflow":  "ProbationOfficer.workflow",
+        "command":   "run",
+        "payload":   { "moduleId": "__test__OversizedSleeve.module" }
+      },
+      "expect": {
+        "response":  { "ok": false },
+        "violations": ["LINE_LIMIT_EXCEEDED"]
+      }
+    },
+
+    {
+      "id":          "sleeve-chaos-6",
+      "track":       "A-chaos",
+      "name":        "Daemon crash under high load",
+      "description": "Randomly kill the external daemon during concurrent sleeve calls. Expect: Triage opens boundary circuit, no deadlock, Chronicle logs all faults.",
+      "setup": {
+        "target":    "QwenSleeve.module",
+        "action":    "chaos-kill-daemon",
+        "concurrency": 10,
+        "killAfterMs": 500
+      },
+      "invoke": {
+        "module":    "QwenSleeve.module",
+        "command":   "generate",
+        "payload":   { "prompt": "stress test" },
+        "repeat":    10,
+        "parallel":  true
+      },
+      "expect": {
+        "events":    ["triage:boundaryFault"],
+        "circuitState": { "module": "QwenSleeve.module", "state": "OPEN" },
+        "noDeadlock": true,
+        "chronicleLogs": ["triage:boundaryFault"]
+      }
+    },
+
+    {
+      "id":          "sleeve-chaos-7",
+      "track":       "A-chaos",
+      "name":        "Corrupted external response",
+      "description": "Randomly corrupt the external payload returned from the LLM provider. Expect: ResponseFormatter catches the corruption, returns { ok: false }, no crash.",
+      "setup": {
+        "target":    "PolicySleeve.module",
+        "action":    "chaos-corrupt-response",
+        "corruptionRate": 0.5
+      },
+      "invoke": {
+        "module":    "PolicySleeve.module",
+        "command":   "generate",
+        "payload":   { "prompt": "chaos", "tier": 1 },
+        "repeat":    20
+      },
+      "expect": {
+        "allResponses": { "schema": "{ ok: boolean }" },
+        "noThrow": true,
+        "noUndefined": true
+      }
+    },
+
+    {
+      "id":          "sleeve-chaos-8",
+      "track":       "A-chaos",
+      "name":        "External system timeout",
+      "description": "Inject artificial 10s delays into external system responses. Expect: Triage detects the p95 latency spike, opens the circuit, TestCore reports a controlled failure — not a crash.",
+      "setup": {
+        "target":    "PolicySleeve.module",
+        "action":    "chaos-delay-external",
+        "delayMs":   10000
+      },
+      "invoke": {
+        "module":    "PolicySleeve.module",
+        "command":   "generate",
+        "payload":   { "prompt": "timeout test", "tier": 1 }
+      },
+      "expect": {
+        "response":   { "ok": false, "error": "timeout" },
+        "noDeadlock": true,
+        "events":     ["triage:boundaryFault"]
+      }
+    }
+
+  ]
+}

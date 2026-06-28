@@ -5,6 +5,29 @@ import { runCreationPipeline } from "../pipeline/CreationPipeline";
 import { updateProposalStatus } from "../fisp/loadProposal";
 import { broadcastDashboardUpdate } from "../ws";
 
+export const MANIFEST = {
+  id: "decision.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "handleDecision"
+  ],
+  dependencies: [
+    "http",
+    "../utils/parseJsonBody",
+    "../fisp/loadProposal",
+    "../pipeline/CreationPipeline",
+    "../ws"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 export async function handleDecision(req: IncomingMessage, res: ServerResponse) {
   const body = await parseJsonBody(req);
   const { decision, notes, applyToCanonical } = body;

@@ -1,3 +1,19 @@
+
+const MANIFEST = {
+  id: "probationOfficer.js",
+  type: "module",
+  layer: 4,
+  runtime: "JavaScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "JavaScript"
+  ],
+  dependencies: [],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.runProbationOfficer = runProbationOfficer;

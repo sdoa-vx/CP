@@ -1,3 +1,28 @@
+
+const MANIFEST = {
+  id: "identity.js",
+  type: "module",
+  layer: 4,
+  runtime: "JavaScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "register",
+    "validateManifest",
+    "arbitrateRosterEvolution",
+    "register",
+    "compareSemVer",
+    "probationOfficer",
+    "resolveOptimizationTie"
+  ],
+  dependencies: [
+    "@stdlib/sdoa-types",
+    "@stdlib/typescript-registry"
+  ],
+  docs: "SDOA Module Identity Resolution Rules"
+};
+
 "use strict";
 
 /**

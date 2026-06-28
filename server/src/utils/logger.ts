@@ -1,6 +1,27 @@
 import fs from "fs";
 import path from "path";
 
+export const MANIFEST = {
+  id: "logger.ts",
+  type: "module",
+  layer: 4,
+  runtime: "TypeScript",
+  version: "1.0.0",
+  operationalRole: "infrastructure",
+  optimization: { priority: "stability" },
+  capabilities: [
+    "logger",
+    "tailLogs"
+  ],
+  dependencies: [
+    "fs",
+    "path"
+  ],
+  docs: "Auto-generated enriched SDOA manifest via static analysis"
+};
+
+
+
 const LOG_FILE = path.join(process.cwd(), ".sdoa-logs.jsonl");
 
 export const logger = {
