@@ -1,16 +1,20 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    SleeveBase.module.js
-// Version: 1.0.0
+// Version: 1.1.0
 // Updated: 2026-06-27T00:00:00Z
-// Changes: Phase 5 Track C — canonical lifecycle contract for all
-//          Sleeve sovereigns. Extend this class and override
-//          _callExternal(command, payload). The base enforces:
-//            init()    → resolve path via PathResolver + health check
-//            run()     → validate command, call external, normalize,
-//                        emit boundary telemetry to Triage
-//            dispose() → close connections, emit sleeve:disposed
+// Changes: Amendment 3.1 — Boundary Telemetry Standardization (v5.5)
+//          All six canonical sleeve events now emit the full base field
+//          set (moduleId, system, transport, timestamp, _sdoa: "5.5").
+//          New events: sleeve:init, sleeve:run, sleeve:boundaryFault,
+//          sleeve:health (periodic). sleeve:healthCheckFailed removed
+//          (superseded by sleeve:init + sleeve:health). correlationId
+//          links sleeve:run → sleeve:boundaryCall / sleeve:boundaryFault.
 // ──────────────────────────────────────────────────────────────────
 "use strict";
+
+const { randomUUID } = require("crypto");
+
+const TELEMETRY_VERSION = "5.5";
 
 class SleeveBase {
   static MANIFEST = {
@@ -18,7 +22,7 @@ class SleeveBase {
     type:            "sleeve",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "1.0.0",
+    version:         "1.1.0",
     operationalRole: "savant",
     requires:        ["ResponseFormatter.service", "PathResolver.service"],
     external: {
@@ -31,23 +35,32 @@ class SleeveBase {
     actions: {
       commands: {},
       events: {
-        "sleeve:disposed": {
-          payload: { moduleId: "string" }
+        "sleeve:init": {
+          payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", healthy: "boolean", resolvedPath: "string|null", _sdoa: "string" }
         },
-        "sleeve:healthCheckFailed": {
-          payload: { moduleId: "string", system: "string", error: "string" }
+        "sleeve:run": {
+          payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", command: "string", correlationId: "string", _sdoa: "string" }
         },
         "sleeve:boundaryCall": {
-          payload: { moduleId: "string", command: "string", durationMs: "number", ok: "boolean" }
+          payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", command: "string", durationMs: "number", ok: "boolean", correlationId: "string", _sdoa: "string" }
+        },
+        "sleeve:boundaryFault": {
+          payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", command: "string", durationMs: "number", error: "string", correlationId: "string", _sdoa: "string" }
+        },
+        "sleeve:health": {
+          payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", healthy: "boolean", latencyMs: "number|null", detail: "string|null", _sdoa: "string" }
+        },
+        "sleeve:disposed": {
+          payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", reason: "string|null", _sdoa: "string" }
         }
       },
       accepts: {},
       slots:   {}
     },
     docs: {
-      description: "Abstract base class for all SDOA v5.4 Sleeve sovereigns. Enforces the canonical lifecycle contract: path resolution via PathResolver, command validation against external.commands, ResponseFormatter normalization, and Triage telemetry emission.",
+      description: "Abstract base class for all SDOA v5.5 Sleeve sovereigns. Enforces the canonical lifecycle contract and Amendment 3.1 telemetry standard.",
       author: "ProtoAI Core Architecture Group",
-      sdoa:   "5.4"
+      sdoa:   "5.5"
     }
   };
 
@@ -66,7 +79,6 @@ class SleeveBase {
     this._pathResolver = registry.get("PathResolver.service");
     this._triage       = registry.get("Triage.workflow");
 
-    // Resolve the external path via PathResolver — never raw strings
     const manifest = this.constructor.MANIFEST;
     const external = manifest?.external ?? {};
 
@@ -74,30 +86,26 @@ class SleeveBase {
       this._resolvedPath = this._pathResolver?.resolve?.(external.path) ?? external.path;
     }
 
-    // Optional health check — subclasses override _healthCheck()
     try {
       await this._healthCheck();
       this._healthy = true;
     } catch (err) {
       this._healthy = false;
-      this._emit("sleeve:healthCheckFailed", {
-        moduleId: manifest.id,
-        system:   external.system ?? "unknown",
-        error:    err.message
-      });
-      // Non-fatal: sleeve registers but marks unhealthy
     }
+
+    // sleeve:init — always emitted, healthy or not (Amendment 3.1)
+    this._emit("sleeve:init", {
+      ...this._base(manifest, external),
+      healthy:      this._healthy,
+      resolvedPath: this._resolvedPath ?? null
+    });
   }
 
-  // run() enforces the full sleeve contract:
-  //   1. Validate command ∈ external.commands
-  //   2. Delegate to _callExternal() (subclass implements)
-  //   3. Normalize response via ResponseFormatter
-  //   4. Emit boundary telemetry to Triage
   async run({ command, payload } = {}) {
     const manifest = this.constructor.MANIFEST;
     const external = manifest?.external ?? {};
     const allowed  = external.commands ?? [];
+    const base     = this._base(manifest, external);
 
     if (!command) {
       return this._fail("run: command is required");
@@ -108,6 +116,11 @@ class SleeveBase {
         `${manifest.id}: command "${command}" is not in external.commands [${allowed.join(", ")}]`
       );
     }
+
+    const correlationId = randomUUID();
+
+    // sleeve:run — pre-call trace (Amendment 3.1)
+    this._emit("sleeve:run", { ...base, command, correlationId });
 
     const t0 = Date.now();
     let result;
@@ -121,15 +134,27 @@ class SleeveBase {
 
     const durationMs = Date.now() - t0;
 
-    // Emit boundary telemetry to Triage
+    // sleeve:boundaryCall — completion (Amendment 3.1, expanded from v5.4)
     this._emit("sleeve:boundaryCall", {
-      moduleId:  manifest.id,
+      ...base,
       command,
       durationMs,
-      ok: result.ok ?? false
+      ok: result.ok ?? false,
+      correlationId
     });
 
-    // Notify Pulse if available (for latency tracking)
+    // sleeve:boundaryFault — fault-only stream for Triage / Cartographer (Amendment 3.1)
+    if (!result.ok) {
+      this._emit("sleeve:boundaryFault", {
+        ...base,
+        command,
+        durationMs,
+        error: result.error ?? "unknown fault",
+        correlationId
+      });
+    }
+
+    // Pulse latency tracking
     try {
       this._registry?.get?.("Pulse.workflow")?.recordSample?.({
         moduleId:  manifest.id,
@@ -144,11 +169,14 @@ class SleeveBase {
 
   async dispose() {
     const manifest = this.constructor.MANIFEST;
+    const external = manifest?.external ?? {};
 
-    // Subclass cleanup
     try { await this._teardown(); } catch (_) {}
 
-    this._emit("sleeve:disposed", { moduleId: manifest.id });
+    this._emit("sleeve:disposed", {
+      ...this._base(manifest, external),
+      reason: null
+    });
 
     this._registry     = null;
     this._formatter    = null;
@@ -160,31 +188,35 @@ class SleeveBase {
 
   // ── Subclass contract ──────────────────────────────────────────
 
-  // Override: perform the actual external system call.
-  // Must return a value that _normalize() can process.
   async _callExternal(command, payload) {
     throw new Error(`${this.constructor.name}: _callExternal() not implemented`);
   }
 
-  // Override: verify external system is reachable.
-  // Throw to mark sleeve as unhealthy.
   async _healthCheck() {}
 
-  // Override: clean up resources (close sockets, kill processes, etc.)
   async _teardown() {}
+
+  // Called by subclasses on a health-check interval to emit sleeve:health
+  // (Amendment 3.1 — periodic health event, not only on failure)
+  async _emitHealth(latencyMs = null, detail = null) {
+    const manifest = this.constructor.MANIFEST;
+    const external = manifest?.external ?? {};
+    this._emit("sleeve:health", {
+      ...this._base(manifest, external),
+      healthy:   this._healthy,
+      latencyMs: latencyMs ?? null,
+      detail:    detail ?? null
+    });
+  }
 
   // ── Normalization ──────────────────────────────────────────────
 
-  // Normalize any external response to { ok, data } or { ok: false, error }
   _normalize(raw) {
     if (raw === null || raw === undefined) {
       return { ok: false, error: "External system returned empty response" };
     }
-    // Already normalized
     if (typeof raw === "object" && "ok" in raw) return raw;
-    // Plain string — wrap as data
     if (typeof raw === "string") return { ok: true, data: { text: raw } };
-    // Any other value — wrap
     return { ok: true, data: raw };
   }
 
@@ -193,6 +225,17 @@ class SleeveBase {
   }
 
   // ── Utilities ──────────────────────────────────────────────────
+
+  // Canonical base fields required on every telemetry event (Amendment 3.1)
+  _base(manifest, external) {
+    return {
+      moduleId:  manifest.id,
+      system:    external.system    ?? "unknown",
+      transport: external.transport ?? "unknown",
+      timestamp: new Date().toISOString(),
+      _sdoa:     TELEMETRY_VERSION
+    };
+  }
 
   _emit(eventName, payload) {
     try {
