@@ -1,12 +1,12 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    Triage.workflow.js
-// Version: 5.1.0
+// Version: 5.2.0
 // Updated: 2026-06-27T00:00:00Z
-// Changes: Section 4.4 compliance — Triage now monitors sleeve
-//          boundary connection states in addition to internal commands.
-//          _buildRoutingTable() includes "boundary" surface entries so
-//          external daemon failures get circuit-breaker coverage.
-//          New event: triage:boundaryFault for sleeve external failures.
+// Changes: Amendment 3.1 — subscribe to sleeve:boundaryFault directly
+//          from the EventBus. Circuit breakers now trip on ANY sleeve
+//          fault regardless of whether Triage dispatched the call.
+//          Previously Triage only tripped circuits from its own catch
+//          block; now all invocation paths are covered.
 // ──────────────────────────────────────────────────────────────────
 "use strict";
 
@@ -16,7 +16,7 @@ class TriageWorkflow {
     type:            "workflow",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "5.1.0",
+    version:         "5.2.0",
     operationalRole: "triage",
     requires:  ["Oracle.service", "Pulse.workflow", "Chronicle.service"],
     dataFiles: [],
@@ -38,7 +38,8 @@ class TriageWorkflow {
       },
       accepts: {
         "pulse:anomalyDetected":     { description: "Opens circuit breaker for the module with the anomaly." },
-        "registry:moduleRegistered": { description: "Rebuilds the routing table when a new module is fielded." }
+        "registry:moduleRegistered": { description: "Rebuilds the routing table when a new module is fielded." },
+        "sleeve:boundaryFault":      { description: "Amendment 3.1 — trips the circuit breaker for the faulting sleeve regardless of invocation path." }
       },
       slots: {}
     },
@@ -216,11 +217,25 @@ class TriageWorkflow {
     if (this._busUnsub.length) return;
     const bus = this._getBus();
     if (!bus) return;
-    const onAnomaly  = ({ moduleId, metric, value }) => { if (metric === "error_rate_pct" && value > this._errorRateThreshold) this._checkCircuit(moduleId); };
+    const onAnomaly = ({ moduleId, metric, value }) => { if (metric === "error_rate_pct" && value > this._errorRateThreshold) this._checkCircuit(moduleId); };
     const onRegister = () => this._buildRoutingTable();
+    // Amendment 3.1: sleeve:boundaryFault trips circuit from any call path
+    const onBoundaryFault = ({ moduleId, externalSystem, transport, error, command }) => {
+      this._checkCircuit(moduleId);
+      this._chronicle?.record?.({
+        type:    "triage:boundaryFault",
+        source:  "Triage.workflow",
+        payload: { moduleId, externalSystem, transport, error, command }
+      });
+    };
     bus.on("pulse:anomalyDetected",     onAnomaly);
     bus.on("registry:moduleRegistered", onRegister);
-    this._busUnsub.push(() => bus.off?.("pulse:anomalyDetected", onAnomaly), () => bus.off?.("registry:moduleRegistered", onRegister));
+    bus.on("sleeve:boundaryFault",      onBoundaryFault);
+    this._busUnsub.push(
+      () => bus.off?.("pulse:anomalyDetected",     onAnomaly),
+      () => bus.off?.("registry:moduleRegistered", onRegister),
+      () => bus.off?.("sleeve:boundaryFault",      onBoundaryFault)
+    );
   }
 
   _getBus()             { return this._registry?.get?.("EventBus.service"); }

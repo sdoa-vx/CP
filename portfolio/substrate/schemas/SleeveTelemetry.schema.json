@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "SleeveTelemetry.schema.json",
+  "title": "SDOA v5.5 Sleeve Telemetry Standard — Amendment 3.1",
+  "description": "Canonical event shapes for all sleeve lifecycle telemetry. Every event emitted by a sleeve sovereign must conform to the base fields plus the event-specific fields defined here. Consumers (Triage, Cartographer, Chronicle, tracksdoa.us) must accept these shapes.",
+  "ratified": "2026-06-27",
+  "sdoaVersion": "5.5",
+
+  "baseFields": {
+    "description": "Required on every sleeve telemetry event.",
+    "fields": {
+      "moduleId":   { "type": "string", "description": "MANIFEST id of the emitting sleeve" },
+      "system":     { "type": "string", "description": "external.system from the sleeve MANIFEST" },
+      "transport":  { "type": "string", "description": "external.transport from the sleeve MANIFEST" },
+      "timestamp":  { "type": "string", "format": "date-time", "description": "ISO 8601 UTC emission time" },
+      "_sdoa":      { "type": "string", "enum": ["5.5"], "description": "Telemetry schema version" }
+    }
+  },
+
+  "events": {
+    "sleeve:init": {
+      "description": "Emitted at the end of init(). Signals that the sleeve has completed path resolution and health check. Healthy or not, init always emits this event.",
+      "extends": "baseFields",
+      "fields": {
+        "healthy":    { "type": "boolean", "description": "true if _healthCheck() passed, false if it threw" },
+        "resolvedPath": { "type": ["string", "null"], "description": "The path resolved by PathResolver, or null if path is auto" }
+      }
+    },
+
+    "sleeve:run": {
+      "description": "Emitted at the entry of run(), before _callExternal() is invoked. Allows tracing calls that never complete (timeouts, process crashes). Paired with sleeve:boundaryCall by correlationId.",
+      "extends": "baseFields",
+      "fields": {
+        "command":       { "type": "string", "description": "Command being dispatched" },
+        "correlationId": { "type": "string", "description": "UUID linking sleeve:run to its sleeve:boundaryCall outcome" }
+      }
+    },
+
+    "sleeve:boundaryCall": {
+      "description": "Emitted after run() completes (success or failure). The primary telemetry event for boundary latency, error rate, and drift analysis.",
+      "extends": "baseFields",
+      "fields": {
+        "command":       { "type": "string", "description": "Command that was executed" },
+        "durationMs":    { "type": "number", "description": "Wall-clock duration of the full run() call" },
+        "ok":            { "type": "boolean", "description": "true = normalized response returned successfully" },
+        "correlationId": { "type": "string", "description": "UUID matching the sleeve:run event that started this call" }
+      }
+    },
+
+    "sleeve:boundaryFault": {
+      "description": "Emitted when run() completes with ok=false. Distinct from sleeve:boundaryCall so fault consumers (Triage circuit breaker, Cartographer drift) can subscribe selectively without filtering.",
+      "extends": "baseFields",
+      "fields": {
+        "command":    { "type": "string", "description": "Command that faulted" },
+        "durationMs": { "type": "number", "description": "Duration before fault was determined" },
+        "error":      { "type": "string", "description": "Error message from the failed call or normalization" },
+        "correlationId": { "type": "string", "description": "UUID matching the sleeve:run that opened this call" }
+      }
+    },
+
+    "sleeve:health": {
+      "description": "Emitted by periodic health checks (not only on failure). Allows dashboards and Oracle to track health status over time without requiring a live call.",
+      "extends": "baseFields",
+      "fields": {
+        "healthy":   { "type": "boolean", "description": "true = external system responded to health probe" },
+        "latencyMs": { "type": ["number", "null"], "description": "Round-trip latency of the health probe, null if skipped" },
+        "detail":    { "type": ["string", "null"], "description": "Optional detail string, e.g. model version or endpoint status" }
+      }
+    },
+
+    "sleeve:disposed": {
+      "description": "Emitted at the end of dispose(). Signals that the sleeve has torn down external connections and is no longer active.",
+      "extends": "baseFields",
+      "fields": {
+        "reason": { "type": ["string", "null"], "description": "Optional reason for disposal (e.g. registry shutdown, hot-swap)" }
+      }
+    }
+  },
+
+  "deprecations": {
+    "sleeve:healthCheckFailed": {
+      "supersededBy": "sleeve:init (healthy: false) + sleeve:health (healthy: false)",
+      "removedIn": "5.5"
+    }
+  },
+
+  "consumedBy": {
+    "sleeve:init":          ["Chronicle.service", "tracksdoa.us"],
+    "sleeve:run":           ["Chronicle.service"],
+    "sleeve:boundaryCall":  ["Triage.workflow", "Cartographer.workflow", "Oracle.service", "Pulse.workflow", "Chronicle.service", "tracksdoa.us"],
+    "sleeve:boundaryFault": ["Triage.workflow", "Cartographer.workflow", "Chronicle.service", "tracksdoa.us"],
+    "sleeve:health":        ["Oracle.service", "Pulse.workflow", "Chronicle.service", "tracksdoa.us"],
+    "sleeve:disposed":      ["Chronicle.service", "Registrar.service"]
+  }
+}
