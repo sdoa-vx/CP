@@ -1,8 +1,16 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    Registrar.service.js
-// Version: 5.2.0
-// Updated: 2026-06-27T00:00:00Z
-// Changes: Step 13 — fieldChampion(module) added as the terminal step
+// Version: 5.3.0
+// Updated: 2026-06-28T00:00:00Z
+// Changes: Amendment 4.4 — Model Version Lineage.
+//          recordModelLineage({ moduleId, adapterId, version?, parentAdapterId? })
+//            — appends a lineage entry, emits registrar:lineageRecorded.
+//          getModelLineage({ moduleId }) — returns full adapter chain.
+//          on_model_upgrade_approved(event) — auto-records lineage when
+//            Coach approves an upgrade, linking to the previous head.
+//          _lineage Map: moduleId → LineageEntry[] (in-memory; Chronicle
+//            persists via registrar:lineageRecorded subscription).
+// Previous: Step 13 — fieldChampion(module) added as the terminal step
 //          of the sole healing path. Listens for coach:mutationReady,
 //          writes patched source, re-processes through ProbationOfficer,
 //          and re-fields the module in the active roster.
@@ -21,7 +29,7 @@ class RegistrarService extends EventEmitter {
     type: "service",
     layer: 3,
     runtime: "NodeJS",
-    version: "5.2.0",
+    version: "5.3.0",
     operationalRole: "registrar",
     requires: ["ResponseFormatter.service", "ProbationOfficer.workflow", "AssemblyLine.service"],
     dataFiles: [],
@@ -31,19 +39,26 @@ class RegistrarService extends EventEmitter {
         discover_portfolio:  { description: "Scans portfolio directory and compiles roster.", input: {}, output: "object" },
         get_active_player:   { description: "Returns current active runtime module details for an ID.", input: { moduleId: "string" }, output: "object" },
         quarantine_player:   { description: "Safely isolates a failing or untrusted module.", input: { moduleId: "string" }, output: "boolean" },
-        fieldChampion:       { description: "Terminal step of the healing path. Writes patched source, re-validates through ProbationOfficer, and promotes module to active roster.", input: { moduleId: "string", mutatedSource: "string" }, output: "boolean" }
+        fieldChampion:        { description: "Terminal step of the healing path. Writes patched source, re-validates through ProbationOfficer, and promotes module to active roster.", input: { moduleId: "string", mutatedSource: "string" }, output: "boolean" },
+        recordModelLineage:   { description: "Amendment 4.4 — append a LoRA adapter lineage entry for a model sleeve. Links adapterId to its parent (the adapter it replaces) forming a complete upgrade chain.", input: { moduleId: "string", adapterId: "string", version: "string?", parentAdapterId: "string?" }, output: "object" },
+        getModelLineage:      { description: "Amendment 4.4 — return the full adapter lineage chain for a model sleeve, oldest first.", input: { moduleId: "string" }, output: "object[]" }
       },
       events: {
         "registrar:mutationDetected":  { payload: { filePath: "string" } },
         "registrar:verifyingPlayer":   { payload: { id: "string", runtime: "string" } },
         "registrar:playerQuarantined": { payload: { id: "string", reason: "string" } },
         "registrar:playerFielded":     { payload: { id: "string", runtime: "string", version: "string" } },
-        "registrar:rosterUpdated":     { payload: { activeRoster: "object" } }
+        "registrar:rosterUpdated":     { payload: { activeRoster: "object" } },
+        "registrar:lineageRecorded":   { payload: { moduleId: "string", adapterId: "string", version: "string|null", parentAdapterId: "string|null", fieldedAt: "string" } }
       },
       accepts: {
         "coach:mutationReady": {
           description: "Receives a validated patch from Coach. Registrar writes the mutated source to the module file and re-fields it through the standard ingestion pipeline.",
           payload: { moduleId: "string", originalSource: "string", mutatedSource: "string", diff: "string" }
+        },
+        "coach:modelUpgradeApproved": {
+          description: "Amendment 4.4 — automatically records adapter lineage when Coach approves a model upgrade.",
+          payload: { moduleId: "string", adapterId: "string", proposalId: "string", approvedAt: "string", validationScore: "number" }
         }
       },
       slots: {}
@@ -299,11 +314,42 @@ class RegistrarService extends EventEmitter {
     });
   }
 
+  // ── Amendment 4.4: Model Version Lineage ──────────────────────
+
+  // _lineage: moduleId → LineageEntry[]
+  // LineageEntry: { adapterId, version, parentAdapterId, fieldedAt }
+  _lineage = new Map();
+
+  recordModelLineage({ moduleId, adapterId, version = null, parentAdapterId = null } = {}) {
+    if (!moduleId || !adapterId) return { ok: false, error: "moduleId and adapterId required" };
+    if (!this._lineage.has(moduleId)) this._lineage.set(moduleId, []);
+    const fieldedAt = new Date().toISOString();
+    this._lineage.get(moduleId).push({ adapterId, version, parentAdapterId, fieldedAt });
+    this.emit("registrar:lineageRecorded", { moduleId, adapterId, version, parentAdapterId, fieldedAt });
+    return { ok: true, moduleId, adapterId, fieldedAt };
+  }
+
+  getModelLineage({ moduleId } = {}) {
+    if (!moduleId) return { ok: false, error: "moduleId required" };
+    return { ok: true, moduleId, lineage: [...(this._lineage.get(moduleId) ?? [])] };
+  }
+
+  // Auto-records lineage when Coach approves an adapter upgrade.
+  // parentAdapterId is the current head of the lineage chain (if any).
+  onCoachModelUpgradeApproved(event) {
+    const { moduleId, adapterId } = event ?? {};
+    if (!moduleId || !adapterId) return;
+    const chain         = this._lineage.get(moduleId) ?? [];
+    const parentAdapterId = chain.length ? chain.at(-1).adapterId : null;
+    this.recordModelLineage({ moduleId, adapterId, parentAdapterId });
+  }
+
   async dispose() {
     if (this.watcher) this.watcher.close();
     this.pool.clear();
     this.activeRoster.clear();
     this.quarantine.clear();
+    this._lineage.clear();
   }
 }
 

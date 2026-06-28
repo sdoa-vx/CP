@@ -76,6 +76,48 @@
       }
     },
 
+    "sleeve:loraTrainingStarted": {
+      "description": "Amendment 4.4 — emitted when trainLoRA() begins fine-tuning a LoRA adapter on a model sleeve. Long-running; may not complete for minutes. Paired with sleeve:loraTrainingComplete by adapterId.",
+      "extends": "baseFields",
+      "fields": {
+        "adapterId":        { "type": "string",  "description": "UUID identifying this training run and the resulting adapter" },
+        "trainingDataSize": { "type": "number",  "description": "Number of training examples supplied" },
+        "epochs":           { "type": "number",  "description": "Training epochs requested" },
+        "rank":             { "type": "number",  "description": "LoRA rank (dimensionality of adapter matrices)" }
+      }
+    },
+    "sleeve:loraTrainingComplete": {
+      "description": "Amendment 4.4 — emitted when trainLoRA() finishes. Carries training loss and duration. A low loss alone does not indicate the adapter is ready — validateLoRA() must pass before proposeModelUpgrade() is allowed.",
+      "extends": "baseFields",
+      "fields": {
+        "adapterId":  { "type": "string",  "description": "UUID matching sleeve:loraTrainingStarted" },
+        "loss":       { "type": ["number", "null"], "description": "Final training loss, null if the external system did not report it" },
+        "durationMs": { "type": "number",  "description": "Wall-clock training duration" },
+        "ok":         { "type": "boolean", "description": "false if training failed (loss diverged, OOM, etc.)" }
+      }
+    },
+    "sleeve:loraValidated": {
+      "description": "Amendment 4.4 — emitted after validateLoRA() runs test cases against a trained adapter. The adapter may only be proposed for governance approval when passed=true.",
+      "extends": "baseFields",
+      "fields": {
+        "adapterId":     { "type": "string",  "description": "Adapter under test" },
+        "passed":        { "type": "boolean", "description": "true if all required test cases passed at or above quality threshold" },
+        "score":         { "type": "number",  "description": "Normalized quality score 0–1 from the test suite" },
+        "testCaseCount": { "type": "number",  "description": "Number of test cases evaluated" }
+      }
+    },
+    "sleeve:modelUpgradeProposed": {
+      "description": "Amendment 4.4 — emitted by proposeModelUpgrade() after a validated adapter passes the pre-proposal gate. Routes to Coach for governance approval. The sleeve cannot self-approve — this is a proposal only.",
+      "extends": "baseFields",
+      "fields": {
+        "adapterId":       { "type": "string", "description": "Validated adapter being proposed" },
+        "proposalId":      { "type": "string", "description": "UUID for this proposal; paired with coach:modelUpgradeApproved or coach:modelUpgradeRejected" },
+        "validationScore": { "type": "number", "description": "Score from the most recent validateLoRA() run" },
+        "proposedReason":  { "type": ["string", "null"], "description": "Human-readable reason for proposing this upgrade" }
+      },
+      "constraints": { "selfApprovalForbidden": true }
+    },
+
     "sleeve:transportNegotiated": {
       "description": "Amendment 4.1 — emitted when negotiateTransport() selects a different transport than the one currently active. Carries the previous transport, the new selection, scoring reasons, and a per-transport score array so Cartographer can track transport stability over time. Not emitted if negotiation produces no change.",
       "extends": "baseFields",
@@ -141,7 +183,11 @@
     "sleeve:boundaryFault": ["Triage.workflow", "Cartographer.workflow", "Chronicle.service", "tracksdoa.us"],
     "sleeve:health":        ["Oracle.service", "Pulse.workflow", "Chronicle.service", "tracksdoa.us"],
     "sleeve:disposed":         ["Chronicle.service", "Registrar.service"],
-    "sleeve:transportNegotiated": ["Cartographer.workflow", "Chronicle.service", "tracksdoa.us"],
+    "sleeve:loraTrainingStarted":   ["Chronicle.service", "Cartographer.workflow"],
+    "sleeve:loraTrainingComplete":  ["Chronicle.service", "Cartographer.workflow"],
+    "sleeve:loraValidated":         ["Chronicle.service", "Coach.workflow"],
+    "sleeve:modelUpgradeProposed":  ["Coach.workflow", "Chronicle.service"],
+    "sleeve:transportNegotiated":   ["Cartographer.workflow", "Chronicle.service", "tracksdoa.us"],
     "sleeve:sandboxRun":          ["Chronicle.service"],
     "sleeve:modelInfo":         ["Cartographer.workflow", "Oracle.service", "Chronicle.service"],
     "sleeve:commandDiscovered": ["Coach.workflow", "Chronicle.service"]

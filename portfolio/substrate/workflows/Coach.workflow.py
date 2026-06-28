@@ -1,8 +1,14 @@
 # ──────────────────────────────────────────────────────────────────
 # File:    Coach.workflow.py
-# Version: 5.2.0
-# Updated: 2026-06-27T00:00:00Z
-# Changes: Amendment 3.2 — on_command_discovered() handler added.
+# Version: 5.3.0
+# Updated: 2026-06-28T00:00:00Z
+# Changes: Amendment 4.4 — Model upgrade approval path.
+#          on_model_upgrade_proposed(event) receives sleeve:modelUpgradeProposed.
+#          Validates quality (score >= QUALITY_THRESHOLD = 0.70).
+#          If approved: emits coach:modelUpgradeApproved.
+#          If rejected: emits coach:modelUpgradeRejected with reason.
+#          Sleeve cannot self-approve — Coach is the sole gate.
+# Previous: Amendment 3.2 — on_command_discovered() handler added.
 #          Receives sleeve:commandDiscovered, computes a search/replace
 #          patch on the external.commands array, and calls on_patch_request()
 #          directly. The existing pipeline (ProbationOfficer → Registrar.
@@ -28,7 +34,7 @@ MANIFEST_JSON = """
     "type": "workflow",
     "layer": 3,
     "runtime": "Python",
-    "version": "5.2.0",
+    "version": "5.3.0",
     "operationalRole": "savant",
     "requires": ["AiProvider.adapter", "ProbationOfficer.workflow"],
     "dataFiles": [],
@@ -55,9 +61,19 @@ MANIFEST_JSON = """
             "mutatedSource": "string",
             "diff": "string"
           }
+        },
+        "coach:modelUpgradeApproved": {
+          "payload": { "moduleId": "string", "adapterId": "string", "proposalId": "string", "approvedAt": "string", "validationScore": "number" }
+        },
+        "coach:modelUpgradeRejected": {
+          "payload": { "moduleId": "string", "adapterId": "string", "proposalId": "string", "reason": "string" }
         }
       },
       "accepts": {
+        "sleeve:modelUpgradeProposed": {
+          "description": "Amendment 4.4 — receives a validated adapter proposal from a model sleeve. Coach validates quality score against QUALITY_THRESHOLD (0.70) and emits coach:modelUpgradeApproved or coach:modelUpgradeRejected. Sleeve cannot self-approve.",
+          "payload": { "moduleId": "string", "adapterId": "string", "proposalId": "string", "validationScore": "number", "proposedReason": "string|null" }
+        },
         "heal:patch-request": {
           "description": "Receives a patch synthesis result from AiSleeve. Coach applies the patch, validates via ProbationOfficer, then signals Registrar to re-field the module.",
           "payload": {
@@ -318,3 +334,39 @@ Instructions:
             # coach:patchRejected on failure — stop after first attempt
             # (the second variant is a fallback only if search not found)
             break
+
+    # ── sleeve:modelUpgradeProposed handler (Amendment 4.4) ────────
+    # Receives a validated LoRA adapter proposal from a model sleeve.
+    # Coach is the sole approval gate — sleeves cannot self-approve.
+    # Validates quality score against QUALITY_THRESHOLD; emits
+    # coach:modelUpgradeApproved or coach:modelUpgradeRejected.
+    QUALITY_THRESHOLD = 0.70
+
+    def on_model_upgrade_proposed(self, event):
+        module_id        = event.get("moduleId")
+        adapter_id       = event.get("adapterId")
+        proposal_id      = event.get("proposalId", "")
+        validation_score = event.get("validationScore", 0.0)
+        reason           = event.get("proposedReason")
+
+        if not module_id or not adapter_id:
+            return
+
+        import datetime
+        approved_at = datetime.datetime.utcnow().isoformat() + "Z"
+
+        if validation_score >= self.QUALITY_THRESHOLD:
+            self.emit("coach:modelUpgradeApproved", {
+                "moduleId":        module_id,
+                "adapterId":       adapter_id,
+                "proposalId":      proposal_id,
+                "approvedAt":      approved_at,
+                "validationScore": validation_score
+            })
+        else:
+            self.emit("coach:modelUpgradeRejected", {
+                "moduleId":   module_id,
+                "adapterId":  adapter_id,
+                "proposalId": proposal_id,
+                "reason":     f"validationScore {validation_score:.3f} below threshold {self.QUALITY_THRESHOLD} (reason: {reason or 'none'})"
+            })
