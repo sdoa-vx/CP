@@ -76,6 +76,18 @@
       }
     },
 
+    "sleeve:sandboxRun": {
+      "description": "Amendment 3.5 — emitted instead of sleeve:boundaryCall when the sleeve is in sandbox mode. Signals that the response came from a fixture or Chronicle replay, NOT from the real external system. Downstream consumers (Triage circuit breakers, Cartographer drift, Pulse scoring) must never act on this event — it is for Chronicle audit and test harness use only.",
+      "extends": "baseFields",
+      "fields": {
+        "command":    { "type": "string",  "description": "Command that was simulated" },
+        "durationMs": { "type": "number",  "description": "Wall-clock time of fixture lookup (will be near-zero)" },
+        "ok":         { "type": "boolean", "description": "Whether the fixture returned a success response" },
+        "replay":     { "type": "boolean", "description": "true if the fixture came from Chronicle replay, false if injected manually" },
+        "fixtureKey": { "type": ["string", "null"], "description": "The command key used to look up the fixture ('*' means wildcard)" }
+      }
+    },
+
     "sleeve:modelInfo": {
       "description": "Amendment 3.3 — emitted by model sleeves (AI inference boundaries) at init() and optionally after each health check. Provides model version, hash, and declared capabilities so Cartographer can detect version drift across deployments. Non-model sleeves never emit this event.",
       "extends": "baseFields",
@@ -117,6 +129,7 @@
     "sleeve:boundaryFault": ["Triage.workflow", "Cartographer.workflow", "Chronicle.service", "tracksdoa.us"],
     "sleeve:health":        ["Oracle.service", "Pulse.workflow", "Chronicle.service", "tracksdoa.us"],
     "sleeve:disposed":         ["Chronicle.service", "Registrar.service"],
+    "sleeve:sandboxRun":        ["Chronicle.service"],
     "sleeve:modelInfo":         ["Cartographer.workflow", "Oracle.service", "Chronicle.service"],
     "sleeve:commandDiscovered": ["Coach.workflow", "Chronicle.service"]
   }
