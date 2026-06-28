@@ -1,8 +1,19 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    Cartographer.workflow.js
-// Version: 5.3.0
-// Updated: 2026-06-27T00:00:00Z
-// Changes: Amendment 3.3 — Model Capability Drift detection.
+// Version: 5.4.0
+// Updated: 2026-06-28T00:00:00Z
+// Changes: Amendment 4.3 — Predictive Drift Prevention.
+//          predictiveDrift({ since?, windowCount?, horizon? }) — splits
+//          Chronicle telemetry into N time windows, fits a linear trend
+//          (least-squares regression) to p95 latency and error rate per
+//          sleeve, projects time-to-threshold, and emits early warnings
+//          BEFORE a metric crosses its danger threshold.
+//          New events: cartographer:driftWarning (per alarming metric),
+//          cartographer:rotationRecommended (when predicted-failing sleeve
+//          has alternatives in Oracle.rankSleeves).
+//          New internals: _buildWindowMetrics(), _computeTrend(),
+//          _timeToThreshold().
+// Previous: Amendment 3.3 — Model Capability Drift detection.
 //          New command: modelDrift() analyses AI model sleeves across
 //          five drift dimensions: latency, error/hallucination, capability
 //          (per-command failure), scoring, and version drift.
@@ -47,7 +58,7 @@ class CartographerWorkflow {
     type:            "workflow",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "5.3.0",
+    version:         "5.4.0",
     operationalRole: "savant",
 
     // ── Dependencies ──────────────────────────
@@ -97,10 +108,20 @@ class CartographerWorkflow {
         modelDrift: {
           description: "Analyse AI model sleeves across five drift dimensions: latency drift, error/hallucination drift, capability drift (per-command failure rate), scoring drift, and version drift. Returns a severity-rated modelDriftReport.",
           input: {
-            since:         "string?",  // ISO timestamp — recent window start (default: 24h ago)
-            baselineSince: "string?"   // ISO timestamp — baseline window start (default: 7d ago)
+            since:         "string?",
+            baselineSince: "string?"
           },
-          output: "object"   // { driftItems[], summary }
+          output: "object"
+        },
+        // Amendment 4.3
+        predictiveDrift: {
+          description: "Trend analysis across all boundary sleeves. Splits Chronicle telemetry into windowCount time windows, fits a linear regression to p95 latency and error rate per sleeve, projects the time-to-threshold for each metric, and emits cartographer:driftWarning for any sleeve predicted to cross a danger threshold within the horizon. Also emits cartographer:rotationRecommended when the predicted-failing sleeve has viable alternatives in Oracle.",
+          input: {
+            since:       "string?",   // ISO timestamp — analysis window start (default: 24h ago)
+            windowCount: "number?",   // number of sub-windows to fit (default: 5)
+            horizon:     "number?"    // warning horizon in ms (default: 4h = 14_400_000)
+          },
+          output: "object"   // { warnings[], rotations[], summary }
         }
       },
       events: {
@@ -115,6 +136,13 @@ class CartographerWorkflow {
         },
         "cartographer:modelDrift": {
           payload: { driftCount: "number", severity: "string", dimensions: "string[]", systems: "string[]" }
+        },
+        // Amendment 4.3
+        "cartographer:driftWarning": {
+          payload: { moduleId: "string", metric: "string", currentValue: "number", slope: "number", predictedCrossMs: "number", severity: "string", windowCount: "number", windowMs: "number" }
+        },
+        "cartographer:rotationRecommended": {
+          payload: { moduleId: "string", reason: "string", capabilities: "string[]", alternatives: "string[]" }
         }
       },
       accepts: {},
@@ -533,6 +561,143 @@ class CartographerWorkflow {
         detail:   `Model version changed: ${versions.join(" → ")}`
       };
     } catch (_) { return null; }
+  }
+
+  // ── Amendment 4.3: Predictive Drift Prevention ────────────────
+
+  predictiveDrift({ since, windowCount = 5, horizon } = {}) {
+    const nowMs        = Date.now();
+    const totalMs      = since ? (nowMs - new Date(since).getTime()) : 24 * 60 * 60 * 1000;
+    const windowMs     = totalMs / windowCount;
+    const horizonMs    = horizon != null ? Number(horizon) : 4 * 60 * 60 * 1000;
+
+    const surface  = this._oracle?.dumpSurface({}) ?? [];
+    const sleeves  = [...new Set(surface.filter(e => e.surfaceType === "boundary").map(e => e.moduleId))];
+    const warnings = [], rotations = [];
+
+    const LATENCY_THRESHOLD = 2000, ERROR_THRESHOLD = 20;
+
+    for (const moduleId of sleeves) {
+      const windows = this._buildWindowMetrics(moduleId, nowMs, windowMs, windowCount);
+      if (windows.filter(w => w.callCount > 0).length < 3) continue;
+
+      // Latency trend
+      const p95s      = windows.map(w => w.p95Ms ?? 0);
+      const p95Trend  = this._computeTrend(p95s);
+      if (p95Trend.slope > 0) {
+        const ttt = this._timeToThreshold(p95s.at(-1), p95Trend.slope, LATENCY_THRESHOLD, windowMs);
+        if (ttt < horizonMs * 6) {
+          const severity = ttt < 3_600_000 ? "critical" : ttt < horizonMs ? "high" : "medium";
+          const w = { moduleId, metric: "p95Latency", currentValue: parseFloat(p95s.at(-1).toFixed(1)), slope: p95Trend.slope, predictedCrossMs: Math.round(ttt), severity, windowCount, windowMs: Math.round(windowMs) };
+          warnings.push(w);
+          this._emit("cartographer:driftWarning", w);
+        }
+      }
+
+      // Error rate trend
+      const errs      = windows.map(w => w.errorRatePct ?? 0);
+      const errTrend  = this._computeTrend(errs);
+      if (errTrend.slope > 0) {
+        const ttt = this._timeToThreshold(errs.at(-1), errTrend.slope, ERROR_THRESHOLD, windowMs);
+        if (ttt < horizonMs * 6) {
+          const severity = ttt < 3_600_000 ? "critical" : ttt < horizonMs ? "high" : "medium";
+          const w = { moduleId, metric: "errorRate", currentValue: parseFloat(errs.at(-1).toFixed(2)), slope: errTrend.slope, predictedCrossMs: Math.round(ttt), severity, windowCount, windowMs: Math.round(windowMs) };
+          warnings.push(w);
+          this._emit("cartographer:driftWarning", w);
+        }
+      }
+    }
+
+    // Rotation recommendations: high/critical warnings with available alternatives
+    const urgentByModule = {};
+    for (const w of warnings.filter(w => w.severity === "critical" || w.severity === "high")) {
+      (urgentByModule[w.moduleId] = urgentByModule[w.moduleId] ?? []).push(w);
+    }
+    for (const [moduleId, ws] of Object.entries(urgentByModule)) {
+      const profile = this._oracle?.describeModule?.({ moduleId }) ?? {};
+      const caps    = profile.capabilities ?? [];
+      const alts    = [...new Set(
+        caps.flatMap(cap => (this._oracle?.rankSleeves?.({ capability: cap }) ?? [])
+          .filter(r => r.moduleId !== moduleId).map(r => r.moduleId))
+      )];
+      if (!alts.length) continue;
+      const reason = ws.map(w => `${w.metric} → threshold in ${Math.round(w.predictedCrossMs / 60000)}min`).join("; ");
+      this._emit("cartographer:rotationRecommended", { moduleId, reason, capabilities: caps, alternatives: alts });
+      rotations.push({ moduleId, alternatives: alts, reason });
+    }
+
+    this._chronicle?.record?.({
+      type:    "cartographer:predictiveDrift",
+      source:  "Cartographer.workflow",
+      payload: { warningCount: warnings.length, rotationCount: rotations.length }
+    });
+
+    const sev = warnings.some(w => w.severity === "critical") ? "critical"
+              : warnings.some(w => w.severity === "high")     ? "high"
+              : warnings.some(w => w.severity === "medium")   ? "medium" : "none";
+
+    return ResponseFormatter.ok({
+      warnings,
+      rotations,
+      summary: {
+        total:    warnings.length,
+        critical: warnings.filter(w => w.severity === "critical").length,
+        high:     warnings.filter(w => w.severity === "high").length,
+        medium:   warnings.filter(w => w.severity === "medium").length,
+        overallSeverity: sev,
+        rotationsRecommended: rotations.length
+      }
+    });
+  }
+
+  _buildWindowMetrics(moduleId, nowMs, windowMs, windowCount) {
+    if (!this._chronicle?.query) return [];
+    try {
+      const startMs = nowMs - windowMs * windowCount;
+      const entries = (this._chronicle.query({ type: "sleeve:boundaryCall" }) ?? [])
+        .filter(e => e.payload?.moduleId === moduleId)
+        .filter(e => { const t = new Date(e.payload?.timestamp ?? e.recordedAt ?? 0).getTime(); return t >= startMs && t < nowMs; });
+
+      return Array.from({ length: windowCount }, (_, i) => {
+        const wStart = nowMs - windowMs * (windowCount - i);
+        const wEnd   = wStart + windowMs;
+        const calls  = entries
+          .filter(e => { const t = new Date(e.payload?.timestamp ?? e.recordedAt ?? 0).getTime(); return t >= wStart && t < wEnd; })
+          .map(e => ({ durationMs: e.payload?.durationMs ?? 0, ok: e.payload?.ok ?? true }));
+        if (!calls.length) return { p95Ms: null, errorRatePct: null, callCount: 0 };
+        const sorted = calls.map(c => c.durationMs).sort((a, b) => a - b);
+        return {
+          p95Ms:        sorted[Math.floor(sorted.length * 0.95)] ?? 0,
+          errorRatePct: parseFloat(((calls.filter(c => !c.ok).length / calls.length) * 100).toFixed(2)),
+          callCount:    calls.length
+        };
+      });
+    } catch (_) { return []; }
+  }
+
+  // Least-squares linear regression on a series of n values (x = 0..n-1).
+  _computeTrend(series) {
+    const n    = series.length;
+    if (n < 2) return { slope: 0, intercept: 0, r2: 0 };
+    const vals  = series.map(v => v ?? 0);
+    const sumX  = (n * (n - 1)) / 2;
+    const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6;
+    const sumY  = vals.reduce((a, v) => a + v, 0);
+    const sumXY = vals.reduce((a, v, i) => a + i * v, 0);
+    const denom = n * sumX2 - sumX * sumX;
+    if (denom === 0) return { slope: 0, intercept: sumY / n, r2: 0 };
+    const slope     = parseFloat(((n * sumXY - sumX * sumY) / denom).toFixed(4));
+    const intercept = parseFloat(((sumY - slope * sumX) / n).toFixed(4));
+    const yMean = sumY / n;
+    const ssTot = vals.reduce((a, v) => a + (v - yMean) ** 2, 0);
+    const ssRes = vals.reduce((a, v, i) => a + (v - (intercept + slope * i)) ** 2, 0);
+    return { slope, intercept, r2: ssTot > 0 ? parseFloat((1 - ssRes / ssTot).toFixed(3)) : 0 };
+  }
+
+  // Returns estimated ms until `current + slope*x >= threshold`, or Infinity.
+  _timeToThreshold(current, slope, threshold, windowMs) {
+    if (slope <= 0 || current >= threshold) return slope <= 0 ? Infinity : 0;
+    return ((threshold - current) / slope) * windowMs;
   }
 
   async dispose() {
