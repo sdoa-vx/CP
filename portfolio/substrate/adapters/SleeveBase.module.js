@@ -1,8 +1,23 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    SleeveBase.module.js
-// Version: 1.5.0
+// Version: 1.6.0
 // Updated: 2026-06-28T00:00:00Z
-// Changes: Amendment 4.1 — Sleeve Transport Negotiation.
+// Changes: Amendment 4.4 — Sovereign Model Training Pipeline.
+//          trainLoRA({ trainingData, epochs?, rank? }) — triggers LoRA
+//            fine-tuning via _trainLoRA() [subclass override]. Emits
+//            sleeve:loraTrainingStarted + sleeve:loraTrainingComplete.
+//          validateLoRA({ adapterId, testCases? }) — runs quality test
+//            suite via _validateLoRA() [subclass override]. Emits
+//            sleeve:loraValidated. Adapter state must be "trained".
+//          proposeModelUpgrade({ adapterId, reason? }) — submits
+//            validated adapter for governance approval. Emits
+//            sleeve:modelUpgradeProposed. Requires state "validated"
+//            AND passed=true. Sleeve cannot self-approve.
+//          Subscribes to coach:modelUpgradeApproved — calls _loadAdapter()
+//            when Coach approves an upgrade for this sleeve.
+//          _adapterRegistry Map tracks per-adapter lifecycle state.
+//          Subclass stubs: _trainLoRA(), _validateLoRA(), _loadAdapter().
+// Previous: Amendment 4.1 — Sleeve Transport Negotiation.
 //          Sleeves may declare external.transports[] (ordered preference list).
 //          negotiateTransport(trigger?) probes each candidate, scores by
 //          Chronicle history (p95, error rate) + probe latency, selects best
@@ -58,7 +73,7 @@ class SleeveBase {
     type:            "sleeve",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "1.5.0",
+    version:         "1.6.0",
     operationalRole: "savant",
     requires:        ["ResponseFormatter.service", "PathResolver.service"],
     external: {
@@ -95,6 +110,22 @@ class SleeveBase {
           input: { command: "string", response: "any" },
           output: "{ ok: true }"
         },
+        // Amendment 4.4 — Sovereign Model Training Pipeline
+        trainLoRA: {
+          description: "Begin LoRA fine-tuning on the external model system. Generates an adapterId, emits sleeve:loraTrainingStarted, calls _trainLoRA() [subclass override], then emits sleeve:loraTrainingComplete. Returns { ok, adapterId, loss, durationMs }.",
+          input: { trainingData: "object[]", epochs: "number?", rank: "number?" },
+          output: "{ ok: boolean, adapterId: string, loss: number|null, durationMs: number }"
+        },
+        validateLoRA: {
+          description: "Run a quality test suite against a trained adapter. Adapter must be in state 'trained'. Calls _validateLoRA() [subclass override], emits sleeve:loraValidated. Returns { ok, adapterId, passed, score }. Only passed=true adapters may be proposed for governance approval.",
+          input: { adapterId: "string", testCases: "object[]?" },
+          output: "{ ok: boolean, adapterId: string, passed: boolean, score: number }"
+        },
+        proposeModelUpgrade: {
+          description: "Submit a validated adapter for governance approval. Adapter must be in state 'validated' with passed=true. Emits sleeve:modelUpgradeProposed — routed to Coach. Sleeve cannot self-approve. Returns { ok, proposalId }.",
+          input: { adapterId: "string", reason: "string?" },
+          output: "{ ok: boolean, proposalId: string }"
+        },
         replayFromChronicle: {
           description: "Amendment 3.5 — load Chronicle sleeve:boundaryCall history for this sleeve as ordered replay queues and enter replay+sandbox mode. Each command queue dequeues in arrival order; an exhausted queue returns a synthetic error. Call exitSandbox() to return to real operation.",
           input: { since: "string?" },
@@ -126,6 +157,10 @@ class SleeveBase {
         "sleeve:commandDiscovered": {
           payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", currentCommands: "string[]", discoveredCommands: "string[]", undeclaredCommands: "string[]", proposalId: "string", _sdoa: "string" }
         },
+        "sleeve:loraTrainingStarted":  { payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", adapterId: "string", trainingDataSize: "number", epochs: "number", rank: "number", _sdoa: "string" } },
+        "sleeve:loraTrainingComplete": { payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", adapterId: "string", loss: "number|null", durationMs: "number", ok: "boolean", _sdoa: "string" } },
+        "sleeve:loraValidated":        { payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", adapterId: "string", passed: "boolean", score: "number", testCaseCount: "number", _sdoa: "string" } },
+        "sleeve:modelUpgradeProposed": { payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", adapterId: "string", proposalId: "string", validationScore: "number", proposedReason: "string|null", _sdoa: "string" } },
         "sleeve:transportNegotiated": {
           payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", previousTransport: "string", selectedTransport: "string", trigger: "string", reason: "string", scores: "object[]", _sdoa: "string" }
         },
@@ -133,7 +168,11 @@ class SleeveBase {
           payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", command: "string", durationMs: "number", ok: "boolean", replay: "boolean", fixtureKey: "string|null", _sdoa: "string" }
         }
       },
-      accepts: {},
+      accepts: {
+        "coach:modelUpgradeApproved": {
+          description: "Amendment 4.4 — when Coach approves a model upgrade for this sleeve, calls _loadAdapter(adapterId) to activate the new LoRA adapter on the external system."
+        }
+      },
       slots:   {}
     },
     docs: {
@@ -149,6 +188,10 @@ class SleeveBase {
   _triage       = null;
   _resolvedPath = null;
   _healthy      = false;
+
+  // Amendment 4.4 — model training state
+  _adapterRegistry = new Map();  // adapterId → { state, loss, score, passed, proposalId }
+  _upgradeUnsub    = null;       // unsub handle for coach:modelUpgradeApproved
 
   // Amendment 4.1 — transport negotiation state
   _activeTransport = null;   // set at init(); updated by negotiateTransport()
@@ -183,6 +226,22 @@ class SleeveBase {
     } catch (err) {
       this._healthy = false;
     }
+
+    // Amendment 4.4: subscribe to approval events for this sleeve only
+    try {
+      const bus = registry.get("EventBus.service");
+      if (bus) {
+        const onApproved = async (event) => {
+          if (event.moduleId !== manifest.id) return;
+          const entry = this._adapterRegistry.get(event.adapterId);
+          if (entry) entry.state = "fielding";
+          try { await this._loadAdapter(event.adapterId); if (entry) entry.state = "fielded"; }
+          catch (_) { if (entry) entry.state = "loadFailed"; }
+        };
+        bus.on("coach:modelUpgradeApproved", onApproved);
+        this._upgradeUnsub = () => bus.off?.("coach:modelUpgradeApproved", onApproved);
+      }
+    } catch (_) {}
 
     // sleeve:init — always emitted, healthy or not (Amendment 3.1)
     this._emit("sleeve:init", {
@@ -289,6 +348,9 @@ class SleeveBase {
     this._triage       = null;
     this._resolvedPath = null;
     this._healthy      = false;
+    try { this._upgradeUnsub?.(); } catch (_) {}
+    this._upgradeUnsub    = null;
+    this._adapterRegistry.clear();
     this._activeTransport = null;   // Amendment 4.1
     // Amendment 3.5: always exit sandbox on dispose — no leaked intercept
     this._sandboxMode  = false;
@@ -321,6 +383,103 @@ class SleeveBase {
       modelHash:            modelHash ?? null,
       declaredCapabilities: declaredCapabilities ?? []
     });
+  }
+
+  // ── Amendment 4.4 — Sovereign Model Training Pipeline ─────────
+
+  async trainLoRA({ trainingData = [], epochs = 3, rank = 8 } = {}) {
+    const manifest   = this.constructor.MANIFEST;
+    const external   = manifest?.external ?? {};
+    const base       = this._base(manifest, external);
+    const adapterId  = randomUUID();
+
+    this._adapterRegistry.set(adapterId, { state: "training", loss: null, score: null, passed: false });
+
+    this._emit("sleeve:loraTrainingStarted", {
+      ...base, adapterId, trainingDataSize: trainingData.length, epochs, rank
+    });
+
+    const t0 = Date.now();
+    let loss = null, ok = true;
+    try {
+      const result = await this._trainLoRA(trainingData, epochs, rank, adapterId);
+      loss = result?.loss ?? null;
+    } catch (err) {
+      ok = false;
+      this._adapterRegistry.get(adapterId).state = "failed";
+    }
+    const durationMs = Date.now() - t0;
+
+    if (ok) this._adapterRegistry.get(adapterId).state = "trained";
+    if (loss !== null) this._adapterRegistry.get(adapterId).loss = loss;
+
+    this._emit("sleeve:loraTrainingComplete", { ...base, adapterId, loss, durationMs, ok });
+    return { ok, adapterId, loss, durationMs };
+  }
+
+  async validateLoRA({ adapterId, testCases = [] } = {}) {
+    const entry = this._adapterRegistry.get(adapterId);
+    if (!entry || entry.state !== "trained") {
+      return { ok: false, error: `adapterId "${adapterId}" is not in state "trained" (current: ${entry?.state ?? "unknown"})` };
+    }
+
+    const manifest = this.constructor.MANIFEST;
+    const external = manifest?.external ?? {};
+    const base     = this._base(manifest, external);
+
+    let passed = false, score = 0, testCaseCount = testCases.length;
+    try {
+      const result = await this._validateLoRA(adapterId, testCases);
+      passed        = result?.passed ?? false;
+      score         = result?.score  ?? 0;
+      testCaseCount = result?.testCaseCount ?? testCaseCount;
+    } catch (_) {}
+
+    Object.assign(entry, { state: "validated", passed, score });
+    this._emit("sleeve:loraValidated", { ...base, adapterId, passed, score, testCaseCount });
+    return { ok: true, adapterId, passed, score };
+  }
+
+  async proposeModelUpgrade({ adapterId, reason = null } = {}) {
+    const entry = this._adapterRegistry.get(adapterId);
+    if (!entry || entry.state !== "validated") {
+      return { ok: false, error: `adapterId "${adapterId}" must be in state "validated" before proposing` };
+    }
+    if (!entry.passed) {
+      return { ok: false, error: `adapterId "${adapterId}" did not pass validation — cannot propose` };
+    }
+
+    const manifest   = this.constructor.MANIFEST;
+    const external   = manifest?.external ?? {};
+    const proposalId = randomUUID();
+
+    entry.state      = "proposed";
+    entry.proposalId = proposalId;
+
+    this._emit("sleeve:modelUpgradeProposed", {
+      ...this._base(manifest, external),
+      adapterId,
+      proposalId,
+      validationScore: entry.score,
+      proposedReason:  reason ?? null
+    });
+    return { ok: true, proposalId };
+  }
+
+  // ── Amendment 4.4 subclass stubs ──────────────────────────────
+  // Override in model sleeve subclasses (AiSleeve, QwenSleeve, PolicySleeve).
+  // Non-model sleeves never call these; stubs are harmless defaults.
+
+  async _trainLoRA(trainingData, epochs, rank, adapterId) {
+    return { loss: null };
+  }
+
+  async _validateLoRA(adapterId, testCases) {
+    return { passed: false, score: 0, testCaseCount: testCases.length };
+  }
+
+  async _loadAdapter(adapterId) {
+    // No-op stub — model sleeves override to swap the active LoRA weights.
   }
 
   // ── Amendment 4.1 — Sleeve Transport Negotiation ──────────────
