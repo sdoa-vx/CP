@@ -76,6 +76,16 @@
       }
     },
 
+    "sleeve:modelInfo": {
+      "description": "Amendment 3.3 — emitted by model sleeves (AI inference boundaries) at init() and optionally after each health check. Provides model version, hash, and declared capabilities so Cartographer can detect version drift across deployments. Non-model sleeves never emit this event.",
+      "extends": "baseFields",
+      "fields": {
+        "modelVersion":      { "type": ["string", "null"], "description": "Model identifier, e.g. 'Qwen2.5-7B-Instruct-Q4_K_M' or API model name" },
+        "modelHash":         { "type": ["string", "null"], "description": "SHA-256 or provider-reported hash of the model weights, null if unavailable" },
+        "declaredCapabilities": { "type": "array", "items": { "type": "string" }, "description": "Capabilities the model reports it supports (from introspection or provider metadata)" }
+      }
+    },
+
     "sleeve:commandDiscovered": {
       "description": "Amendment 3.2 — emitted when runDiscovery() finds external commands not declared in MANIFEST external.commands. This is a PROPOSAL only — the sleeve cannot self-approve. Coach receives this event and routes a manifest amendment through ProbationOfficer → Registrar.fieldChampion(). If ProbationOfficer rejects the amended source, the proposal is silently dropped.",
       "extends": "baseFields",
@@ -107,6 +117,7 @@
     "sleeve:boundaryFault": ["Triage.workflow", "Cartographer.workflow", "Chronicle.service", "tracksdoa.us"],
     "sleeve:health":        ["Oracle.service", "Pulse.workflow", "Chronicle.service", "tracksdoa.us"],
     "sleeve:disposed":         ["Chronicle.service", "Registrar.service"],
+    "sleeve:modelInfo":         ["Cartographer.workflow", "Oracle.service", "Chronicle.service"],
     "sleeve:commandDiscovered": ["Coach.workflow", "Chronicle.service"]
   }
 }
