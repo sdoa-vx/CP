@@ -1,8 +1,11 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    Registrar.service.js
-// Version: 5.1.0
-// Updated: 2026-06-17T00:00:00Z
-// Changes: Relocated to canonical sdoavx/ structure
+// Version: 5.2.0
+// Updated: 2026-06-27T00:00:00Z
+// Changes: Step 13 — fieldChampion(module) added as the terminal step
+//          of the sole healing path. Listens for coach:mutationReady,
+//          writes patched source, re-processes through ProbationOfficer,
+//          and re-fields the module in the active roster.
 // ──────────────────────────────────────────────────────────────────
 // Last modified: 2026-06-02 12:10 UTC
 // Module Type: service | Operational Role: registrar
@@ -18,25 +21,31 @@ class RegistrarService extends EventEmitter {
     type: "service",
     layer: 3,
     runtime: "NodeJS",
-    version: "5.1.0", // Bumping patch/minor for enhanced safety implementation
+    version: "5.2.0",
     operationalRole: "registrar",
     requires: ["ResponseFormatter.service", "ProbationOfficer.workflow", "AssemblyLine.service"],
     dataFiles: [],
     lifecycle: ["init", "dispose"],
     actions: {
       commands: {
-        discover_portfolio: { description: "Scans portfolio directory and compiles roster.", input: {}, output: "object" },
-        get_active_player: { description: "Returns current active runtime module details for an ID.", input: { moduleId: "string" }, output: "object" },
-        quarantine_player: { description: "Safely isolates a failing or untrusted module.", input: { moduleId: "string" }, output: "boolean" }
+        discover_portfolio:  { description: "Scans portfolio directory and compiles roster.", input: {}, output: "object" },
+        get_active_player:   { description: "Returns current active runtime module details for an ID.", input: { moduleId: "string" }, output: "object" },
+        quarantine_player:   { description: "Safely isolates a failing or untrusted module.", input: { moduleId: "string" }, output: "boolean" },
+        fieldChampion:       { description: "Terminal step of the healing path. Writes patched source, re-validates through ProbationOfficer, and promotes module to active roster.", input: { moduleId: "string", mutatedSource: "string" }, output: "boolean" }
       },
       events: {
-        "registrar:mutationDetected": { payload: { filePath: "string" } },
-        "registrar:verifyingPlayer":  { payload: { id: "string", runtime: "string" } },
-        "registrar:playerQuarantined":{ payload: { id: "string", reason: "string" } },
-        "registrar:playerFielded":    { payload: { id: "string", runtime: "string", version: "string" } },
+        "registrar:mutationDetected":  { payload: { filePath: "string" } },
+        "registrar:verifyingPlayer":   { payload: { id: "string", runtime: "string" } },
+        "registrar:playerQuarantined": { payload: { id: "string", reason: "string" } },
+        "registrar:playerFielded":     { payload: { id: "string", runtime: "string", version: "string" } },
         "registrar:rosterUpdated":     { payload: { activeRoster: "object" } }
       },
-      accepts: {},
+      accepts: {
+        "coach:mutationReady": {
+          description: "Receives a validated patch from Coach. Registrar writes the mutated source to the module file and re-fields it through the standard ingestion pipeline.",
+          payload: { moduleId: "string", originalSource: "string", mutatedSource: "string", diff: "string" }
+        }
+      },
       slots: {}
     },
     optimization: {
@@ -252,6 +261,42 @@ class RegistrarService extends EventEmitter {
       return true;
     }
     return false;
+  }
+
+  // ── Healing path terminal step (Step 13) ──────────────────────────
+  // Called by the registry event bus when Coach emits coach:mutationReady.
+  // Registrar is the only authority permitted to write patched source back
+  // to the portfolio — no sleeve or workflow may do this directly.
+  async fieldChampion({ moduleId, mutatedSource }) {
+    const player = this.activeRoster.get(moduleId);
+    if (!player) {
+      this.emit("registrar:playerQuarantined", { id: moduleId, reason: "fieldChampion: module not in active roster" });
+      return false;
+    }
+
+    const filePath = player.filePath;
+
+    // Write patched source — Registrar (authority) is permitted; sleeves are not.
+    try {
+      fs.writeFileSync(filePath, mutatedSource, 'utf8');
+    } catch (err) {
+      this.emit("registrar:playerQuarantined", { id: moduleId, reason: `fieldChampion: write failed — ${err.message}` });
+      return false;
+    }
+
+    // Re-run full ingestion pipeline (ProbationOfficer gate included).
+    const accepted = await this.processIncomingModule(filePath);
+    if (!accepted) return false;
+
+    this.arbitrateRosterEvolution();
+    return true;
+  }
+
+  // Wire the coach:mutationReady event so the registry event bus routes it here.
+  onCoachMutationReady(event) {
+    this.fieldChampion(event).catch(err => {
+      this.emit("registrar:playerQuarantined", { id: event.moduleId, reason: `fieldChampion error: ${err.message}` });
+    });
   }
 
   async dispose() {
