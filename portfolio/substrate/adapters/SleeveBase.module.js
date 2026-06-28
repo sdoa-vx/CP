@@ -1,8 +1,23 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    SleeveBase.module.js
-// Version: 1.6.0
+// Version: 1.7.0
 // Updated: 2026-06-28T00:00:00Z
-// Changes: Amendment 4.4 — Sovereign Model Training Pipeline.
+// Changes: Amendment 4.5 — Boundary Compression & Batching.
+//          batchExternalCalls(calls[]) — dispatches N { command, payload }
+//            tuples as grouped chunks (external.maxBatchSize, default 10).
+//            Each chunk calls _executeBatch() [subclass override for true
+//            batching; default is sequential fallback]. Emits
+//            sleeve:batchDispatched. Returns { ok, batchId, results[], durationMs }.
+//          compressPayload(payload, command?) — zlib deflate JSON payload.
+//            Returns { _compressed, _encoding, data, originalBytes,
+//            compressedBytes }. Emits sleeve:payloadCompressed.
+//          decompressPayload(compressed) — inflates back to object.
+//            Passes through non-compressed payloads transparently.
+//          _executeBatch(calls[]) [subclass stub] — sequential fallback;
+//            subclasses override for native batched API calls.
+//          run() automatic compression: if external.compression === true
+//            AND payload is object, compresses payload before _callExternal().
+// Previous: Amendment 4.4 — Sovereign Model Training Pipeline.
 //          trainLoRA({ trainingData, epochs?, rank? }) — triggers LoRA
 //            fine-tuning via _trainLoRA() [subclass override]. Emits
 //            sleeve:loraTrainingStarted + sleeve:loraTrainingComplete.
@@ -64,6 +79,7 @@
 "use strict";
 
 const { randomUUID } = require("crypto");
+const zlib           = require("zlib");
 
 const TELEMETRY_VERSION = "5.5";
 
@@ -73,7 +89,7 @@ class SleeveBase {
     type:            "sleeve",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "1.6.0",
+    version:         "1.7.0",
     operationalRole: "savant",
     requires:        ["ResponseFormatter.service", "PathResolver.service"],
     external: {
@@ -109,6 +125,22 @@ class SleeveBase {
           description: "Amendment 3.5 — add or replace a fixture for a command. Value may be a static response object or a function fn(command, payload) => response for dynamic/stateful scenarios. Use '*' as command key for a catch-all wildcard.",
           input: { command: "string", response: "any" },
           output: "{ ok: true }"
+        },
+        // Amendment 4.5 — Boundary Compression & Batching
+        batchExternalCalls: {
+          description: "Dispatch N { command, payload } calls as grouped chunks (up to external.maxBatchSize per chunk, default 10). Calls _executeBatch() per chunk — subclasses override for native batched API calls; default falls back to sequential. Emits sleeve:batchDispatched. Returns { ok, batchId, results[], callCount, durationMs }.",
+          input: { calls: "{ command: string, payload: object? }[]" },
+          output: "{ ok: boolean, batchId: string, results: object[], callCount: number, durationMs: number }"
+        },
+        compressPayload: {
+          description: "zlib-deflate a JSON-serialisable payload. Returns { _compressed, _encoding, data, originalBytes, compressedBytes }. Emits sleeve:payloadCompressed. Pass the result to decompressPayload() to recover the original.",
+          input: { payload: "any", command: "string?" },
+          output: "object"
+        },
+        decompressPayload: {
+          description: "Inflate a payload compressed by compressPayload(). Passes through non-compressed payloads transparently.",
+          input: { compressed: "any" },
+          output: "any"
         },
         // Amendment 4.4 — Sovereign Model Training Pipeline
         trainLoRA: {
@@ -157,6 +189,8 @@ class SleeveBase {
         "sleeve:commandDiscovered": {
           payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", currentCommands: "string[]", discoveredCommands: "string[]", undeclaredCommands: "string[]", proposalId: "string", _sdoa: "string" }
         },
+        "sleeve:batchDispatched":  { payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", batchId: "string", callCount: "number", durationMs: "number", ok: "boolean", _sdoa: "string" } },
+        "sleeve:payloadCompressed":{ payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", command: "string|null", originalBytes: "number", compressedBytes: "number", compressionRatio: "number", _sdoa: "string" } },
         "sleeve:loraTrainingStarted":  { payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", adapterId: "string", trainingDataSize: "number", epochs: "number", rank: "number", _sdoa: "string" } },
         "sleeve:loraTrainingComplete": { payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", adapterId: "string", loss: "number|null", durationMs: "number", ok: "boolean", _sdoa: "string" } },
         "sleeve:loraValidated":        { payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", adapterId: "string", passed: "boolean", score: "number", testCaseCount: "number", _sdoa: "string" } },
@@ -275,6 +309,12 @@ class SleeveBase {
     // Amendment 3.5: sandbox intercept — never touches external system
     if (this._sandboxMode) return this._runSandbox(command, payload ?? {});
 
+    // Amendment 4.5: automatic payload compression when external.compression === true
+    let effectivePayload = payload ?? {};
+    if (external.compression === true && effectivePayload && typeof effectivePayload === "object") {
+      effectivePayload = this.compressPayload(effectivePayload, command);
+    }
+
     const correlationId = randomUUID();
 
     // sleeve:run — pre-call trace (Amendment 3.1)
@@ -285,7 +325,7 @@ class SleeveBase {
 
     try {
       // Amendment 4.1: pass active transport so subclasses can dispatch per-transport
-      const raw = await this._callExternal(command, payload ?? {}, this._activeTransport);
+      const raw = await this._callExternal(command, effectivePayload, this._activeTransport);
       result    = this._normalize(raw);
     } catch (err) {
       result = this._fail(err.message);
@@ -383,6 +423,78 @@ class SleeveBase {
       modelHash:            modelHash ?? null,
       declaredCapabilities: declaredCapabilities ?? []
     });
+  }
+
+  // ── Amendment 4.5 — Boundary Compression & Batching ──────────
+
+  async batchExternalCalls(calls = []) {
+    if (!calls.length) return { ok: false, error: "batchExternalCalls: no calls provided" };
+    const manifest = this.constructor.MANIFEST;
+    const external = manifest?.external ?? {};
+    const base     = this._base(manifest, external);
+    const batchId  = randomUUID();
+    const maxSize  = external.maxBatchSize ?? 10;
+    const t0       = Date.now();
+    const results  = [];
+
+    for (let i = 0; i < calls.length; i += maxSize) {
+      const chunk = calls.slice(i, i + maxSize);
+      let chunkResults;
+      try   { chunkResults = await this._executeBatch(chunk); }
+      catch (err) { chunkResults = chunk.map(() => this._fail(err.message)); }
+      results.push(...chunkResults);
+    }
+
+    const ok = !results.some(r => !r.ok);
+    const durationMs = Date.now() - t0;
+
+    this._emit("sleeve:batchDispatched", { ...base, batchId, callCount: calls.length, durationMs, ok });
+    try { this._registry?.get?.("Pulse.workflow")?.recordSample?.({ moduleId: manifest.id, commandId: "batch", durationMs, success: ok }); } catch (_) {}
+
+    return { ok, batchId, results, callCount: calls.length, durationMs };
+  }
+
+  compressPayload(payload, command = null) {
+    const manifest = this.constructor.MANIFEST;
+    const external = manifest?.external ?? {};
+    const json     = JSON.stringify(payload);
+    const buf      = Buffer.from(json, "utf8");
+    const deflated = zlib.deflateSync(buf);
+    const originalBytes   = buf.length;
+    const compressedBytes = deflated.length;
+    const compressionRatio = parseFloat((compressedBytes / originalBytes).toFixed(3));
+
+    this._emit("sleeve:payloadCompressed", {
+      ...this._base(manifest, external),
+      command:          command ?? null,
+      originalBytes,
+      compressedBytes,
+      compressionRatio
+    });
+
+    return { _compressed: true, _encoding: "deflate", data: deflated.toString("base64"), originalBytes, compressedBytes };
+  }
+
+  decompressPayload(compressed) {
+    if (!compressed?._compressed) return compressed;
+    try {
+      const buf = Buffer.from(compressed.data, "base64");
+      return JSON.parse(zlib.inflateSync(buf).toString("utf8"));
+    } catch (err) {
+      return { _decompressError: err.message, _original: compressed };
+    }
+  }
+
+  // Override in subclasses that support native batched API calls.
+  // Must return an array of normalized responses in the same order as calls[].
+  // Default: sequential fallback — functionally correct, no native batching benefit.
+  async _executeBatch(calls) {
+    const results = [];
+    for (const call of calls) {
+      try { results.push(this._normalize(await this._callExternal(call.command, call.payload ?? {}, this._activeTransport))); }
+      catch (err) { results.push(this._fail(err.message)); }
+    }
+    return results;
   }
 
   // ── Amendment 4.4 — Sovereign Model Training Pipeline ─────────

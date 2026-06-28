@@ -76,6 +76,27 @@
       }
     },
 
+    "sleeve:batchDispatched": {
+      "description": "Amendment 4.5 — emitted after batchExternalCalls() completes a chunk group. Replaces N individual sleeve:boundaryCall events with a single aggregate event when calls are batched. Carries total callCount, overall durationMs (wall clock for all chunks), and ok (false if any result failed). batchId links to the originating batchExternalCalls() invocation.",
+      "extends": "baseFields",
+      "fields": {
+        "batchId":   { "type": "string",  "description": "UUID identifying this batch dispatch" },
+        "callCount": { "type": "number",  "description": "Total number of individual calls in the batch" },
+        "durationMs":{ "type": "number",  "description": "Wall-clock duration of the full batch dispatch" },
+        "ok":        { "type": "boolean", "description": "false if any result in the batch failed" }
+      }
+    },
+    "sleeve:payloadCompressed": {
+      "description": "Amendment 4.5 — emitted when compressPayload() is called explicitly. Provides before/after byte counts and compression ratio for boundary traffic analysis. Not emitted for automatic compression inside run() — see sleeve:boundaryCall for that context.",
+      "extends": "baseFields",
+      "fields": {
+        "command":          { "type": ["string", "null"], "description": "Command context if compression was triggered within a run() call, else null" },
+        "originalBytes":    { "type": "number", "description": "Byte size of the JSON-serialised payload before compression" },
+        "compressedBytes":  { "type": "number", "description": "Byte size after deflate compression" },
+        "compressionRatio": { "type": "number", "description": "compressedBytes / originalBytes (lower is better)" }
+      }
+    },
+
     "sleeve:loraTrainingStarted": {
       "description": "Amendment 4.4 — emitted when trainLoRA() begins fine-tuning a LoRA adapter on a model sleeve. Long-running; may not complete for minutes. Paired with sleeve:loraTrainingComplete by adapterId.",
       "extends": "baseFields",
@@ -183,6 +204,8 @@
     "sleeve:boundaryFault": ["Triage.workflow", "Cartographer.workflow", "Chronicle.service", "tracksdoa.us"],
     "sleeve:health":        ["Oracle.service", "Pulse.workflow", "Chronicle.service", "tracksdoa.us"],
     "sleeve:disposed":         ["Chronicle.service", "Registrar.service"],
+    "sleeve:batchDispatched":       ["Triage.workflow", "Cartographer.workflow", "Chronicle.service", "Pulse.workflow"],
+    "sleeve:payloadCompressed":     ["Chronicle.service"],
     "sleeve:loraTrainingStarted":   ["Chronicle.service", "Cartographer.workflow"],
     "sleeve:loraTrainingComplete":  ["Chronicle.service", "Cartographer.workflow"],
     "sleeve:loraValidated":         ["Chronicle.service", "Coach.workflow"],
