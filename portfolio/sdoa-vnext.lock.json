@@ -1,8 +1,8 @@
 {
   "lockedAt":   "2026-06-27T00:00:00.000Z",
   "sdoaVersion": "5.4.0",
-  "label":      "SDOA vNext — Phase 2 Ratified",
-  "note":       "All Phase 1 violations repaired. Phase 2 Sleeve Ratification complete. Coach is the sole healing path. This file freezes the canonical module inventory, capability surfaces, routing tables, and external system declarations.",
+  "label":      "SDOA vNext — Phase 2 Ratified + Step 13 Locked",
+  "note":       "All Phase 1 violations repaired. Phase 2 Sleeve Ratification complete. Step 13: Coach is the sole healing path; Registrar.fieldChampion() is the terminal step. This file freezes the canonical module inventory, capability surfaces, routing tables, and external system declarations.",
 
   "frozenModules": [
     { "id": "Registry.service",         "version": "5.0.0", "type": "service",  "runtime": "NodeJS" },
@@ -16,6 +16,7 @@
     { "id": "AlgosimTest.workflow",      "version": "5.1.0", "type": "workflow", "runtime": "NodeJS" },
     { "id": "LlmPolicyEngine",           "version": "3.1.0", "type": "engine",   "runtime": "NodeJS" },
     { "id": "LlmConnector.adapter",      "version": "5.0.0", "type": "adapter",  "runtime": "NodeJS" },
+    { "id": "Registrar.service",          "version": "5.2.0", "type": "service",  "runtime": "NodeJS" },
     { "id": "AiProvider.adapter",        "version": "5.0.0", "type": "adapter",  "runtime": "NodeJS" },
     { "id": "LocalLlmServer.engine",     "version": "5.0.0", "type": "engine",   "runtime": "Python" },
     { "id": "ContextEngine",             "version": "1.2.3", "type": "engine",   "runtime": "Python" },
@@ -36,7 +37,7 @@
 
   "frozenHealingPath": {
     "description": "Coach.workflow is the sole healing path from this version forward.",
-    "flow": "AiSleeve.healTestFailure → heal:patch-request event → Coach.on_patch_request → ProbationOfficer.run → coach:mutationReady → Registrar re-fields module",
+    "flow": "AiSleeve.healTestFailure → heal:patch-request event → Coach.on_patch_request → ProbationOfficer.run → coach:mutationReady → Registrar.fieldChampion(module)",
     "forbidden": [
       "Any module calling fs.writeFileSync on a peer module source file",
       "Any module monkey-patching a live registry instance",
@@ -54,6 +55,6 @@
     "advisory": ["V10"]
   },
 
-  "nextVersion": "SDOA v6.0.0",
+  "nextVersion": "SDOA v5.5.0",
   "promotionGate": "All TestCore assertions must pass. ProbationOfficer must find zero SLEEVE_* violations. Oracle.dumpSurface must return no rogue boundary entries."
 }
