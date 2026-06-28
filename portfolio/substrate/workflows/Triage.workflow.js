@@ -1,12 +1,18 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    Triage.workflow.js
-// Version: 5.2.0
+// Version: 5.3.0
 // Updated: 2026-06-27T00:00:00Z
-// Changes: Amendment 3.1 — subscribe to sleeve:boundaryFault directly
+// Changes: Amendment 3.4 — Multi-Sleeve Routing.
+//          run() now re-scores all candidates from live Pulse telemetry
+//          at call time (not stale table-build scores). The single
+//          silent fallback (candidates[1]) replaced with a waterfall
+//          loop that iterates all viable candidates in score order.
+//          New events: triage:sleeveFailover (per failover step) and
+//          triage:allSleevesExhausted (when all candidates fail).
+//          Both events are Chronicled for Cartographer drift analysis.
+// Previous: Amendment 3.1 — subscribe to sleeve:boundaryFault directly
 //          from the EventBus. Circuit breakers now trip on ANY sleeve
 //          fault regardless of whether Triage dispatched the call.
-//          Previously Triage only tripped circuits from its own catch
-//          block; now all invocation paths are covered.
 // ──────────────────────────────────────────────────────────────────
 "use strict";
 
@@ -16,7 +22,7 @@ class TriageWorkflow {
     type:            "workflow",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "5.2.0",
+    version:         "5.3.0",
     operationalRole: "triage",
     requires:  ["Oracle.service", "Pulse.workflow", "Chronicle.service"],
     dataFiles: [],
@@ -34,7 +40,10 @@ class TriageWorkflow {
         "triage:circuitReset":    { payload: { moduleId: "string" } },
         "triage:noCapableModule": { payload: { capability: "string" } },
         // v5.1: Sleeve boundary fault — external daemon/API unreachable
-        "triage:boundaryFault":   { payload: { moduleId: "string", externalSystem: "string", transport: "string", error: "string" } }
+        "triage:boundaryFault":       { payload: { moduleId: "string", externalSystem: "string", transport: "string", error: "string" } },
+        // Amendment 3.4: multi-sleeve failover observability
+        "triage:sleeveFailover":      { payload: { capability: "string", failedModuleId: "string", failedReason: "string", nextModuleId: "string", attemptNumber: "number", totalCandidates: "number" } },
+        "triage:allSleevesExhausted": { payload: { capability: "string", attemptedModules: "string[]", lastError: "string" } }
       },
       accepts: {
         "pulse:anomalyDetected":     { description: "Opens circuit breaker for the module with the anomaly." },
@@ -66,7 +75,11 @@ class TriageWorkflow {
   async run({ capability, payload, sessionId, dryRun } = {}) {
     if (!this._routingTable.size) this._buildRoutingTable();
 
-    const candidates = (this._routingTable.get(capability) ?? []).filter(c => {
+    // Amendment 3.4: re-score from live Pulse telemetry before every dispatch
+    const all = this._routingTable.get(capability) ?? [];
+    this._scoreCandidates(all);
+
+    const candidates = all.filter(c => {
       const cb = this._circuits.get(c.moduleId);
       return !cb || cb.state === "CLOSED" || cb.state === "HALF_OPEN";
     });
@@ -76,54 +89,91 @@ class TriageWorkflow {
       return { ok: false, error: `No capable module for "${capability}"` };
     }
 
-    const chosen = candidates[0];
-    const cb     = this._circuits.get(chosen.moduleId);
-
     if (dryRun) {
-      return { ok: true, data: { chosenModule: chosen.moduleId, reason: "top-ranked", p95Ms: chosen.p95Ms ?? null, errorRatePct: chosen.errorRatePct ?? null, dispatched: false } };
+      const top = candidates[0];
+      return { ok: true, data: { chosenModule: top.moduleId, reason: "top-ranked", p95Ms: top.p95Ms ?? null, errorRatePct: top.errorRatePct ?? null, dispatched: false } };
     }
 
-    try {
-      const result = await chosen.module?.run?.(payload ?? {});
-      this._pulse?.recordSample?.({ moduleId: chosen.moduleId, commandId: "run", durationMs: 0, success: true });
-      if (cb?.state === "HALF_OPEN") { cb.state = "CLOSED"; cb.errorCount = 0; this._emit("triage:circuitReset", { moduleId: chosen.moduleId }); }
-      this._emit("triage:routed", { capability, chosenModule: chosen.moduleId, reason: "top-ranked", p95Ms: chosen.p95Ms ?? 0 });
-      this._chronicle?.record?.({
-        type:    "triage:dispatched",
-        source:  "Triage.workflow",
-        payload: { capability, moduleId: chosen.moduleId, sessionId }
-      });
-      return result;
-    } catch (err) {
-      // v5.1: emit boundary fault alert before tripping the circuit (§4.4)
-      if (chosen.isBoundary) {
-        this._emit("triage:boundaryFault", {
-          moduleId:       chosen.moduleId,
-          externalSystem: chosen.externalSystem,
-          transport:      chosen.transport,
-          error:          err?.message ?? "boundary connection failed"
+    const attempted = [];
+
+    // Amendment 3.4: waterfall loop — try each candidate in score order
+    for (let attempt = 0; attempt < candidates.length; attempt++) {
+      const chosen = candidates[attempt];
+      const cb     = this._circuits.get(chosen.moduleId);
+
+      try {
+        const result = await chosen.module?.run?.(payload ?? {});
+        this._pulse?.recordSample?.({ moduleId: chosen.moduleId, commandId: "run", durationMs: 0, success: true });
+        if (cb?.state === "HALF_OPEN") { cb.state = "CLOSED"; cb.errorCount = 0; this._emit("triage:circuitReset", { moduleId: chosen.moduleId }); }
+        this._emit("triage:routed", {
+          capability,
+          chosenModule: chosen.moduleId,
+          reason:       attempt === 0 ? "top-ranked" : `failover-${attempt}`,
+          p95Ms:        chosen.p95Ms ?? 0
         });
         this._chronicle?.record?.({
-          type:    "triage:boundaryFault",
+          type:    "triage:dispatched",
           source:  "Triage.workflow",
-          payload: { moduleId: chosen.moduleId, externalSystem: chosen.externalSystem, error: err?.message }
+          payload: { capability, moduleId: chosen.moduleId, sessionId, attempt }
         });
+        return result;
+      } catch (err) {
+        attempted.push(chosen.moduleId);
+
+        // Boundary fault telemetry (§4.4)
+        if (chosen.isBoundary) {
+          this._emit("triage:boundaryFault", {
+            moduleId:       chosen.moduleId,
+            externalSystem: chosen.externalSystem,
+            transport:      chosen.transport,
+            error:          err?.message ?? "boundary connection failed"
+          });
+          this._chronicle?.record?.({
+            type:    "triage:boundaryFault",
+            source:  "Triage.workflow",
+            payload: { moduleId: chosen.moduleId, externalSystem: chosen.externalSystem, error: err?.message }
+          });
+        }
+
+        // Circuit trip
+        if (cb?.state === "HALF_OPEN") {
+          cb.state = "OPEN"; cb.openedAt = Date.now();
+          const _t = setTimeout(() => { this._timers.delete(_t); this._halfOpen(chosen.moduleId); }, this._halfOpenAfterMs);
+          this._timers.add(_t);
+        } else {
+          this._checkCircuit(chosen.moduleId);
+        }
+
+        // Amendment 3.4: emit failover event and continue to next candidate
+        const next = candidates[attempt + 1];
+        if (next) {
+          this._emit("triage:sleeveFailover", {
+            capability,
+            failedModuleId:  chosen.moduleId,
+            failedReason:    err?.message ?? "unknown",
+            nextModuleId:    next.moduleId,
+            attemptNumber:   attempt + 1,
+            totalCandidates: candidates.length
+          });
+          this._chronicle?.record?.({
+            type:    "triage:sleeveFailover",
+            source:  "Triage.workflow",
+            payload: { capability, failedModuleId: chosen.moduleId, nextModuleId: next.moduleId, attemptNumber: attempt + 1 }
+          });
+          continue;
+        }
+
+        // All candidates exhausted
+        this._emit("triage:allSleevesExhausted", {
+          capability,
+          attemptedModules: attempted,
+          lastError:        err?.message ?? "unknown"
+        });
+        return { ok: false, error: `All ${candidates.length} candidate(s) exhausted for "${capability}". Last: ${err?.message ?? "unknown"}` };
       }
-      if (cb?.state === "HALF_OPEN") {
-        cb.state = "OPEN";
-        cb.openedAt = Date.now();
-        const _t = setTimeout(() => {
-          this._timers.delete(_t);
-          this._halfOpen(chosen.moduleId);
-        }, this._halfOpenAfterMs);
-        this._timers.add(_t);
-      } else {
-        this._checkCircuit(chosen.moduleId);
-      }
-      const fallback = candidates[1];
-      if (fallback) return fallback.module?.run?.(payload ?? {});
-      return { ok: false, error: err?.message ?? "dispatch failed" };
     }
+
+    return { ok: false, error: `No dispatch completed for "${capability}"` };
   }
 
   async dispose() {
