@@ -1,8 +1,14 @@
 # ──────────────────────────────────────────────────────────────────
 # File:    Coach.workflow.py
-# Version: 5.1.0
+# Version: 5.2.0
 # Updated: 2026-06-27T00:00:00Z
-# Changes: Step 13 — Coach is now the sole healing path.
+# Changes: Amendment 3.2 — on_command_discovered() handler added.
+#          Receives sleeve:commandDiscovered, computes a search/replace
+#          patch on the external.commands array, and calls on_patch_request()
+#          directly. The existing pipeline (ProbationOfficer → Registrar.
+#          fieldChampion) validates and writes the amendment. Sleeves
+#          cannot self-approve: this handler is the sole approval gate.
+# Previous: Step 13 — Coach is now the sole healing path.
 #          Added accepts: heal:patch-request so the registry routes
 #          AiSleeve patch events here automatically.
 #          on_patch_request() receives the event, reads the target
@@ -22,7 +28,7 @@ MANIFEST_JSON = """
     "type": "workflow",
     "layer": 3,
     "runtime": "Python",
-    "version": "5.1.0",
+    "version": "5.2.0",
     "operationalRole": "savant",
     "requires": ["AiProvider.adapter", "ProbationOfficer.workflow"],
     "dataFiles": [],
@@ -58,6 +64,15 @@ MANIFEST_JSON = """
             "targetModuleId": "string",
             "patch": { "search": "string", "replace": "string" },
             "meta": "object"
+          }
+        },
+        "sleeve:commandDiscovered": {
+          "description": "Amendment 3.2 — receives discovery proposal from a sleeve. Coach computes a manifest amendment patch and routes it through the existing ProbationOfficer → Registrar.fieldChampion() pipeline. Coach is the sole approval gate; sleeves cannot self-approve.",
+          "payload": {
+            "moduleId": "string",
+            "currentCommands": "string[]",
+            "undeclaredCommands": "string[]",
+            "proposalId": "string"
           }
         }
       },
@@ -250,3 +265,56 @@ Instructions:
             "mutatedSource":  mutated,
             "diff":           f"-{patch['search']}\n+{patch['replace']}"
         })
+
+    # ── sleeve:commandDiscovered handler (Amendment 3.2) ───────────
+    # Receives a discovery proposal from a sleeve. Computes a
+    # search/replace patch on the external.commands array and routes
+    # it through the existing on_patch_request() pipeline so
+    # ProbationOfficer validates the amended source before Registrar
+    # writes it. Sleeves cannot self-approve — this is the sole gate.
+    def on_command_discovered(self, event):
+        module_id         = event.get("moduleId")
+        current_commands  = event.get("currentCommands", [])
+        undeclared        = event.get("undeclaredCommands", [])
+        proposal_id       = event.get("proposalId", "")
+
+        if not module_id or not undeclared:
+            return
+
+        # Guard: command names must match the schema constraint
+        valid_pattern = __import__("re").compile(r"^[a-zA-Z][a-zA-Z0-9_/.-]*$")
+        undeclared = [c for c in undeclared if valid_pattern.match(c)][:10]
+        if not undeclared:
+            return
+
+        # Build the amended commands array
+        amended = sorted(set(current_commands + undeclared))
+
+        # Compute exact search/replace strings as they appear in the source.
+        # Handles both JS array literals and JSON arrays.
+        old_inline = json.dumps(current_commands)           # ["cmd1","cmd2"]
+        new_inline = json.dumps(amended)
+        old_json   = json.dumps(current_commands, indent=2) # pretty JSON variant
+        new_json   = json.dumps(amended, indent=2)
+
+        # Try compact form first; fall back to pretty form.
+        # on_patch_request will reject if neither matches — safe by design.
+        patch_variants = [
+            {"search": f'"commands": {old_inline}', "replace": f'"commands": {new_inline}'},
+            {"search": f'"commands": {old_json}',   "replace": f'"commands": {new_json}'},
+        ]
+
+        for patch in patch_variants:
+            self.on_patch_request({
+                "targetModuleId": module_id,
+                "patch":          patch,
+                "meta": {
+                    "proposalType":       "command-discovery",
+                    "proposalId":         proposal_id,
+                    "undeclaredCommands": undeclared
+                }
+            })
+            # on_patch_request emits coach:mutationReady on success or
+            # coach:patchRejected on failure — stop after first attempt
+            # (the second variant is a fallback only if search not found)
+            break

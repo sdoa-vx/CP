@@ -1,8 +1,14 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    SleeveBase.module.js
-// Version: 1.1.0
+// Version: 1.2.0
 // Updated: 2026-06-27T00:00:00Z
-// Changes: Amendment 3.1 — Boundary Telemetry Standardization (v5.5)
+// Changes: Amendment 3.2 — Sleeve Auto-Discovery.
+//          runDiscovery() probes the external system via _discoverCommands(),
+//          computes undeclared commands, and emits sleeve:commandDiscovered.
+//          Coach receives the event and routes a manifest amendment through
+//          ProbationOfficer → Registrar.fieldChampion(). Sleeves cannot
+//          self-approve: discovery is a proposal, not a write.
+// Previous: Amendment 3.1 — Boundary Telemetry Standardization (v5.5)
 //          All six canonical sleeve events now emit the full base field
 //          set (moduleId, system, transport, timestamp, _sdoa: "5.5").
 //          New events: sleeve:init, sleeve:run, sleeve:boundaryFault,
@@ -22,7 +28,7 @@ class SleeveBase {
     type:            "sleeve",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "1.1.0",
+    version:         "1.2.0",
     operationalRole: "savant",
     requires:        ["ResponseFormatter.service", "PathResolver.service"],
     external: {
@@ -33,7 +39,13 @@ class SleeveBase {
     },
     lifecycle: ["init", "run", "dispose"],
     actions: {
-      commands: {},
+      commands: {
+        discover: {
+          description: "Amendment 3.2 — probe the external system for available commands and emit sleeve:commandDiscovered if any are undeclared. Proposal only; Coach routes through ProbationOfficer before any manifest change.",
+          input: {},
+          output: "Promise<{ proposalId: string|null, undeclaredCommands: string[] }>"
+        }
+      },
       events: {
         "sleeve:init": {
           payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", healthy: "boolean", resolvedPath: "string|null", _sdoa: "string" }
@@ -52,6 +64,9 @@ class SleeveBase {
         },
         "sleeve:disposed": {
           payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", reason: "string|null", _sdoa: "string" }
+        },
+        "sleeve:commandDiscovered": {
+          payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", currentCommands: "string[]", discoveredCommands: "string[]", undeclaredCommands: "string[]", proposalId: "string", _sdoa: "string" }
         }
       },
       accepts: {},
@@ -195,6 +210,55 @@ class SleeveBase {
   async _healthCheck() {}
 
   async _teardown() {}
+
+  // ── Amendment 3.2 — Sleeve Auto-Discovery ─────────────────────
+  // Probe the external system for available commands, compute the
+  // undeclared subset, and emit sleeve:commandDiscovered as a proposal.
+  // Coach receives the event and routes a manifest amendment through
+  // ProbationOfficer → Registrar.fieldChampion(). This method never
+  // writes the manifest directly — the sleeve cannot self-approve.
+  async runDiscovery() {
+    const manifest = this.constructor.MANIFEST;
+    const external = manifest?.external ?? {};
+    const base     = this._base(manifest, external);
+
+    const currentCommands   = external.commands ?? [];
+    let   discoveredCommands = [];
+
+    try {
+      discoveredCommands = await this._discoverCommands();
+    } catch (err) {
+      // Discovery failure is non-fatal — log and return empty proposal
+      console.warn(`[${manifest.id}] _discoverCommands() failed: ${err.message}`);
+      return { proposalId: null, undeclaredCommands: [] };
+    }
+
+    const valid     = discoveredCommands.filter(c => /^[a-zA-Z][a-zA-Z0-9_/.-]*$/.test(c));
+    const undeclared = valid.filter(c => !currentCommands.includes(c)).slice(0, 10);
+
+    if (undeclared.length === 0) {
+      return { proposalId: null, undeclaredCommands: [] };
+    }
+
+    const proposalId = randomUUID();
+
+    this._emit("sleeve:commandDiscovered", {
+      ...base,
+      currentCommands,
+      discoveredCommands: valid,
+      undeclaredCommands: undeclared,
+      proposalId
+    });
+
+    return { proposalId, undeclaredCommands: undeclared };
+  }
+
+  // Override: return the list of commands available on the external system.
+  // This is a lightweight probe — not a full call. Return [] if the
+  // external system has no introspection capability.
+  async _discoverCommands() {
+    return [];
+  }
 
   // Called by subclasses on a health-check interval to emit sleeve:health
   // (Amendment 3.1 — periodic health event, not only on failure)
