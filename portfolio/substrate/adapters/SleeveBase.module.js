@@ -1,8 +1,22 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    SleeveBase.module.js
-// Version: 1.3.0
-// Updated: 2026-06-27T00:00:00Z
-// Changes: Amendment 3.3 — Model Capability Drift.
+// Version: 1.4.0
+// Updated: 2026-06-28T00:00:00Z
+// Changes: Amendment 3.5 — Sleeve Sandbox Mode.
+//          enterSandbox({ fixtures? }) — intercepts _callExternal(); real
+//            external system is never contacted while sandbox is active.
+//          exitSandbox() — restores normal operation.
+//          injectFixture(command, response|fn) — add/update a fixture;
+//            fn(command, payload) form enables dynamic/stateful responses.
+//          replayFromChronicle({ since? }) — loads Chronicle
+//            sleeve:boundaryCall history as ordered queues and enters
+//            replay+sandbox mode. Each command's queue dequeues in
+//            arrival order; exhausted queue → synthetic error.
+//          run() in sandbox mode emits sleeve:sandboxRun (NOT
+//            sleeve:boundaryCall) — Triage, Cartographer, Pulse never
+//            see synthetic data. Chronicle receives sandboxRun entries
+//            tagged { sandbox: true, replay: boolean }.
+// Previous: Amendment 3.3 — Model Capability Drift.
 //          sleeve:modelInfo event added for AI model sleeves.
 //          _emitModelInfo(modelVersion, modelHash, capabilities) helper
 //          lets model sleeves report version/hash after init so
@@ -33,7 +47,7 @@ class SleeveBase {
     type:            "sleeve",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "1.3.0",
+    version:         "1.4.0",
     operationalRole: "savant",
     requires:        ["ResponseFormatter.service", "PathResolver.service"],
     external: {
@@ -49,6 +63,26 @@ class SleeveBase {
           description: "Amendment 3.2 — probe the external system for available commands and emit sleeve:commandDiscovered if any are undeclared. Proposal only; Coach routes through ProbationOfficer before any manifest change.",
           input: {},
           output: "Promise<{ proposalId: string|null, undeclaredCommands: string[] }>"
+        },
+        enterSandbox: {
+          description: "Amendment 3.5 — switch the sleeve into sandbox mode. All subsequent run() calls return fixture responses without contacting the external system. Emits sleeve:sandboxRun instead of sleeve:boundaryCall so downstream telemetry consumers (Triage, Cartographer, Pulse) never receive synthetic data.",
+          input: { fixtures: "Record<string, any>?" },
+          output: "{ ok: true }"
+        },
+        exitSandbox: {
+          description: "Amendment 3.5 — restore the sleeve to normal operation. Clears all fixtures and disables sandbox intercept.",
+          input: {},
+          output: "{ ok: true }"
+        },
+        injectFixture: {
+          description: "Amendment 3.5 — add or replace a fixture for a command. Value may be a static response object or a function fn(command, payload) => response for dynamic/stateful scenarios. Use '*' as command key for a catch-all wildcard.",
+          input: { command: "string", response: "any" },
+          output: "{ ok: true }"
+        },
+        replayFromChronicle: {
+          description: "Amendment 3.5 — load Chronicle sleeve:boundaryCall history for this sleeve as ordered replay queues and enter replay+sandbox mode. Each command queue dequeues in arrival order; an exhausted queue returns a synthetic error. Call exitSandbox() to return to real operation.",
+          input: { since: "string?" },
+          output: "{ ok: boolean, fixtures: number }"
         }
       },
       events: {
@@ -75,6 +109,9 @@ class SleeveBase {
         },
         "sleeve:commandDiscovered": {
           payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", currentCommands: "string[]", discoveredCommands: "string[]", undeclaredCommands: "string[]", proposalId: "string", _sdoa: "string" }
+        },
+        "sleeve:sandboxRun": {
+          payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", command: "string", durationMs: "number", ok: "boolean", replay: "boolean", fixtureKey: "string|null", _sdoa: "string" }
         }
       },
       accepts: {},
@@ -93,6 +130,11 @@ class SleeveBase {
   _triage       = null;
   _resolvedPath = null;
   _healthy      = false;
+
+  // Amendment 3.5 — sandbox state
+  _sandboxMode  = false;
+  _replayMode   = false;
+  _fixtures     = new Map();   // command|"*" → response | fn(cmd,payload)→response
 
   // ── Lifecycle ──────────────────────────────────────────────────
 
@@ -139,6 +181,9 @@ class SleeveBase {
         `${manifest.id}: command "${command}" is not in external.commands [${allowed.join(", ")}]`
       );
     }
+
+    // Amendment 3.5: sandbox intercept — never touches external system
+    if (this._sandboxMode) return this._runSandbox(command, payload ?? {});
 
     const correlationId = randomUUID();
 
@@ -207,6 +252,10 @@ class SleeveBase {
     this._triage       = null;
     this._resolvedPath = null;
     this._healthy      = false;
+    // Amendment 3.5: always exit sandbox on dispose — no leaked intercept
+    this._sandboxMode  = false;
+    this._replayMode   = false;
+    this._fixtures.clear();
   }
 
   // ── Subclass contract ──────────────────────────────────────────
@@ -232,6 +281,123 @@ class SleeveBase {
       modelHash:            modelHash ?? null,
       declaredCapabilities: declaredCapabilities ?? []
     });
+  }
+
+  // ── Amendment 3.5 — Sleeve Sandbox Mode ───────────────────────
+
+  // Switch the sleeve into sandbox mode. All run() calls will hit
+  // _runSandbox() instead of _callExternal(). Optional fixtures map
+  // (command → response|fn) pre-seeds the fixture table.
+  enterSandbox({ fixtures } = {}) {
+    this._sandboxMode = true;
+    this._replayMode  = false;
+    this._fixtures.clear();
+    if (fixtures && typeof fixtures === "object") {
+      for (const [cmd, resp] of Object.entries(fixtures)) {
+        this._fixtures.set(cmd, resp);
+      }
+    }
+    return { ok: true };
+  }
+
+  // Restore real operation and clear all fixtures.
+  exitSandbox() {
+    this._sandboxMode = false;
+    this._replayMode  = false;
+    this._fixtures.clear();
+    return { ok: true };
+  }
+
+  // Add or replace a single fixture. Use command="*" for a wildcard
+  // that matches any command not otherwise registered.
+  // Value may be a static response object or fn(command, payload) for
+  // dynamic / stateful responses.
+  injectFixture(command, response) {
+    this._fixtures.set(command, response);
+    return { ok: true };
+  }
+
+  // Load Chronicle sleeve:boundaryCall history for this sleeve as
+  // ordered per-command queues, then enter replay+sandbox mode.
+  // Each queue dequeues in arrival order (oldest first); an exhausted
+  // queue returns a synthetic error rather than blocking.
+  async replayFromChronicle({ since } = {}) {
+    const chronicle = this._registry?.get?.("Chronicle.service");
+    if (!chronicle?.query) return { ok: false, fixtures: 0 };
+
+    const manifest = this.constructor.MANIFEST;
+    const sinceMs  = since ? new Date(since).getTime() : 0;
+
+    const entries = (chronicle.query({ type: "sleeve:boundaryCall" }) ?? [])
+      .filter(e => e.payload?.moduleId === manifest.id)
+      .filter(e => new Date(e.payload?.timestamp ?? e.recordedAt ?? 0).getTime() >= sinceMs)
+      .sort((a, b) => new Date(a.payload?.timestamp ?? 0) - new Date(b.payload?.timestamp ?? 0));
+
+    const queues = {};
+    for (const entry of entries) {
+      const cmd = entry.payload?.command;
+      if (!cmd) continue;
+      if (!queues[cmd]) queues[cmd] = [];
+      queues[cmd].push(
+        entry.payload?.ok !== false
+          ? { ok: true,  data:  { replay: true, originalTimestamp: entry.payload?.timestamp } }
+          : { ok: false, error: "[replay] original call returned error" }
+      );
+    }
+
+    this._fixtures.clear();
+    let count = 0;
+    for (const [cmd, queue] of Object.entries(queues)) {
+      // Closure captures queue by reference — dequeues in order
+      const q = queue;
+      this._fixtures.set(cmd, () =>
+        q.length > 0 ? q.shift() : { ok: false, error: `[replay] queue for "${cmd}" exhausted` }
+      );
+      count += q.length;
+    }
+
+    this._sandboxMode = true;
+    this._replayMode  = true;
+    return { ok: true, fixtures: count };
+  }
+
+  // Internal: execute a run() in sandbox mode.
+  // Emits sleeve:sandboxRun (NOT sleeve:boundaryCall) — intentional.
+  async _runSandbox(command, payload) {
+    const manifest   = this.constructor.MANIFEST;
+    const external   = manifest?.external ?? {};
+    const base       = this._base(manifest, external);
+    const t0         = Date.now();
+
+    // Fixture lookup: exact command match, then wildcard
+    const fixtureKey = this._fixtures.has(command) ? command
+                     : this._fixtures.has("*")     ? "*"
+                     :                               null;
+    const fixture    = fixtureKey !== null ? this._fixtures.get(fixtureKey) : undefined;
+
+    let result;
+    if (fixture === undefined) {
+      result = { ok: false, error: `[sandbox] No fixture registered for command "${command}"` };
+    } else if (typeof fixture === "function") {
+      try   { result = this._normalize(await fixture(command, payload)); }
+      catch (err) { result = this._fail(`[sandbox] fixture threw: ${err.message}`); }
+    } else {
+      result = this._normalize(fixture);
+    }
+
+    const durationMs = Date.now() - t0;
+
+    // sleeve:sandboxRun — Chronicle only; NOT consumed by Triage/Cartographer/Pulse
+    this._emit("sleeve:sandboxRun", {
+      ...base,
+      command,
+      durationMs,
+      ok:         result.ok ?? false,
+      replay:     this._replayMode,
+      fixtureKey: fixtureKey ?? null
+    });
+
+    return result;
   }
 
   // ── Amendment 3.2 — Sleeve Auto-Discovery ─────────────────────
