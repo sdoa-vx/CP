@@ -22,7 +22,7 @@ MANIFEST_JSON = """
     "type": "workflow",
     "layer": 3,
     "runtime": "Python",
-    "version": "5.0.0",
+    "version": "5.1.0",
     "operationalRole": "savant",
     "requires": ["AiProvider.adapter", "ProbationOfficer.workflow"],
     "dataFiles": [],
