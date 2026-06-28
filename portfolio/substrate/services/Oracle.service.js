@@ -1,8 +1,14 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    Oracle.service.js
-// Version: 5.2.0
+// Version: 5.3.0
 // Updated: 2026-06-27T00:00:00Z
-// Changes: Phase 5 Item 6 — sleeve capability scoring extended.
+// Changes: Amendment 3.4 — Multi-Sleeve Routing.
+//          New command: rankSleeves({ capability, limit }) — returns all
+//          registered sleeve modules that expose the given capability,
+//          re-scored live from current Pulse telemetry, sorted by score
+//          descending. Used by Triage.run() for real-time ranking before
+//          each dispatch. Limit defaults to 10.
+// Previous: Phase 5 Item 6 — sleeve capability scoring extended.
 //          _score() now factors latency, error rate, and stability
 //          (boundaryFault count) for sleeve modules via Pulse.workflow.
 //          Pulse is resolved lazily so Oracle stays Universal-runtime.
@@ -36,7 +42,7 @@ class OracleService {
     type:            "service",
     layer:           3,
     runtime:         "Universal",
-    version:         "5.2.0",
+    version:         "5.3.0",
     operationalRole: "oracle",
 
     // ── Dependencies ──────────────────────────
@@ -93,6 +99,12 @@ class OracleService {
           description: "List all sleeve modules that wrap the given external system.",
           input:  { system: "string" },
           output: "object[]"
+        },
+        // Amendment 3.4: live-scored sleeve ranking for multi-sleeve routing
+        rankSleeves: {
+          description: "Return all registered sleeve modules that expose the given capability token, re-scored from current Pulse telemetry at call time. Sorted descending by score. Used by Triage for real-time provider ranking before each dispatch.",
+          input:  { capability: "string?", limit: "number?" },
+          output: "object[]"   // SleeveRankEntry[]
         }
       },
       events: {
@@ -301,6 +313,63 @@ class OracleService {
    */
   whoHasBoundary({ system } = {}) {
     return this.query({ externalSystem: system });
+  }
+
+  /**
+   * rankSleeves({ capability?, limit? }) → SleeveRankEntry[]
+   *
+   * Amendment 3.4: live-scored ranking of all sleeve modules, filtered
+   * by the given capability token if supplied. Re-reads Pulse telemetry
+   * on every call so the rank reflects current health, not the stale
+   * state captured at index-build time.
+   *
+   * Returned fields per entry:
+   *   moduleId, score, scoreFactors[], system, transport, capabilities[],
+   *   p95Ms, errorRatePct, faultCount
+   */
+  rankSleeves({ capability, limit = 10 } = {}) {
+    this._ensureIndex();
+    const results = [];
+
+    for (const entry of this._index.modules) {
+      const m = entry.manifest;
+      if (m.type !== "sleeve") continue;
+      if (capability && !(m.capabilities ?? []).includes(capability)) continue;
+
+      const telemetry  = this._getSleeveTelemetry(m.id);
+      let   score      = 10;  // base score — all known sleeves start equal
+      const scoreFactors = [];
+
+      if (telemetry) {
+        if (telemetry.p95Ms != null) {
+          if      (telemetry.p95Ms <  200)  { score += 3; scoreFactors.push("latency(fast)"); }
+          else if (telemetry.p95Ms > 2000)  { score -= 3; scoreFactors.push("latency(slow)"); }
+        }
+        if (telemetry.errorRatePct != null) {
+          if      (telemetry.errorRatePct > 20) { score -= 5; scoreFactors.push("errorRate(high)"); }
+          else if (telemetry.errorRatePct >  5) { score -= 2; scoreFactors.push("errorRate(elevated)"); }
+        }
+        if (telemetry.boundaryFaultCount != null) {
+          const penalty = Math.min(telemetry.boundaryFaultCount, 5);
+          if (penalty > 0) { score -= penalty; scoreFactors.push(`faults(${penalty})`); }
+        }
+      }
+
+      results.push({
+        moduleId:     m.id,
+        score,
+        scoreFactors,
+        system:       m.external?.system    ?? null,
+        transport:    m.external?.transport ?? null,
+        capabilities: m.capabilities ?? [],
+        p95Ms:        telemetry?.p95Ms            ?? null,
+        errorRatePct: telemetry?.errorRatePct      ?? null,
+        faultCount:   telemetry?.boundaryFaultCount ?? null
+      });
+    }
+
+    results.sort((a, b) => b.score - a.score);
+    return results.slice(0, Math.max(1, limit));
   }
 
   // ── Index Management ───────────────────────────────────────────
