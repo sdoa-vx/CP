@@ -1,8 +1,15 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    Cartographer.workflow.js
-// Version: 5.2.0
+// Version: 5.3.0
 // Updated: 2026-06-27T00:00:00Z
-// Changes: Phase 5 Track B — boundary drift detection.
+// Changes: Amendment 3.3 — Model Capability Drift detection.
+//          New command: modelDrift() analyses AI model sleeves across
+//          five drift dimensions: latency, error/hallucination, capability
+//          (per-command failure), scoring, and version drift.
+//          Emits cartographer:modelDrift with per-sleeve severity report.
+//          Model sleeves identified by external.system keyword heuristic
+//          (llm|model|llama|inference|ai|provider|qwen).
+// Previous: Phase 5 Track B — boundary drift detection.
 //          New command: boundaryDrift() compares each sleeve's
 //          external.commands against observed Chronicle telemetry.
 //          Emits cartographer:boundaryDrift with severity-rated report.
@@ -40,7 +47,7 @@ class CartographerWorkflow {
     type:            "workflow",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "5.2.0",
+    version:         "5.3.0",
     operationalRole: "savant",
 
     // ── Dependencies ──────────────────────────
@@ -83,8 +90,17 @@ class CartographerWorkflow {
         // Phase 5 Track B
         boundaryDrift: {
           description: "Compare each sleeve's declared external.commands against observed Chronicle telemetry. Returns a severity-rated boundaryDriftReport.",
-          input: { since: "string?" },   // ISO timestamp lower-bound for telemetry window
-          output: "object"               // { driftItems[], summary }
+          input: { since: "string?" },
+          output: "object"
+        },
+        // Amendment 3.3
+        modelDrift: {
+          description: "Analyse AI model sleeves across five drift dimensions: latency drift, error/hallucination drift, capability drift (per-command failure rate), scoring drift, and version drift. Returns a severity-rated modelDriftReport.",
+          input: {
+            since:         "string?",  // ISO timestamp — recent window start (default: 24h ago)
+            baselineSince: "string?"   // ISO timestamp — baseline window start (default: 7d ago)
+          },
+          output: "object"   // { driftItems[], summary }
         }
       },
       events: {
@@ -96,6 +112,9 @@ class CartographerWorkflow {
         },
         "cartographer:boundaryDrift": {
           payload: { driftCount: "number", severity: "string", systems: "string[]" }
+        },
+        "cartographer:modelDrift": {
+          payload: { driftCount: "number", severity: "string", dimensions: "string[]", systems: "string[]" }
         }
       },
       accepts: {},
@@ -300,6 +319,220 @@ class CartographerWorkflow {
       return `High failure rate (${faults.length}/${calls.length}) — possible path or endpoint mismatch`;
     }
     return null;
+  }
+
+  // ── Amendment 3.3: Model Capability Drift ─────────────────────
+
+  // Model sleeve heuristic: external.system matches AI/LLM keywords.
+  static MODEL_SLEEVE_RE = /llm|model|llama|inference|ai|provider|qwen|gpt|claude/i;
+
+  modelDrift({ since, baselineSince } = {}) {
+    const nowMs          = Date.now();
+    const recentStart    = since         ? new Date(since).getTime()         : nowMs - 24 * 60 * 60 * 1000;
+    const baselineStart  = baselineSince ? new Date(baselineSince).getTime() : nowMs - 7  * 24 * 60 * 60 * 1000;
+
+    const surface = this._oracle?.dumpSurface({}) ?? [];
+    const modelSleeves = [...new Set(
+      surface
+        .filter(e => e.surfaceType === "boundary" &&
+                     CartographerWorkflow.MODEL_SLEEVE_RE.test(e.schema?.system ?? ""))
+        .map(e => e.moduleId)
+    )];
+
+    const recentTelemetry   = this._getModelCalls(recentStart,   nowMs);
+    const baselineTelemetry = this._getModelCalls(baselineStart,  recentStart);
+
+    const driftItems = [];
+
+    for (const moduleId of modelSleeves) {
+      const profile  = this._oracle?.describeModule({ moduleId });
+      const recent   = recentTelemetry[moduleId]   ?? [];
+      const baseline = baselineTelemetry[moduleId] ?? [];
+
+      const latency    = this._detectLatencyDrift(recent, baseline);
+      const error      = this._detectErrorDrift(recent, baseline);
+      const capability = this._detectCapabilityDrift(recent, profile);
+      const scoring    = this._detectScoringDrift(moduleId);
+      const version    = this._detectVersionDrift(moduleId);
+
+      const dimensions = { latency, error, capability, scoring, version };
+      const activeDims = Object.entries(dimensions).filter(([, v]) => v !== null);
+      if (!activeDims.length) continue;
+
+      const severity = activeDims.some(([, v]) => v.severity === "critical") ? "critical"
+                     : activeDims.some(([, v]) => v.severity === "high")     ? "high"
+                     : activeDims.some(([, v]) => v.severity === "medium")   ? "medium"
+                     :                                                          "low";
+
+      driftItems.push({
+        moduleId,
+        system:     profile?.externalSystem    ?? "unknown",
+        transport:  profile?.externalTransport ?? "unknown",
+        severity,
+        dimensions: Object.fromEntries(activeDims),
+        recentCallCount:   recent.length,
+        baselineCallCount: baseline.length
+      });
+    }
+
+    const maxSev = driftItems.some(r => r.severity === "critical") ? "critical"
+                 : driftItems.some(r => r.severity === "high")     ? "high"
+                 : driftItems.some(r => r.severity === "medium")   ? "medium"
+                 : driftItems.length                                ? "low" : "none";
+
+    const activeDimNames = [...new Set(
+      driftItems.flatMap(r => Object.keys(r.dimensions))
+    )];
+
+    this._emit("cartographer:modelDrift", {
+      driftCount: driftItems.length,
+      severity:   maxSev,
+      dimensions: activeDimNames,
+      systems:    [...new Set(driftItems.map(r => r.system))]
+    });
+
+    this._chronicle?.record?.({
+      type:    "cartographer:modelDrift",
+      source:  "Cartographer.workflow",
+      payload: { driftCount: driftItems.length, severity: maxSev, dimensions: activeDimNames }
+    });
+
+    return ResponseFormatter.ok({
+      driftItems,
+      summary: {
+        total:     driftItems.length,
+        critical:  driftItems.filter(r => r.severity === "critical").length,
+        high:      driftItems.filter(r => r.severity === "high").length,
+        medium:    driftItems.filter(r => r.severity === "medium").length,
+        low:       driftItems.filter(r => r.severity === "low").length,
+        overallSeverity: maxSev,
+        activeDimensions: activeDimNames
+      }
+    });
+  }
+
+  _getModelCalls(startMs, endMs) {
+    if (!this._chronicle?.query) return {};
+    try {
+      const entries = this._chronicle.query({ type: "sleeve:boundaryCall" }) ?? [];
+      const map = {};
+      for (const entry of entries) {
+        const ts = new Date(entry.payload?.timestamp ?? entry.recordedAt ?? 0).getTime();
+        if (ts < startMs || ts >= endMs) continue;
+        const id = entry.payload?.moduleId;
+        if (!id) continue;
+        if (!map[id]) map[id] = [];
+        map[id].push({
+          command:    entry.payload?.command    ?? null,
+          durationMs: entry.payload?.durationMs ?? null,
+          ok:         entry.payload?.ok         ?? true
+        });
+      }
+      return map;
+    } catch (_) { return {}; }
+  }
+
+  _detectLatencyDrift(recent, baseline) {
+    if (recent.length < 5 || baseline.length < 5) return null;
+    const p95 = arr => {
+      const sorted = arr.map(c => c.durationMs ?? 0).sort((a, b) => a - b);
+      return sorted[Math.floor(sorted.length * 0.95)] ?? 0;
+    };
+    const recentP95   = p95(recent);
+    const baselineP95 = p95(baseline);
+    if (baselineP95 === 0) return null;
+    const ratio = recentP95 / baselineP95;
+    if (ratio < 2) return null;
+    return {
+      severity:    ratio >= 5 ? "critical" : ratio >= 3 ? "high" : "medium",
+      recentP95Ms: recentP95,
+      baselineP95Ms: baselineP95,
+      ratio:       parseFloat(ratio.toFixed(2)),
+      detail:      `p95 latency ${ratio.toFixed(1)}x above baseline`
+    };
+  }
+
+  _detectErrorDrift(recent, baseline) {
+    if (recent.length < 5) return null;
+    const errorRate = arr => arr.length ? arr.filter(c => !c.ok).length / arr.length : 0;
+    const recentRate   = errorRate(recent);
+    const baselineRate = errorRate(baseline);
+    const delta = recentRate - baselineRate;
+    if (delta < 0.05) return null;   // <5% increase is noise
+    return {
+      severity:      delta >= 0.25 ? "critical" : delta >= 0.10 ? "high" : "medium",
+      recentPct:     parseFloat((recentRate   * 100).toFixed(1)),
+      baselinePct:   parseFloat((baselineRate * 100).toFixed(1)),
+      deltaPct:      parseFloat((delta        * 100).toFixed(1)),
+      detail:        `Error rate +${(delta * 100).toFixed(1)}% vs baseline (proxy for response quality degradation)`
+    };
+  }
+
+  _detectCapabilityDrift(recent, profile) {
+    if (recent.length < 5) return null;
+    const byCommand = {};
+    for (const call of recent) {
+      if (!call.command) continue;
+      if (!byCommand[call.command]) byCommand[call.command] = { total: 0, errors: 0 };
+      byCommand[call.command].total++;
+      if (!call.ok) byCommand[call.command].errors++;
+    }
+    const failing = Object.entries(byCommand)
+      .filter(([, s]) => s.total >= 3 && (s.errors / s.total) >= 0.8)
+      .map(([cmd, s]) => ({ command: cmd, errorRate: parseFloat(((s.errors / s.total) * 100).toFixed(1)) }));
+    if (!failing.length) return null;
+    const declared = new Set(profile?.externalCommands ?? []);
+    return {
+      severity:        failing.length >= 3 ? "critical" : failing.length >= 2 ? "high" : "medium",
+      failingCommands: failing,
+      undeclared:      failing.filter(f => !declared.has(f.command)).map(f => f.command),
+      detail:          `${failing.length} command(s) approaching unavailability (>80% error rate)`
+    };
+  }
+
+  _detectScoringDrift(moduleId) {
+    if (!this._chronicle?.query) return null;
+    try {
+      const entries = (this._chronicle.query({ type: "oracle:scored" }) ?? [])
+        .filter(e => e.payload?.moduleId === moduleId)
+        .map(e => ({ score: e.payload?.score ?? null, ts: e.recordedAt ?? null }))
+        .filter(e => e.score !== null)
+        .sort((a, b) => new Date(a.ts) - new Date(b.ts));
+
+      if (entries.length < 4) return null;
+
+      const half    = Math.floor(entries.length / 2);
+      const older   = entries.slice(0, half).map(e => e.score);
+      const newer   = entries.slice(half).map(e => e.score);
+      const avg     = arr => arr.reduce((s, v) => s + v, 0) / arr.length;
+      const delta   = avg(newer) - avg(older);
+
+      if (delta > -0.05) return null;   // <5% drop is noise
+      return {
+        severity:   delta <= -0.25 ? "critical" : delta <= -0.10 ? "high" : "medium",
+        olderAvg:   parseFloat(avg(older).toFixed(3)),
+        newerAvg:   parseFloat(avg(newer).toFixed(3)),
+        delta:      parseFloat(delta.toFixed(3)),
+        detail:     `Oracle score trending down (Δ${delta.toFixed(3)})`
+      };
+    } catch (_) { return null; }
+  }
+
+  _detectVersionDrift(moduleId) {
+    if (!this._chronicle?.query) return null;
+    try {
+      const entries = (this._chronicle.query({ type: "sleeve:modelInfo" }) ?? [])
+        .filter(e => e.payload?.moduleId === moduleId && e.payload?.modelVersion)
+        .map(e => e.payload.modelVersion);
+      if (entries.length < 2) return null;
+      const versions = [...new Set(entries)];
+      if (versions.length === 1) return null;
+      return {
+        severity: "high",
+        versions,
+        detail:   `Model version changed: ${versions.join(" → ")}`
+      };
+    } catch (_) { return null; }
   }
 
   async dispose() {

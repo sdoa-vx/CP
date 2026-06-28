@@ -1,8 +1,13 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    SleeveBase.module.js
-// Version: 1.2.0
+// Version: 1.3.0
 // Updated: 2026-06-27T00:00:00Z
-// Changes: Amendment 3.2 — Sleeve Auto-Discovery.
+// Changes: Amendment 3.3 — Model Capability Drift.
+//          sleeve:modelInfo event added for AI model sleeves.
+//          _emitModelInfo(modelVersion, modelHash, capabilities) helper
+//          lets model sleeves report version/hash after init so
+//          Cartographer.modelDrift() can detect version drift.
+// Previous: Amendment 3.2 — Sleeve Auto-Discovery.
 //          runDiscovery() probes the external system via _discoverCommands(),
 //          computes undeclared commands, and emits sleeve:commandDiscovered.
 //          Coach receives the event and routes a manifest amendment through
@@ -28,7 +33,7 @@ class SleeveBase {
     type:            "sleeve",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "1.2.0",
+    version:         "1.3.0",
     operationalRole: "savant",
     requires:        ["ResponseFormatter.service", "PathResolver.service"],
     external: {
@@ -64,6 +69,9 @@ class SleeveBase {
         },
         "sleeve:disposed": {
           payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", reason: "string|null", _sdoa: "string" }
+        },
+        "sleeve:modelInfo": {
+          payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", modelVersion: "string|null", modelHash: "string|null", declaredCapabilities: "string[]", _sdoa: "string" }
         },
         "sleeve:commandDiscovered": {
           payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", currentCommands: "string[]", discoveredCommands: "string[]", undeclaredCommands: "string[]", proposalId: "string", _sdoa: "string" }
@@ -210,6 +218,21 @@ class SleeveBase {
   async _healthCheck() {}
 
   async _teardown() {}
+
+  // ── Amendment 3.3 — Model info emission ───────────────────────
+  // Called by AI model sleeves (AiSleeve, QwenSleeve, PolicySleeve)
+  // after resolving the model at init() or after a health check.
+  // Non-model sleeves never need to call this.
+  _emitModelInfo(modelVersion = null, modelHash = null, declaredCapabilities = []) {
+    const manifest = this.constructor.MANIFEST;
+    const external = manifest?.external ?? {};
+    this._emit("sleeve:modelInfo", {
+      ...this._base(manifest, external),
+      modelVersion:         modelVersion ?? null,
+      modelHash:            modelHash ?? null,
+      declaredCapabilities: declaredCapabilities ?? []
+    });
+  }
 
   // ── Amendment 3.2 — Sleeve Auto-Discovery ─────────────────────
   // Probe the external system for available commands, compute the
