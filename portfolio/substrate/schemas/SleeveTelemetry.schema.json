@@ -76,6 +76,18 @@
       }
     },
 
+    "sleeve:transportNegotiated": {
+      "description": "Amendment 4.1 — emitted when negotiateTransport() selects a different transport than the one currently active. Carries the previous transport, the new selection, scoring reasons, and a per-transport score array so Cartographer can track transport stability over time. Not emitted if negotiation produces no change.",
+      "extends": "baseFields",
+      "fields": {
+        "previousTransport": { "type": "string",  "description": "Transport that was active before renegotiation" },
+        "selectedTransport": { "type": "string",  "description": "Transport chosen by negotiateTransport()" },
+        "trigger":           { "type": "string",  "description": "What triggered negotiation: 'init' | 'fault' | 'explicit'" },
+        "reason":            { "type": "string",  "description": "Comma-joined scoring factors for the winning transport" },
+        "scores":            { "type": "array",   "items": { "type": "object" }, "description": "Array of { transport, score, viable, reason } for all candidates" }
+      }
+    },
+
     "sleeve:sandboxRun": {
       "description": "Amendment 3.5 — emitted instead of sleeve:boundaryCall when the sleeve is in sandbox mode. Signals that the response came from a fixture or Chronicle replay, NOT from the real external system. Downstream consumers (Triage circuit breakers, Cartographer drift, Pulse scoring) must never act on this event — it is for Chronicle audit and test harness use only.",
       "extends": "baseFields",
@@ -129,7 +141,8 @@
     "sleeve:boundaryFault": ["Triage.workflow", "Cartographer.workflow", "Chronicle.service", "tracksdoa.us"],
     "sleeve:health":        ["Oracle.service", "Pulse.workflow", "Chronicle.service", "tracksdoa.us"],
     "sleeve:disposed":         ["Chronicle.service", "Registrar.service"],
-    "sleeve:sandboxRun":        ["Chronicle.service"],
+    "sleeve:transportNegotiated": ["Cartographer.workflow", "Chronicle.service", "tracksdoa.us"],
+    "sleeve:sandboxRun":          ["Chronicle.service"],
     "sleeve:modelInfo":         ["Cartographer.workflow", "Oracle.service", "Chronicle.service"],
     "sleeve:commandDiscovered": ["Coach.workflow", "Chronicle.service"]
   }

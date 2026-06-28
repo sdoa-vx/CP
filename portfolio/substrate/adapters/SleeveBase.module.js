@@ -1,8 +1,19 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    SleeveBase.module.js
-// Version: 1.4.0
+// Version: 1.5.0
 // Updated: 2026-06-28T00:00:00Z
-// Changes: Amendment 3.5 — Sleeve Sandbox Mode.
+// Changes: Amendment 4.1 — Sleeve Transport Negotiation.
+//          Sleeves may declare external.transports[] (ordered preference list).
+//          negotiateTransport(trigger?) probes each candidate, scores by
+//          Chronicle history (p95, error rate) + probe latency, selects best
+//          viable transport, sets _activeTransport, emits
+//          sleeve:transportNegotiated when selection changes.
+//          _base() now uses _activeTransport so all telemetry reflects
+//          the actual transport in use. _callExternal() receives transport
+//          as third arg so subclasses can dispatch per-transport.
+//          Auto-negotiation fires async after any boundary fault when
+//          multiple transports are declared.
+// Previous: Amendment 3.5 — Sleeve Sandbox Mode.
 //          enterSandbox({ fixtures? }) — intercepts _callExternal(); real
 //            external system is never contacted while sandbox is active.
 //          exitSandbox() — restores normal operation.
@@ -47,7 +58,7 @@ class SleeveBase {
     type:            "sleeve",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "1.4.0",
+    version:         "1.5.0",
     operationalRole: "savant",
     requires:        ["ResponseFormatter.service", "PathResolver.service"],
     external: {
@@ -63,6 +74,11 @@ class SleeveBase {
           description: "Amendment 3.2 — probe the external system for available commands and emit sleeve:commandDiscovered if any are undeclared. Proposal only; Coach routes through ProbationOfficer before any manifest change.",
           input: {},
           output: "Promise<{ proposalId: string|null, undeclaredCommands: string[] }>"
+        },
+        negotiateTransport: {
+          description: "Amendment 4.1 — score all declared external.transports[] and switch to the highest-viable option. Emits sleeve:transportNegotiated when selection changes. Subclasses override _probeTransport(transport) for transport-specific health checks.",
+          input: { trigger: "string?" },
+          output: "{ ok: boolean, selectedTransport: string, changed: boolean, scores: object[] }"
         },
         enterSandbox: {
           description: "Amendment 3.5 — switch the sleeve into sandbox mode. All subsequent run() calls return fixture responses without contacting the external system. Emits sleeve:sandboxRun instead of sleeve:boundaryCall so downstream telemetry consumers (Triage, Cartographer, Pulse) never receive synthetic data.",
@@ -110,6 +126,9 @@ class SleeveBase {
         "sleeve:commandDiscovered": {
           payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", currentCommands: "string[]", discoveredCommands: "string[]", undeclaredCommands: "string[]", proposalId: "string", _sdoa: "string" }
         },
+        "sleeve:transportNegotiated": {
+          payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", previousTransport: "string", selectedTransport: "string", trigger: "string", reason: "string", scores: "object[]", _sdoa: "string" }
+        },
         "sleeve:sandboxRun": {
           payload: { moduleId: "string", system: "string", transport: "string", timestamp: "string", command: "string", durationMs: "number", ok: "boolean", replay: "boolean", fixtureKey: "string|null", _sdoa: "string" }
         }
@@ -131,6 +150,9 @@ class SleeveBase {
   _resolvedPath = null;
   _healthy      = false;
 
+  // Amendment 4.1 — transport negotiation state
+  _activeTransport = null;   // set at init(); updated by negotiateTransport()
+
   // Amendment 3.5 — sandbox state
   _sandboxMode  = false;
   _replayMode   = false;
@@ -151,6 +173,10 @@ class SleeveBase {
       this._resolvedPath = this._pathResolver?.resolve?.(external.path) ?? external.path;
     }
 
+    // Amendment 4.1: seed active transport from first declared option
+    const transports = external.transports ?? [external.transport].filter(Boolean);
+    this._activeTransport = transports[0] ?? external.transport ?? null;
+
     try {
       await this._healthCheck();
       this._healthy = true;
@@ -164,6 +190,11 @@ class SleeveBase {
       healthy:      this._healthy,
       resolvedPath: this._resolvedPath ?? null
     });
+
+    // Amendment 4.1: probe available transports at init if multiple declared
+    if (transports.length > 1) {
+      try { await this.negotiateTransport("init"); } catch (_) {}
+    }
   }
 
   async run({ command, payload } = {}) {
@@ -194,7 +225,8 @@ class SleeveBase {
     let result;
 
     try {
-      const raw = await this._callExternal(command, payload ?? {});
+      // Amendment 4.1: pass active transport so subclasses can dispatch per-transport
+      const raw = await this._callExternal(command, payload ?? {}, this._activeTransport);
       result    = this._normalize(raw);
     } catch (err) {
       result = this._fail(err.message);
@@ -220,6 +252,11 @@ class SleeveBase {
         error: result.error ?? "unknown fault",
         correlationId
       });
+      // Amendment 4.1: auto-renegotiate transport async after any fault
+      const transports = external.transports ?? [];
+      if (transports.length > 1) {
+        Promise.resolve().then(() => this.negotiateTransport("fault").catch(() => {}));
+      }
     }
 
     // Pulse latency tracking
@@ -252,6 +289,7 @@ class SleeveBase {
     this._triage       = null;
     this._resolvedPath = null;
     this._healthy      = false;
+    this._activeTransport = null;   // Amendment 4.1
     // Amendment 3.5: always exit sandbox on dispose — no leaked intercept
     this._sandboxMode  = false;
     this._replayMode   = false;
@@ -260,7 +298,9 @@ class SleeveBase {
 
   // ── Subclass contract ──────────────────────────────────────────
 
-  async _callExternal(command, payload) {
+  // Amendment 4.1: transport is the currently active transport (from negotiation).
+  // Subclasses that support multiple transports use it to dispatch the call correctly.
+  async _callExternal(command, payload, transport) {
     throw new Error(`${this.constructor.name}: _callExternal() not implemented`);
   }
 
@@ -281,6 +321,85 @@ class SleeveBase {
       modelHash:            modelHash ?? null,
       declaredCapabilities: declaredCapabilities ?? []
     });
+  }
+
+  // ── Amendment 4.1 — Sleeve Transport Negotiation ──────────────
+
+  async negotiateTransport(trigger = "explicit") {
+    const manifest   = this.constructor.MANIFEST;
+    const external   = manifest?.external ?? {};
+    const transports = external.transports ?? [external.transport].filter(Boolean);
+    if (transports.length <= 1) {
+      return { ok: true, selectedTransport: this._activeTransport, changed: false, scores: [] };
+    }
+
+    const prev   = this._activeTransport;
+    const scores = [];
+
+    for (const t of transports) {
+      const s = await this._scoreTransport(t);
+      scores.push({ transport: t, ...s });
+    }
+
+    const viable = scores.filter(s => s.viable !== false).sort((a, b) => b.score - a.score);
+    const best   = viable[0] ?? scores[0];
+
+    const changed = best.transport !== prev;
+    this._activeTransport = best.transport;
+
+    if (changed) {
+      this._emit("sleeve:transportNegotiated", {
+        ...this._base(manifest, external),
+        previousTransport: prev ?? "none",
+        selectedTransport: best.transport,
+        trigger,
+        reason:  best.reason ?? "score-based",
+        scores:  scores.map(s => ({ transport: s.transport, score: s.score, viable: s.viable ?? true, reason: s.reason ?? "" }))
+      });
+    }
+
+    return { ok: true, selectedTransport: best.transport, changed, scores };
+  }
+
+  async _scoreTransport(transport) {
+    let viable = true, probeMs = null;
+    try { ({ viable = true, latencyMs: probeMs = null } = await this._probeTransport(transport) ?? {}); }
+    catch (_) { viable = false; }
+    if (!viable) return { score: -Infinity, viable: false, reason: "not-viable" };
+
+    let score = 10;
+    const reasons = [];
+
+    // Chronicle history for this transport
+    const chronicle = this._registry?.get?.("Chronicle.service");
+    if (chronicle?.query) {
+      const id      = this.constructor.MANIFEST?.id;
+      const entries = (chronicle.query({ type: "sleeve:boundaryCall" }) ?? [])
+        .filter(e => e.payload?.moduleId === id && e.payload?.transport === transport);
+      if (entries.length >= 5) {
+        const sorted = entries.map(e => e.payload?.durationMs ?? 0).sort((a, b) => a - b);
+        const p95    = sorted[Math.floor(sorted.length * 0.95)];
+        if (p95 <  200) { score += 3; reasons.push("p95(fast)"); }
+        else if (p95 > 2000) { score -= 3; reasons.push("p95(slow)"); }
+        const errRate = entries.filter(e => !e.payload?.ok).length / entries.length;
+        if (errRate > 0.20) { score -= 5; reasons.push("errorRate(high)"); }
+        else if (errRate > 0.05) { score -= 2; reasons.push("errorRate(elevated)"); }
+      }
+    }
+
+    if (probeMs !== null) {
+      if (probeMs <  50)  { score += 2; reasons.push("probe(fast)"); }
+      else if (probeMs > 500) { score -= 2; reasons.push("probe(slow)"); }
+    }
+
+    return { score, viable: true, reason: reasons.join(",") || "baseline" };
+  }
+
+  // Override in subclasses for transport-specific availability probing.
+  // Return { viable: boolean, latencyMs: number|null }.
+  // Default: assume all declared transports are viable (no-op probe).
+  async _probeTransport(transport) {
+    return { viable: true, latencyMs: null };
   }
 
   // ── Amendment 3.5 — Sleeve Sandbox Mode ───────────────────────
@@ -479,12 +598,14 @@ class SleeveBase {
 
   // ── Utilities ──────────────────────────────────────────────────
 
-  // Canonical base fields required on every telemetry event (Amendment 3.1)
+  // Canonical base fields required on every telemetry event (Amendment 3.1).
+  // Amendment 4.1: transport uses _activeTransport so telemetry reflects
+  // the transport actually in use, not only the MANIFEST declaration.
   _base(manifest, external) {
     return {
       moduleId:  manifest.id,
-      system:    external.system    ?? "unknown",
-      transport: external.transport ?? "unknown",
+      system:    external.system ?? "unknown",
+      transport: this._activeTransport ?? external.transport ?? "unknown",
       timestamp: new Date().toISOString(),
       _sdoa:     TELEMETRY_VERSION
     };
