@@ -1,8 +1,15 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    Oracle.service.js
-// Version: 5.3.0
-// Updated: 2026-06-27T00:00:00Z
-// Changes: Amendment 3.4 — Multi-Sleeve Routing.
+// Version: 5.4.0
+// Updated: 2026-06-28T00:00:00Z
+// Changes: Amendment 4.2 — Autonomous Routing Mesh.
+//          _driftCache (moduleId → { penalty, severity, capturedAt }) populated
+//          by cartographer:modelDrift and cartographer:boundaryDrift events.
+//          _score() now applies drift penalty (-3 high, -8 critical).
+//          getDriftPenalty(moduleId) → { penalty, severity } | null.
+//          meshStatus() → full sleeve mesh view with live scores + drift flags.
+//          oracle:driftPenaltyUpdated event emitted when cache changes.
+// Previous: Amendment 3.4 — Multi-Sleeve Routing.
 //          New command: rankSleeves({ capability, limit }) — returns all
 //          registered sleeve modules that expose the given capability,
 //          re-scored live from current Pulse telemetry, sorted by score
@@ -42,7 +49,7 @@ class OracleService {
     type:            "service",
     layer:           3,
     runtime:         "Universal",
-    version:         "5.3.0",
+    version:         "5.4.0",
     operationalRole: "oracle",
 
     // ── Dependencies ──────────────────────────
@@ -104,24 +111,30 @@ class OracleService {
         rankSleeves: {
           description: "Return all registered sleeve modules that expose the given capability token, re-scored from current Pulse telemetry at call time. Sorted descending by score. Used by Triage for real-time provider ranking before each dispatch.",
           input:  { capability: "string?", limit: "number?" },
-          output: "object[]"   // SleeveRankEntry[]
+          output: "object[]"
+        },
+        // Amendment 4.2: drift penalty and mesh view
+        getDriftPenalty: {
+          description: "Return the cached drift penalty for a module from the last Cartographer drift event. Returns null if no drift signal has been received.",
+          input:  { moduleId: "string" },
+          output: "{ penalty: number, severity: string, capturedAt: number } | null"
+        },
+        meshStatus: {
+          description: "Return a full view of the routing mesh: all sleeves with live Oracle scores, Pulse telemetry, and active drift penalties. Used by Triage for mesh refresh and by dashboards.",
+          input:  {},
+          output: "object[]"   // MeshEntry[]
         }
       },
       events: {
-        "oracle:queryExecuted": {
-          payload: { queryId: "string", matchCount: "number", durationMs: "number" }
-        },
-        "oracle:indexRebuilt": {
-          payload: { moduleCount: "number", commandCount: "number", eventCount: "number" }
-        }
+        "oracle:queryExecuted":        { payload: { queryId: "string", matchCount: "number", durationMs: "number" } },
+        "oracle:indexRebuilt":         { payload: { moduleCount: "number", commandCount: "number", eventCount: "number" } },
+        "oracle:driftPenaltyUpdated":  { payload: { moduleId: "string", penalty: "number", severity: "string", source: "string" } }
       },
       accepts: {
-        "registry:moduleRegistered": {
-          description: "Triggers an index rebuild when a new module joins the registry."
-        },
-        "registry:moduleDeregistered": {
-          description: "Triggers an index rebuild when a module is removed."
-        }
+        "registry:moduleRegistered":   { description: "Triggers an index rebuild when a new module joins the registry." },
+        "registry:moduleDeregistered": { description: "Triggers an index rebuild when a module is removed." },
+        "cartographer:modelDrift":     { description: "Amendment 4.2 — caches drift penalties per sleeve for use in _score()." },
+        "cartographer:boundaryDrift":  { description: "Amendment 4.2 — caches boundary drift penalties per sleeve." }
       },
       slots: {}
     },
@@ -136,10 +149,12 @@ class OracleService {
 
   // ── Private State ─────────────────────────────────────────────
   _registry      = null;
-  _index         = null;   // OracleIndex (rebuilt on demand)
+  _index         = null;
   _busUnsub      = [];
   _queryCounter  = 0;
   _pulse         = null;   // resolved lazily — not all runtimes have Pulse
+  _driftCache    = new Map();   // Amendment 4.2: moduleId → { penalty, severity, capturedAt }
+  _driftCacheTtlMs = 5 * 60 * 1000;  // 5 min; stale entries cleared in _score()
 
   // ── Lifecycle ──────────────────────────────────────────────────
 
@@ -372,6 +387,74 @@ class OracleService {
     return results.slice(0, Math.max(1, limit));
   }
 
+  /**
+   * getDriftPenalty({ moduleId }) → { penalty, severity, capturedAt } | null
+   * Amendment 4.2: read cached Cartographer drift penalty for one module.
+   */
+  getDriftPenalty({ moduleId } = {}) {
+    const entry = this._driftCache.get(moduleId);
+    if (!entry) return null;
+    if ((Date.now() - entry.capturedAt) >= this._driftCacheTtlMs) {
+      this._driftCache.delete(moduleId); return null;
+    }
+    return entry;
+  }
+
+  /**
+   * meshStatus() → MeshEntry[]
+   * Amendment 4.2: full sleeve mesh view with live score, drift penalty, transport.
+   */
+  meshStatus() {
+    this._ensureIndex();
+    const results = [];
+    for (const entry of this._index.modules) {
+      const m = entry.manifest;
+      if (m.type !== "sleeve") continue;
+      const tel   = this._getSleeveTelemetry(m.id);
+      const drift = this.getDriftPenalty({ moduleId: m.id });
+      const { score, matchedFields } = this._score(entry, {}, false);
+      results.push({
+        moduleId:        m.id,
+        score,
+        scoreFactors:    matchedFields,
+        system:          m.external?.system    ?? null,
+        transport:       m.external?.transport ?? null,
+        capabilities:    m.capabilities ?? [],
+        p95Ms:           tel?.p95Ms           ?? null,
+        errorRatePct:    tel?.errorRatePct     ?? null,
+        faultCount:      tel?.boundaryFaultCount ?? null,
+        driftPenalty:    drift?.penalty        ?? 0,
+        driftSeverity:   drift?.severity       ?? null,
+        driftCapturedAt: drift?.capturedAt     ?? null
+      });
+    }
+    results.sort((a, b) => b.score - a.score);
+    return results;
+  }
+
+  // Amendment 4.2: handle Cartographer drift events — update _driftCache
+  _onDriftDetected(event) {
+    const items = event.driftItems ?? [];
+    const SEVERITY_PENALTY = { low: 1, medium: 3, high: 5, critical: 8 };
+    for (const item of items) {
+      if (!item.moduleId) continue;
+      const penalty = SEVERITY_PENALTY[item.severity] ?? 0;
+      this._driftCache.set(item.moduleId, {
+        penalty,
+        severity:    item.severity ?? "low",
+        capturedAt:  Date.now()
+      });
+      if (penalty > 0) {
+        this._emit("oracle:driftPenaltyUpdated", {
+          moduleId: item.moduleId,
+          penalty,
+          severity: item.severity,
+          source:   event.source ?? "cartographer"
+        });
+      }
+    }
+  }
+
   // ── Index Management ───────────────────────────────────────────
 
   _rebuildIndex() {
@@ -526,6 +609,14 @@ class OracleService {
       }
     }
 
+    // ── Amendment 4.2: Drift penalty from Cartographer ──────────
+    const drift = this._driftCache.get(m.id);
+    if (drift && (Date.now() - drift.capturedAt) < this._driftCacheTtlMs) {
+      if (drift.penalty > 0) { score -= drift.penalty; matchedFields.push(`drift:${drift.severity}(-${drift.penalty})`); }
+    } else if (drift) {
+      this._driftCache.delete(m.id);  // evict stale entry
+    }
+
     return { score, matchedFields };
   }
 
@@ -554,13 +645,19 @@ class OracleService {
 
     const onRegistered   = () => this._rebuildIndex();
     const onDeregistered = () => this._rebuildIndex();
+    // Amendment 4.2: drift signals from Cartographer populate _driftCache
+    const onDrift        = (e) => this._onDriftDetected(e);
 
     bus.on("registry:moduleRegistered",   onRegistered);
     bus.on("registry:moduleDeregistered", onDeregistered);
+    bus.on("cartographer:modelDrift",     onDrift);
+    bus.on("cartographer:boundaryDrift",  onDrift);
 
     this._busUnsub = [
       () => bus.off?.("registry:moduleRegistered",   onRegistered),
-      () => bus.off?.("registry:moduleDeregistered", onDeregistered)
+      () => bus.off?.("registry:moduleDeregistered", onDeregistered),
+      () => bus.off?.("cartographer:modelDrift",     onDrift),
+      () => bus.off?.("cartographer:boundaryDrift",  onDrift)
     ];
   }
 
