@@ -10,7 +10,7 @@
   inset:           0;
   z-index:         9999;
   background:      rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(var(----size-var(----size-var(----size-var(----size-4px)))));
+  backdrop-filter: blur(var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-4px))))))));
   align-items:     flex-start;
   justify-content: center;
   padding-top:     15vh;
@@ -26,9 +26,9 @@
   width:         640px;
   max-width:     calc(100vw - var(--space-xl));
   background:    var(--color-bg-surface);
-  border:        var(----size-var(----size-var(----size-var(----size-1px)))) solid rgba(124, 58, 237, 0.35);
+  border:        var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid rgba(124, 58, 237, 0.35);
   border-radius: var(--radius-lg);
-  box-shadow:    0 var(----size-var(----size-var(----size-var(----size-24px)))) 64px rgba(0, 0, 0, 0.7),
+  box-shadow:    0 var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-24px))))))) 64px rgba(0, 0, 0, 0.7),
                  0 0 0 1px rgba(124, 58, 237, 0.15);
   overflow:      hidden;
   animation:     sdoa-palette-slide-in var(--duration-fast) var(--ease-default);
@@ -69,7 +69,7 @@
 
 /* ── Results List ──────────────────────────────────────────── */
 .sdoa-command-palette__list {
-  max-height:   var(----size-var(----size-var(----size-var(----size-360px))));
+  max-height:   var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-360px)))))));
   overflow-y:   auto;
   padding:      var(--space-xs) 0;
   scrollbar-width: thin;
@@ -87,7 +87,7 @@
 .sdoa-command-palette__item {
   display:       flex;
   flex-direction: column;
-  gap:           var(----size-var(----size-var(----size-var(----size-2px))));
+  gap:           var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px)))))));
   padding:       var(--space-sm) var(--space-md);
   cursor:        pointer;
   transition:    background var(--duration-fast) var(--ease-default);
@@ -134,7 +134,7 @@
 }
 
 @keyframes sdoa-palette-slide-in {
-  from { opacity: 0; transform: translateY(-var(----size-var(----size-var(----size-var(----size-8px))))) scale(0.98); }
+  from { opacity: 0; transform: translateY(-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-8px)))))))) scale(0.98); }
   to   { opacity: 1; transform: translateY(0)    scale(1);    }
 }
 

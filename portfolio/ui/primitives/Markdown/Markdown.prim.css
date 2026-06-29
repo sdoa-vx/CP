@@ -16,7 +16,7 @@
   color: var(--text-primary);
   margin: var(--space-lg) 0 var(--space-sm);
   line-height: var(--line-height-tight);
-  border-bottom: var(----size-var(----size-var(----size-var(----size-1px)))) solid var(--border-subtle);
+  border-bottom: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid var(--border-subtle);
   padding-bottom: var(--space-xs);
 }
 .sdoa-markdown .sdoa-md-h2,
@@ -89,13 +89,13 @@
   color: var(--accent-strong);
   background: var(--bg-elevated-2, var(--bg-elevated));
   border-radius: var(--radius-sm);
-  padding: 1px var(----size-var(----size-var(----size-var(----size-5px))));
+  padding: 1px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-5px)))))));
 }
 
 /* ── Blockquotes ──────────────────────────────── */
 .sdoa-markdown .sdoa-md-blockquote,
 .sdoa-markdown blockquote {
-  border-left: var(----size-var(----size-var(----size-var(----size-3px)))) solid var(--accent);
+  border-left: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-3px))))))) solid var(--accent);
   margin: var(--space-sm) 0;
   padding: var(--space-xs) var(--space-md);
   color: var(--text-muted);

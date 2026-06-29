@@ -21,7 +21,7 @@
   gap:           var(--space-sm);
   padding:       var(--space-sm) var(--space-md);
   background:    var(--color-bg-surface);
-  border-bottom: var(----size-var(----size-var(----size-var(----size-1px)))) solid rgba(255, 255, 255, 0.06);
+  border-bottom: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid rgba(255, 255, 255, 0.06);
   flex-shrink:   0;
 }
 
@@ -36,8 +36,8 @@
 /* -- Status Badge ----------------------------------------------- */
 .sdoa-playground__status {
   font-family:   var(--font-mono);
-  font-size:     var(----size-var(----size-var(----size-var(----size-11px))));
-  padding:       var(----size-var(----size-var(----size-var(----size-2px)))) var(--space-sm);
+  font-size:     var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-11px)))))));
+  padding:       var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px))))))) var(--space-sm);
   border-radius: var(--radius-sm);
   white-space:   nowrap;
   margin-right:  auto;
@@ -77,7 +77,7 @@
 
 .sdoa-playground__select {
   flex:          1;
-  max-width:     var(----size-var(----size-var(----size-var(----size-360px))));
+  max-width:     var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-360px)))))));
   background:    var(--color-bg-surface);
   border:        1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-sm);
@@ -138,14 +138,14 @@
   overflow:       hidden;
   border-right:   1px solid rgba(255, 255, 255, 0.05);
 }
-.sdoa-playground__col--form    { flex: 0 0 var(----size-var(----size-var(----size-var(----size-280px)))); }
+.sdoa-playground__col--form    { flex: 0 0 var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-280px))))))); }
 .sdoa-playground__col--result  { flex: 1; }
 .sdoa-playground__col--history { flex: 0 0 240px; border-right: none; }
 
 .sdoa-playground__col-title {
   padding:       var(--space-xs) var(--space-md);
   font-family:   var(--font-mono);
-  font-size:     var(----size-var(----size-var(----size-var(----size-10px))));
+  font-size:     var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-10px)))))));
   color:         rgba(224, 224, 224, 0.3);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -182,7 +182,7 @@
 
 .sdoa-playground__type-tag {
   font-size:     10px;
-  padding:       1px var(----size-var(----size-var(----size-var(----size-5px))));
+  padding:       1px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-5px)))))));
   border-radius: var(--radius-sm);
   background:    rgba(124, 58, 237, 0.15);
   color:         var(--color-accent);

@@ -5,34 +5,34 @@
   background: rgba(2, 6, 23, 0.85);
   display: flex; align-items: center; justify-content: center;
   z-index: 600;
-  backdrop-filter: blur(var(----size-var(----size-var(----size-var(----size-6px)))));
+  backdrop-filter: blur(var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-6px))))))));
 }
 .settings-overlay.hidden { display: none; }
 
 .settings-panel {
   background: var(----color-1a1a2e);
-  border: var(----size-var(----size-var(----size-var(----size-1px)))) solid #333;
-  border-radius: var(----size-1var(----size-var(----size-var(----size-var(----size-2px)))));
+  border: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid #333;
+  border-radius: var(----size-1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px))))))));
   width: 750px; max-width: 95vw; max-height: 90vh;
   display: flex; flex-direction: column;
-  box-shadow: 0 var(----size-var(----size-var(----size-var(----size-8px)))) var(----size-var(----size-var(----size-var(----size-32px)))) rgba(0, 0, 0, 0.5);
+  box-shadow: 0 var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-8px))))))) var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-32px))))))) rgba(0, 0, 0, 0.5);
 }
 
 .settings-header {
   display: flex; justify-content: space-between; align-items: center;
-  padding: var(----size-var(----size-var(----size-var(----size-16px)))) var(----size-var(----size-var(----size-var(----size-20px))));
+  padding: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-16px))))))) var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-20px)))))));
   border-bottom: 1px solid #333;
 }
-.settings-header h2 { margin: 0; font-size: var(----size-var(----size-var(----size-var(----size-18px)))); color: #eee; }
+.settings-header h2 { margin: 0; font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-18px))))))); color: #eee; }
 
 .settings-nav {
   display: flex; border-bottom: 1px solid #333;
   overflow-x: auto;
 }
 .settings-nav-btn {
-  padding: var(----size-var(----size-var(----size-var(----size-10px)))) 16px; background: transparent; border: none;
+  padding: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-10px))))))) 16px; background: transparent; border: none;
   border-bottom: 2px solid transparent; color: #888;
-  cursor: pointer; font-size: var(----size-var(----size-var(----size-var(----size-13px)))); white-space: nowrap;
+  cursor: pointer; font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-13px))))))); white-space: nowrap;
   transition: color .15s, border-color .15s;
 }
 .settings-nav-btn:hover { color: var(----color-ccc); }
@@ -47,14 +47,14 @@
 
 .setting-row {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 1var(----size-var(----size-var(----size-var(----size-4px)))); gap: var(----size-var(----size-var(----size-12px)));
+  margin-bottom: 1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-4px))))))); gap: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-12px))))));
 }
-.setting-row label { color: var(----color-ccc); font-size: var(----size-var(----size-var(----size-var(----size-14px)))); white-space: nowrap; }
+.setting-row label { color: var(----color-ccc); font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-14px))))))); white-space: nowrap; }
 
 .settings-input {
   background: #16213e; border: 1px solid #444; border-radius: 6px;
   color: #eee; padding: 8px 12px; font-size: 13px;
-  width: var(----size-var(----size-var(----size-var(----size-280px)))); max-width: 60%;
+  width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-280px))))))); max-width: 60%;
 }
 .settings-input:focus { outline: none; border-color: #7c3aed; }
 
@@ -89,11 +89,11 @@
 
 .wizard-panel {
   background: var(----color-1a1a2e); border: 1px solid #333; border-radius: 12px;
-  width: 500px; max-width: 95vw; padding: 32px var(----size-var(----size-var(----size-var(----size-28px))));
+  width: 500px; max-width: 95vw; padding: 32px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-28px)))))));
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); text-align: center;
 }
 
-.wizard-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: var(----size-var(----size-var(----size-var(----size-24px)))); }
+.wizard-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-24px))))))); }
 .wizard-dot { width: 8px; height: 8px; border-radius: 50%; background: #444; transition: background .2s; }
 .wizard-dot.active { background: #7c3aed; }
 
@@ -101,11 +101,11 @@
 .wizard-step.active { display: block; }
 .wizard-step h2 { margin: 0 0 8px; font-size: 20px; color: #eee; text-align: center; }
 .wizard-step p { margin: 0 0 8px; font-size: 14px; color: #aaa; text-align: center; }
-.wizard-icon { font-size: var(----size-var(----size-var(----size-var(----size-36px)))); text-align: center; margin-bottom: 16px; color: #a78bfa; }
+.wizard-icon { font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-36px))))))); text-align: center; margin-bottom: 16px; color: #a78bfa; }
 
 .wizard-footer {
   display: flex; justify-content: space-between; align-items: center;
   margin-top: 24px; padding-top: 16px; border-top: 1px solid #333;
 }
-.wizard-panel .settings-input { width: var(----size-var(----size-var(----size-var(----size-220px)))); }
+.wizard-panel .settings-input { width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-220px))))))); }
 .wizard-panel .setting-row label { font-size: 13px; }

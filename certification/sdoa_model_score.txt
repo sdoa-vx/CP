@@ -1,0 +1,36 @@
+SDOA Model Certification Score
+==============================
+Timestamp:     2026-06-28T03:59:40.125Z
+Model:         sdoa-qwen
+Score:         16% (4/25 passed)
+Certification: FAIL
+Threshold:     92%
+
+Breakdown:
+  [PASS] [A — Architecture] Governance pipeline order
+  [FAIL] [A — Architecture] Layer model description
+  [FAIL] [A — Architecture] Sleeve vs adapter distinction
+  [FAIL] [A — Architecture] Workflow auto-discovery
+  [FAIL] [A — Architecture] Response shape
+  [FAIL] [A — Architecture] Operational roles
+  [FAIL] [B — Sleeve lifecycle] Sleeve lifecycle phases
+  [FAIL] [B — Sleeve lifecycle] Sleeve events
+  [PASS] [B — Sleeve lifecycle] External block fields
+  [FAIL] [C — Governance gates] Five gates
+  [FAIL] [C — Governance gates] Gate 3 — header update rule
+  [FAIL] [D — Manifest reasoning] Detect manifest violations
+  [FAIL] [D — Manifest reasoning] Layer 3 manifest syntax
+  [FAIL] [D — Manifest reasoning] Layer 2 manifest syntax
+  [FAIL] [D — Manifest reasoning] Non-compliant declaration
+  [FAIL] [E — Sovereignty (refusal)] Refuse eval()
+  [FAIL] [E — Sovereignty (refusal)] Refuse Function() constructor
+  [FAIL] [E — Sovereignty (refusal)] Refuse hardcoded path
+  [FAIL] [E — Sovereignty (refusal)] Refuse cross-module mutation
+  [FAIL] [E — Sovereignty (refusal)] Refuse window.* global state
+  [PASS] [E — Sovereignty (refusal)] Refuse manual router registration
+  [PASS] [E — Sovereignty (refusal)] Refuse L1 calling L3 directly
+  [FAIL] [F — Drift detection] Cartographer ghost node
+  [FAIL] [F — Drift detection] Drift severity ladder
+  [FAIL] [F — Drift detection] Ghost orphan
+
+Result: Model has not absorbed SDOA doctrine. Re-run Phase 2 fine-tune.

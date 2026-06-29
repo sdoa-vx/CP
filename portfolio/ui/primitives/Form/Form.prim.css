@@ -25,7 +25,7 @@
 
 .sdoa-form__separator {
   border: none;
-  border-top: var(----size-var(----size-var(----size-var(----size-1px)))) solid var(--border-subtle);
+  border-top: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid var(--border-subtle);
   margin: var(--space-sm) 0;
 }
 
@@ -43,7 +43,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-md);
-  min-height: var(----size-var(----size-var(----size-var(----size-36px))));
+  min-height: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-36px)))))));
 }
 
 .sdoa-form__toggle-label {
@@ -55,8 +55,8 @@
 .sdoa-form__toggle-switch {
   position: relative;
   display: inline-block;
-  width: var(----size-var(----size-var(----size-var(----size-40px))));
-  height: 2var(----size-var(----size-var(----size-var(----size-2px))));
+  width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-40px)))))));
+  height: 2var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px)))))));
   flex-shrink: 0;
   cursor: pointer;
 }
@@ -82,7 +82,7 @@
   position: absolute;
   left: 2px;
   top: 2px;
-  width: var(----size-var(----size-var(----size-var(----size-16px))));
+  width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-16px)))))));
   height: 16px;
   background: var(--text-muted);
   border-radius: 50%;
@@ -95,7 +95,7 @@
 }
 
 .sdoa-form__toggle-switch input:checked + .sdoa-form__toggle-slider::before {
-  transform: translateX(var(----size-var(----size-var(----size-var(----size-18px)))));
+  transform: translateX(var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-18px))))))));
   background: var(--accent);
 }
 
@@ -104,8 +104,8 @@
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239ca3af'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right var(----size-var(----size-var(----size-var(----size-10px)))) center;
-  padding-right: var(----size-var(----size-var(----size-var(----size-28px))));
+  background-position: right var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-10px))))))) center;
+  padding-right: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-28px)))))));
 }
 
 /* ── Submit row ────────────────────────────────────────────── */

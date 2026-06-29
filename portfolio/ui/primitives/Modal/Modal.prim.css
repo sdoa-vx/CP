@@ -6,7 +6,7 @@
   inset: 0;
   z-index: var(--z-modal, 200);
   background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(var(----size-var(----size-var(----size-var(----size-4px)))));
+  backdrop-filter: blur(var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-4px))))))));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -25,13 +25,13 @@
 /* ── Dialog ────────────────────────────────────────────────── */
 .sdoa-modal {
   background: var(--bg-elevated);
-  border: var(----size-var(----size-var(----size-var(----size-1px)))) solid var(--border-subtle);
+  border: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid var(--border-subtle);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
   max-height: 85vh;
-  transform: scale(0.96) translateY(var(----size-var(----size-var(----size-var(----size-8px)))));
+  transform: scale(0.96) translateY(var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-8px))))))));
   transition: transform var(--duration-normal) var(--ease-default);
   overflow: hidden;
 }
@@ -68,7 +68,7 @@
   background: transparent;
   border: none;
   color: var(--text-muted);
-  font-size: var(----size-var(----size-var(----size-var(----size-22px))));
+  font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-22px)))))));
   cursor: pointer;
   padding: 0 4px;
   line-height: 1;

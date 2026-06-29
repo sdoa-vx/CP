@@ -21,7 +21,7 @@
   gap:           var(--space-sm);
   padding:       var(--space-sm) var(--space-md);
   background:    var(--color-bg-surface);
-  border-bottom: var(----size-var(----size-var(----size-var(----size-1px)))) solid rgba(255, 255, 255, 0.06);
+  border-bottom: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid rgba(255, 255, 255, 0.06);
   flex-shrink:   0;
   flex-wrap:     wrap;
 }
@@ -35,27 +35,27 @@
 }
 
 .sdoa-blueprint__hint {
-  font-size:    var(----size-var(----size-var(----size-var(----size-11px))));
+  font-size:    var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-11px)))))));
   color:        rgba(224, 224, 224, 0.25);
   margin-left:  auto;
   font-style:   italic;
   white-space:  nowrap;
   overflow:     hidden;
   text-overflow: ellipsis;
-  max-width:    var(----size-var(----size-var(----size-var(----size-360px))));
+  max-width:    var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-360px)))))));
 }
 
 /* -- Layer Filter Buttons --------------------------------------- */
 .sdoa-blueprint__layer-filters {
   display: flex;
-  gap:     var(----size-var(----size-var(----size-var(----size-4px))));
+  gap:     var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-4px)))))));
 }
 
 .sdoa-blueprint__filter-btn {
   background:    rgba(255, 255, 255, 0.05);
   border:        1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-sm);
-  padding:       var(----size-var(----size-var(----size-var(----size-2px)))) var(--space-sm);
+  padding:       var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px))))))) var(--space-sm);
   font-family:   var(--font-mono);
   font-size:     var(--text-sm);
   color:         rgba(224, 224, 224, 0.5);
@@ -114,7 +114,7 @@
   scrollbar-color: rgba(124, 58, 237, 0.3) transparent;
 }
 
-.sdoa-blueprint__canvas-wrap::-webkit-scrollbar       { width: var(----size-var(----size-var(----size-var(----size-6px)))); height: 6px; }
+.sdoa-blueprint__canvas-wrap::-webkit-scrollbar       { width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-6px))))))); height: 6px; }
 .sdoa-blueprint__canvas-wrap::-webkit-scrollbar-track { background: transparent; }
 .sdoa-blueprint__canvas-wrap::-webkit-scrollbar-thumb {
   background:    rgba(124, 58, 237, 0.35);
@@ -137,25 +137,25 @@
   fill:         var(--color-bg-surface);
   stroke:       rgba(255, 255, 255, 0.08);
   stroke-width: 1;
-  filter:       drop-shadow(0 4px var(----size-var(----size-var(----size-var(----size-16px)))) rgba(0,0,0,0.5));
+  filter:       drop-shadow(0 4px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-16px))))))) rgba(0,0,0,0.5));
   transition:   filter var(--duration-fast);
 }
 
 .sdoa-blueprint__node:hover .sdoa-blueprint__node-bg {
   stroke: rgba(255, 255, 255, 0.18);
-  filter: drop-shadow(0 6px var(----size-var(----size-var(----size-var(----size-24px)))) rgba(0,0,0,0.7));
+  filter: drop-shadow(0 6px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-24px))))))) rgba(0,0,0,0.7));
 }
 
 .sdoa-blueprint__node-title {
   font-family:   var(--font-mono);
-  font-size:     var(----size-var(----size-var(----size-var(----size-12px))));
+  font-size:     var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-12px)))))));
   fill:          var(--color-text-primary);
   pointer-events: none;
 }
 
 .sdoa-blueprint__node-badge {
   font-family:    var(--font-mono);
-  font-size:      var(----size-var(----size-var(----size-var(----size-10px))));
+  font-size:      var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-10px)))))));
   text-anchor:    end;
   opacity:        0.7;
   pointer-events: none;

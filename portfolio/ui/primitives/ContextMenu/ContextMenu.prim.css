@@ -3,16 +3,16 @@
 .sdoa-context-menu {
   position: fixed;
   z-index: 9999;
-  min-width: var(----size-var(----size-var(----size-var(----size-180px))));
+  min-width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-180px)))))));
   background: var(--bg-elevated-2);
-  border: var(----size-var(----size-var(----size-var(----size-1px)))) solid var(--border-subtle);
+  border: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid var(--border-subtle);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   padding: var(--space-xs) 0;
   opacity: 0;
   transform: scale(0.95);
   transition: all var(--duration-fast) var(--ease-default);
-  backdrop-filter: blur(var(----size-var(----size-var(----size-var(----size-12px)))));
+  backdrop-filter: blur(var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-12px))))))));
 }
 .sdoa-context-menu--visible { opacity: 1; transform: scale(1); }
 
@@ -27,7 +27,7 @@
 .sdoa-context-menu__item--danger { color: var(--color-error); }
 .sdoa-context-menu__item--danger:hover { background: rgba(249,115,115,0.1); }
 
-.sdoa-context-menu__icon { width: var(----size-var(----size-var(----size-var(----size-18px)))); text-align: center; font-size: var(--text-base); flex-shrink: 0; }
+.sdoa-context-menu__icon { width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-18px))))))); text-align: center; font-size: var(--text-base); flex-shrink: 0; }
 .sdoa-context-menu__label { flex: 1; }
 .sdoa-context-menu__shortcut { font-size: var(--text-xs); color: var(--text-dim); margin-left: auto; }
 

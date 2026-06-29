@@ -1,0 +1,34 @@
+{
+  "id": "Registrar.service",
+  "type": "service",
+  "version": "1.0.0",
+  "runtime": "Rust",
+  "layer": 3,
+  "capabilities": [
+    "governance:registrar",
+    "system:registry"
+  ],
+  "dependencies": [],
+  "requires": [],
+  "dataFiles": [],
+  "lifecycle": [
+    "init",
+    "run",
+    "dispose"
+  ],
+  "actions": {
+    "commands": [],
+    "events": [],
+    "accepts": [],
+    "slots": []
+  },
+  "operationalRole": "registrar",
+  "optimization": {
+    "priority": "high",
+    "assertionSuite": "governance"
+  },
+  "docs": {
+    "description": "Module registry and manifest index sovereign module."
+  },
+  "last_modified": "2026-06-29T00:00:00Z"
+}

@@ -282,7 +282,7 @@ function appendEvent(ev) {
   line.innerHTML = `
     <span class="event-ts">${ev.time || ''}</span>
     <span class="event-type ${cls}">${ev.type}</span>
-    <span class="event-msg">${ev.message || ''}</span>
+    <span class="event-msg">${ev.message || (ev.payload && ev.payload.currentFile) || ''}</span>
   `;
   stream.prepend(line);
 
@@ -314,7 +314,7 @@ function connectEventStream() {
         appendEvent(data);
         
         if (data.type === 'scan:progress' && data.payload) {
-             const pct = Math.round((data.payload.scannedCount / data.payload.totalFiles) * 100);
+             const pct = data.payload.totalFiles > 0 ? Math.round((data.payload.scannedCount / data.payload.totalFiles) * 100) : 0;
              
              // Topbar Gauge
              const topbarGaugePath = document.getElementById('topbarScanGaugePath');

@@ -22,7 +22,7 @@
   gap:           var(--space-sm);
   padding:       var(--space-sm) var(--space-md);
   background:    rgba(0, 0, 0, 0.25);
-  border-bottom: var(----size-var(----size-var(----size-var(----size-1px)))) solid rgba(255, 255, 255, 0.06);
+  border-bottom: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid rgba(255, 255, 255, 0.06);
   flex-shrink:   0;
 }
 
@@ -86,7 +86,7 @@
   scrollbar-color: rgba(124, 58, 237, 0.4) transparent;
 }
 
-.sdoa-timeline__lanes::-webkit-scrollbar       { height: var(----size-var(----size-var(----size-var(----size-4px)))); width: 4px; }
+.sdoa-timeline__lanes::-webkit-scrollbar       { height: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-4px))))))); width: 4px; }
 .sdoa-timeline__lanes::-webkit-scrollbar-track { background: transparent; }
 .sdoa-timeline__lanes::-webkit-scrollbar-thumb {
   background:    rgba(124, 58, 237, 0.4);
@@ -110,14 +110,14 @@
   display:     flex;
   align-items: center;
   gap:         var(--space-sm);
-  min-height:  var(----size-var(----size-var(----size-var(----size-36px))));
+  min-height:  var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-36px)))))));
 }
 
 .sdoa-timeline__label {
-  width:         var(----size-var(----size-var(----size-var(----size-140px))));
+  width:         var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-140px)))))));
   flex-shrink:   0;
   font-family:   var(--font-mono);
-  font-size:     var(----size-var(----size-var(----size-var(----size-11px))));
+  font-size:     var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-11px)))))));
   color:         rgba(224, 224, 224, 0.45);
   white-space:   nowrap;
   overflow:      hidden;
@@ -150,10 +150,10 @@
   position:      absolute;
   top:           50%;
   transform:     translateY(-50%);
-  width:         var(----size-var(----size-var(----size-var(----size-10px))));
+  width:         var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-10px)))))));
   height:        10px;
   border-radius: 50%;
-  border:        1.var(----size-var(----size-var(----size-var(----size-5px)))) solid rgba(0, 0, 0, 0.4);
+  border:        1.var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-5px))))))) solid rgba(0, 0, 0, 0.4);
   cursor:        pointer;
   padding:       0;
   transition:    transform var(--duration-fast) var(--ease-default),
@@ -162,19 +162,19 @@
 
 .sdoa-timeline__dot:hover {
   transform:  translateY(-50%) scale(1.5);
-  box-shadow: 0 0 var(----size-var(----size-var(----size-var(----size-8px)))) currentColor;
+  box-shadow: 0 0 var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-8px))))))) currentColor;
   z-index:    2;
 }
 
 .sdoa-timeline__dot--selected {
   transform:  translateY(-50%) scale(1.65);
-  box-shadow: 0 0 var(----size-1var(----size-var(----size-var(----size-var(----size-2px))))) currentColor, 0 0 0 2px rgba(255,255,255,0.2);
+  box-shadow: 0 0 var(----size-1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px)))))))) currentColor, 0 0 0 2px rgba(255,255,255,0.2);
   z-index:    3;
 }
 
 /* ── Inspector Panel ────────────────────────────────────── */
 .sdoa-timeline__inspector {
-  width:         var(----size-var(----size-var(----size-var(----size-280px))));
+  width:         var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-280px)))))));
   flex-shrink:   0;
   border-left:   1px solid rgba(255, 255, 255, 0.06);
   overflow-y:    auto;
