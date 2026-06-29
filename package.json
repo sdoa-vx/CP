@@ -15,7 +15,7 @@
     "type": "git",
     "url": "https://github.com/sdoa-vx/CP"
   },
-  "publisher": "sdoa-vx",
+  "publisher": "sdoa",
   "activationEvents": [
     "onStartupFinished"
   ],
