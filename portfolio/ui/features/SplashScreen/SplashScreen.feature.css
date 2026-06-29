@@ -16,7 +16,7 @@
   justify-content: center;
   opacity: 1;
   transition: opacity 0.3s ease;
-  backdrop-filter: blur(1var(----size-var(----size-var(----size-var(----size-5px)))));
+  backdrop-filter: blur(1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-5px))))))));
   font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
   color: var(--text, var(----color-f8fafc));
 }
@@ -29,12 +29,12 @@
   width: 90vw;
   max-width: 950px;
   height: 80vh;
-  max-height: 6var(----size-var(----size-var(----size-var(----size-20px))));
+  max-height: 6var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-20px)))))));
   background: rgba(28, 29, 31, 0.75);
-  border: var(----size-var(----size-var(----size-var(----size-1px)))) solid rgba(224, 250, 255, 0.1);
-  border-radius: var(----size-1var(----size-var(----size-var(----size-var(----size-2px)))));
+  border: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid rgba(224, 250, 255, 0.1);
+  border-radius: var(----size-1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px))))))));
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5),
-              0 0 var(----size-var(----size-var(----size-var(----size-30px)))) rgba(224, 250, 255, 0.05);
+              0 0 var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-30px))))))) rgba(224, 250, 255, 0.05);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -43,42 +43,42 @@
 
 /* Header */
 .splash-header {
-  padding: var(----size-1var(----size-var(----size-var(----size-var(----size-6px))))) 2var(----size-var(----size-var(----size-var(----size-4px))));
+  padding: var(----size-1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-6px)))))))) 2var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-4px)))))));
   border-bottom: 1px solid rgba(224, 250, 255, 0.08);
   display: flex;
   align-items: center;
-  gap: var(--space-md, var(----size-var(----size-var(----size-16px))));
+  gap: var(--space-md, var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-16px)))))));
   background: rgba(15, 15, 17, 0.4);
   flex-shrink: 0;
 }
 
 .splash-logo {
   background: var(--accent, var(----color-4f8cff));
-  width: 3var(----size-var(----size-var(----size-var(----size-8px))));
+  width: 3var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-8px)))))));
   height: 38px;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 var(----size-var(----size-var(----size-var(----size-15px)))) rgba(79, 140, 255, 0.3);
+  box-shadow: 0 0 var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-15px))))))) rgba(79, 140, 255, 0.3);
 }
 
 .splash-logo span {
   color: var(----color-fff);
   font-weight: 900;
-  font-size: var(----size-var(----size-var(----size-var(----size-22px))));
+  font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-22px)))))));
 }
 
 .splash-title-wrap h2 {
   margin: 0;
-  font-size: var(----size-var(----size-var(----size-var(----size-18px))));
+  font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-18px)))))));
   font-weight: 700;
   letter-spacing: 0.5px;
   color: var(----color-fff);
 }
 
 .splash-subtitle {
-  font-size: var(----size-var(----size-var(----size-var(----size-11px))));
+  font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-11px)))))));
   color: rgba(224, 250, 255, 0.5);
   font-family: var(--font-mono, 'JetBrains Mono', monospace);
   margin-top: 2px;
@@ -93,7 +93,7 @@
   font-family: var(--font-mono, 'JetBrains Mono', monospace);
   color: rgba(224, 250, 255, 0.6);
   background: rgba(0, 0, 0, 0.2);
-  padding: 4px var(----size-var(----size-var(----size-var(----size-10px))));
+  padding: 4px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-10px)))))));
   border-radius: 20px;
   border: 1px solid rgba(224, 250, 255, 0.05);
 }
@@ -107,12 +107,12 @@
 
 /* Left Nav */
 .splash-tabs-nav {
-  width: var(----size-var(----size-var(----size-var(----size-180px))));
+  width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-180px)))))));
   border-right: 1px solid rgba(224, 250, 255, 0.08);
   background: rgba(15, 15, 17, 0.2);
   display: flex;
   flex-direction: column;
-  padding: var(----size-var(----size-var(----size-12px))) 6px;
+  padding: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-12px)))))) 6px;
   gap: 4px;
   flex-shrink: 0;
 }
@@ -121,7 +121,7 @@
   background: transparent;
   border: none;
   color: rgba(224, 250, 255, 0.6);
-  padding: 10px var(----size-var(----size-var(----size-var(----size-14px))));
+  padding: 10px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-14px)))))));
   text-align: left;
   font-size: 12px;
   font-weight: 500;
@@ -149,14 +149,14 @@
   background: rgba(224, 250, 255, 0.08);
   color: var(----color-fff);
   font-weight: 600;
-  border-left: var(----size-var(----size-var(----size-var(----size-3px)))) solid #C5A059;
+  border-left: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-3px))))))) solid #C5A059;
   box-shadow: inset 1px 0 0 rgba(224, 250, 255, 0.1);
 }
 
 /* Middle settings forms */
 .splash-settings-content {
   flex: 1;
-  padding: var(----size-var(----size-var(----size-var(----size-24px))));
+  padding: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-24px)))))));
   overflow-y: auto;
   min-width: 0;
 }
@@ -205,10 +205,10 @@
 .form-group input, .form-group select, .form-group textarea {
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(224, 250, 255, 0.12);
-  color: #fff;
+  color: var(----color-fff);
   border-radius: 6px;
   padding: 8px 12px;
-  font-size: var(----size-var(----size-var(----size-var(----size-13px))));
+  font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-13px)))))));
   outline: none;
   font-family: var(--font-mono, 'JetBrains Mono', monospace);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -252,7 +252,7 @@
 
 .checkbox-label-wrap strong {
   font-size: 13px;
-  color: #fff;
+  color: var(----color-fff);
 }
 
 .checkbox-label-wrap span {
@@ -294,7 +294,7 @@
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: #fff;
+  color: var(----color-fff);
 }
 
 .preset-badge {
@@ -317,7 +317,7 @@
 
 /* Right mockup panel */
 .splash-mockup-pane {
-  width: var(----size-var(----size-var(----size-var(----size-280px))));
+  width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-280px)))))));
   border-left: 1px solid rgba(224, 250, 255, 0.08);
   background: rgba(15, 15, 17, 0.25);
   padding: 16px;

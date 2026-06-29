@@ -10,9 +10,9 @@
   height:          26px;
   padding:         0 var(--space-sm);
   background:      rgba(0, 0, 0, 0.55);
-  border-top:      var(----size-var(----size-var(----size-var(----size-1px)))) solid rgba(255, 255, 255, 0.06);
+  border-top:      var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid rgba(255, 255, 255, 0.06);
   font-family:     var(--font-mono);
-  font-size:       var(----size-var(----size-var(----size-var(----size-11px))));
+  font-size:       var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-11px)))))));
   color:           rgba(224, 224, 224, 0.5);
   flex-shrink:     0;
   overflow:        hidden;
@@ -34,7 +34,7 @@
 .sdoa-statusbar__section {
   display:     flex;
   align-items: center;
-  gap:         var(----size-var(----size-var(----size-var(----size-2px))));
+  gap:         var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px)))))));
 }
 
 .sdoa-statusbar__section--sovereigns {
@@ -61,11 +61,11 @@
 .sdoa-statusbar__chip {
   display:       inline-flex;
   align-items:   center;
-  gap:           var(----size-var(----size-var(----size-var(----size-3px))));
-  padding:       1px var(----size-var(----size-var(----size-var(----size-5px))));
+  gap:           var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-3px)))))));
+  padding:       1px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-5px)))))));
   border-radius: var(--radius-sm);
   white-space:   nowrap;
-  max-width:     var(----size-var(----size-var(----size-var(----size-220px))));
+  max-width:     var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-220px)))))));
   overflow:      hidden;
 }
 
@@ -100,7 +100,7 @@
   display:       inline-flex;
   align-items:   center;
   justify-content: center;
-  width:         var(----size-var(----size-var(----size-var(----size-18px))));
+  width:         var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-18px)))))));
   height:        18px;
   border-radius: var(--radius-sm);
   border:        none;

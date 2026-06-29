@@ -31,12 +31,12 @@
 
 #inputTopRow select {
   background: var(--bg-elevated-2);
-  border: var(----size-var(----size-var(----size-var(----size-1px)))) solid var(--border-subtle);
+  border: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid var(--border-subtle);
   border-radius: var(--radius);
   color: var(--text);
   font-family: var(--font-sans);
-  font-size: var(----size-1var(----size-var(----size-var(----size-var(----size-2px)))));
-  padding: var(----size-var(----size-var(----size-var(----size-4px)))) var(----size-var(----size-var(----size-var(----size-8px))));
+  font-size: var(----size-1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px))))))));
+  padding: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-4px))))))) var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-8px)))))));
   cursor: pointer;
 }
 
@@ -56,9 +56,9 @@
   border: 1px solid var(--border-subtle);
   background: var(--bg-deep);
   color: var(--text);
-  padding: 8px var(----size-var(----size-var(----size-12px)));
+  padding: 8px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-12px))))));
   font-family: var(--font-sans);
-  font-size: var(----size-1var(----size-var(----size-var(----size-var(----size-3px)))));
+  font-size: var(----size-1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-3px))))))));
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
@@ -73,7 +73,7 @@
 .input-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(----size-var(----size-var(----size-var(----size-5px))));
+  gap: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-5px)))))));
   flex: 1;
 }
 
@@ -86,18 +86,18 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-md);
-  padding: 80px var(----size-var(----size-var(----size-var(----size-20px))));
+  padding: 80px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-20px)))))));
   pointer-events: none;
   user-select: none;
 }
 
-@keyframes sdoa-fade-in { from { opacity: 0; transform: translateY(var(----size-var(----size-var(----size-var(----size-10px))))); } to { opacity: 1; transform: translateY(0); } }
+@keyframes sdoa-fade-in { from { opacity: 0; transform: translateY(var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-10px)))))))); } to { opacity: 1; transform: translateY(0); } }
 
 .sdoa-chat-empty-state__logo {
-  width: var(----size-var(----size-var(----size-var(----size-120px))));
+  width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-120px)))))));
   height: 120px;
   opacity: 0.8;
-  filter: drop-shadow(0 0 var(----size-var(----size-var(----size-var(----size-30px)))) rgba(79, 140, 255, 0.4));
+  filter: drop-shadow(0 0 var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-30px))))))) rgba(79, 140, 255, 0.4));
   object-fit: contain;
   margin-bottom: var(--space-md);
 }
@@ -112,7 +112,7 @@
 .sdoa-chat-empty-state__hint {
   font-size: var(--text-sm);
   color: var(--text-muted);
-  max-width: var(----size-var(----size-var(----size-var(----size-280px))));
+  max-width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-280px)))))));
   text-align: center;
   line-height: 1.5;
 }
@@ -149,7 +149,7 @@
   border: 1px solid rgba(59, 130, 246, 0.25);
   align-self: flex-start;
   border-bottom-left-radius: 4px;
-  box-shadow: 0 10px var(----size-var(----size-var(----size-var(----size-40px)))) -10px rgba(0, 0, 0, 0.5),
+  box-shadow: 0 10px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-40px))))))) -10px rgba(0, 0, 0, 0.5),
               0 0 20px -5px rgba(59, 130, 246, 0.1);
 }
 
@@ -167,7 +167,7 @@
   border: 1px dashed var(--border-subtle);
   align-self: flex-start;
   opacity: 0.8;
-  padding: 10px var(----size-1var(----size-var(----size-var(----size-var(----size-6px)))));
+  padding: 10px var(----size-1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-6px))))))));
   max-width: fit-content;
 }
 
@@ -196,8 +196,8 @@
 
 .sdoa-message__body ul,
 .sdoa-message__body ol {
-  margin: 8px 0 var(----size-var(----size-var(----size-16px)));
-  padding-left: var(----size-var(----size-var(----size-var(----size-24px))));
+  margin: 8px 0 var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-16px))))));
+  padding-left: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-24px)))))));
   line-height: 1.6;
 }
 .sdoa-message__body li {
@@ -211,8 +211,8 @@
 .sdoa-message__body table {
   width: 100%;
   border-collapse: collapse;
-  margin: var(----size-var(----size-var(----size-var(----size-18px)))) 0;
-  font-size: var(----size-var(----size-var(----size-13px)));
+  margin: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-18px))))))) 0;
+  font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-13px))))));
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   overflow: hidden;
@@ -221,9 +221,9 @@
 }
 .sdoa-message__body th {
   background: rgba(15, 23, 42, 0.7);
-  padding: 10px var(----size-var(----size-var(----size-var(----size-14px))));
+  padding: 10px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-14px)))))));
   font-weight: 600;
-  color: var(--text-bright, #ffffff);
+  color: var(--text-bright, var(----color-fff)fff);
   border-bottom: 1px solid var(--border-subtle);
   text-align: left;
 }
@@ -271,7 +271,7 @@
   padding-bottom: 6px;
 }
 .sdoa-message__body h2 {
-  font-size: var(----size-var(----size-var(----size-var(----size-15px))));
+  font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-15px)))))));
   font-weight: 700;
   color: var(--text-bright);
   margin: 20px 0 10px;
@@ -304,7 +304,7 @@
   background: var(--bg-elevated-2);
   border: 1px solid var(--border-subtle);
   color: var(--text-muted);
-  font-size: var(----size-var(----size-var(----size-var(----size-11px))));
+  font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-11px)))))));
   cursor: pointer;
   transition: all var(--duration-fast);
 }
@@ -371,7 +371,7 @@
   position: absolute;
   bottom: 20px;
   right: 20px;
-  width: var(----size-var(----size-var(----size-var(----size-36px))));
+  width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-36px)))))));
   height: 36px;
   border-radius: 50%;
   border: 1px solid rgba(79, 140, 255, 0.4);
@@ -415,7 +415,7 @@
 .sdoa-message__body summary {
   font-weight: 600;
   font-size: 13px;
-  color: var(--text-bright, #fff);
+  color: var(--text-bright, var(----color-fff));
   cursor: pointer;
   padding: 4px;
   outline: none;
@@ -441,7 +441,7 @@
 .sdoa-callout--danger  { --border-color: var(----color-ef4444); background: rgba(239, 68, 68, 0.05); }
 .sdoa-callout-title {
   font-weight: 700;
-  color: var(--text-bright, #fff);
+  color: var(--text-bright, var(----color-fff));
   margin-bottom: 4px;
   display: flex;
   align-items: center;

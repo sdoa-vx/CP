@@ -1,0 +1,7 @@
+{
+  "moduleId": "pulse",
+  "layer": 3,
+  "runtime": "go",
+  "operationalRole": "mesh:pulse",
+  "entrypoint": "src/main.go"
+}

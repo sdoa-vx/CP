@@ -1,0 +1,321 @@
+🔧 1. Antigravity YAML loadout file
+yaml
+# antigravity.loadout.yaml
+version: 1
+
+env:
+  sdoa:
+    engine_dir: ~/antigravity/sdoa/engine
+    modules_dir: ~/antigravity/sdoa/modules
+    registry_dir: ~/antigravity/sdoa/registry
+    pipelines_dir: ~/antigravity/sdoa/pipelines
+    docs_dir: ~/antigravity/sdoa/docs
+    dashboard_dir: ~/antigravity/sdoa/dashboard
+    traces_dir: ~/antigravity/sdoa/traces
+    keys_dir: ~/.antigravity/keys
+
+boot:
+  - name: ensure-directories
+    run:
+      - mkdir -p ~/antigravity/sdoa/engine
+      - mkdir -p ~/antigravity/sdoa/modules
+      - mkdir -p ~/antigravity/sdoa/registry
+      - mkdir -p ~/antigravity/sdoa/pipelines
+      - mkdir -p ~/antigravity/sdoa/docs
+      - mkdir -p ~/antigravity/sdoa/dashboard
+      - mkdir -p ~/antigravity/sdoa/traces
+      - mkdir -p ~/.antigravity/keys
+
+  - name: ensure-keys
+    run:
+      - test -f ~/.antigravity/keys/default.key || sdoa key generate default -o ~/.antigravity/keys/default.key
+      - sdoa key trust ~/.antigravity/keys/default.key --trust ~/.antigravity/keys
+
+  - name: ensure-stdlib
+    run:
+      - sdoa module list --engine ~/antigravity/sdoa/engine || true
+      - sdoa module update --engine ~/antigravity/sdoa/engine --registry ~/antigravity/sdoa/registry
+
+  - name: validate-modules
+    run:
+      - sdoa manifest --modules ~/antigravity/sdoa/modules
+
+  - name: validate-pipelines
+    run:
+      - for f in ~/antigravity/sdoa/pipelines/*.yaml; do sdoa validate pipeline "$f" --modules ~/antigravity/sdoa/modules; done
+
+  - name: generate-codegen
+    run:
+      - sdoa codegen ts ~/antigravity/sdoa/out/ts --modules ~/antigravity/sdoa/modules
+      - sdoa codegen python ~/antigravity/sdoa/out/python --modules ~/antigravity/sdoa/modules
+      - sdoa codegen rust ~/antigravity/sdoa/out/rust --modules ~/antigravity/sdoa/modules
+
+  - name: generate-docs
+    run:
+      - sdoa docs ~/antigravity/sdoa/docs --modules ~/antigravity/sdoa/modules
+
+  - name: generate-dashboard
+    run:
+      - sdoa dashboard ~/antigravity/sdoa/dashboard \
+          --engine ~/antigravity/sdoa/engine \
+          --registry ~/antigravity/sdoa/registry \
+          --traces ~/antigravity/sdoa/traces
+🧠 2. Bootloader script that wires this together
+bash
+#!/usr/bin/env bash
+# antigravity-boot.sh
+
+set -euo pipefail
+
+LOADOUT="${ANTIGRAVITY_LOADOUT:-$HOME/antigravity/antigravity.loadout.yaml}"
+
+echo "[antigravity] using loadout: $LOADOUT"
+
+# Simple YAML runner: assumes `run:` is a list of shell commands.
+run_block() {
+  local name="$1"
+  echo "[antigravity] boot step: $name"
+}
+
+# Hard-wire the steps for now (you can swap to a real YAML parser later)
+
+echo "[antigravity] step: ensure-directories"
+mkdir -p "$HOME/antigravity/sdoa/engine"
+mkdir -p "$HOME/antigravity/sdoa/modules"
+mkdir -p "$HOME/antigravity/sdoa/registry"
+mkdir -p "$HOME/antigravity/sdoa/pipelines"
+mkdir -p "$HOME/antigravity/sdoa/docs"
+mkdir -p "$HOME/antigravity/sdoa/dashboard"
+mkdir -p "$HOME/antigravity/sdoa/traces"
+mkdir -p "$HOME/.antigravity/keys"
+
+echo "[antigravity] step: ensure-keys"
+if [ ! -f "$HOME/.antigravity/keys/default.key" ]; then
+  sdoa key generate default -o "$HOME/.antigravity/keys/default.key"
+fi
+sdoa key trust "$HOME/.antigravity/keys/default.key" --trust "$HOME/.antigravity/keys"
+
+echo "[antigravity] step: ensure-stdlib"
+sdoa module update --engine "$HOME/antigravity/sdoa/engine" --registry "$HOME/antigravity/sdoa/registry" || true
+
+echo "[antigravity] step: validate-modules"
+sdoa manifest --modules "$HOME/antigravity/sdoa/modules"
+
+echo "[antigravity] step: validate-pipelines"
+for f in "$HOME/antigravity/sdoa/pipelines"/*.yaml; do
+  [ -f "$f" ] || continue
+  sdoa validate pipeline "$f" --modules "$HOME/antigravity/sdoa/modules"
+done
+
+echo "[antigravity] step: generate-codegen"
+sdoa codegen ts "$HOME/antigravity/sdoa/out/ts" --modules "$HOME/antigravity/sdoa/modules"
+sdoa codegen python "$HOME/antigravity/sdoa/out/python" --modules "$HOME/antigravity/sdoa/modules"
+sdoa codegen rust "$HOME/antigravity/sdoa/out/rust" --modules "$HOME/antigravity/sdoa/modules"
+
+echo "[antigravity] step: generate-docs"
+sdoa docs "$HOME/antigravity/sdoa/docs" --modules "$HOME/antigravity/sdoa/modules"
+
+echo "[antigravity] step: generate-dashboard"
+sdoa dashboard "$HOME/antigravity/sdoa/dashboard" \
+  --engine "$HOME/antigravity/sdoa/engine" \
+  --registry "$HOME/antigravity/sdoa/registry" \
+  --traces "$HOME/antigravity/sdoa/traces"
+
+echo "[antigravity] boot complete."
+You can call this from Antigravity’s startup sequence or MCP.
+
+🧩 3. MCP tool definitions for SDOA
+Assuming Antigravity’s MCP uses JSON tool specs:
+
+json
+[
+  {
+    "name": "sdoa_new_module",
+    "description": "Create a new SDOA module in the Antigravity workspace.",
+    "command": "sdoa",
+    "args": ["new", "module", "{id}", "--dir", "~/antigravity/sdoa/modules"],
+    "parameters": {
+      "id": {
+        "type": "string",
+        "description": "Module identifier (e.g., text-lint)."
+      }
+    }
+  },
+  {
+    "name": "sdoa_validate_module",
+    "description": "Validate a module directory.",
+    "command": "sdoa",
+    "args": ["validate", "module", "{path}"],
+    "parameters": {
+      "path": {
+        "type": "string",
+        "description": "Path to module directory."
+      }
+    }
+  },
+  {
+    "name": "sdoa_module_pack",
+    "description": "Pack a module into a .sdoa artifact.",
+    "command": "sdoa",
+    "args": ["module", "pack", "{dir}", "-o", "{out}"],
+    "parameters": {
+      "dir": { "type": "string" },
+      "out": { "type": "string" }
+    }
+  },
+  {
+    "name": "sdoa_module_install",
+    "description": "Install a module into the engine.",
+    "command": "sdoa",
+    "args": ["module", "install", "{file}", "--engine", "~/antigravity/sdoa/engine"],
+    "parameters": {
+      "file": { "type": "string" }
+    }
+  },
+  {
+    "name": "sdoa_validate_pipeline",
+    "description": "Validate a pipeline definition.",
+    "command": "sdoa",
+    "args": ["validate", "pipeline", "{file}", "--modules", "~/antigravity/sdoa/modules"],
+    "parameters": {
+      "file": { "type": "string" }
+    }
+  },
+  {
+    "name": "sdoa_dashboard",
+    "description": "Generate the SDOA dashboard.",
+    "command": "sdoa",
+    "args": [
+      "dashboard",
+      "~/antigravity/sdoa/dashboard",
+      "--engine",
+      "~/antigravity/sdoa/engine",
+      "--registry",
+      "~/antigravity/sdoa/registry",
+      "--traces",
+      "~/antigravity/sdoa/traces"
+    ]
+  },
+  {
+    "name": "sdoa_docs",
+    "description": "Generate SDOA docs.",
+    "command": "sdoa",
+    "args": ["docs", "~/antigravity/sdoa/docs", "--modules", "~/antigravity/sdoa/modules"]
+  },
+  {
+    "name": "sdoa_invoke",
+    "description": "Invoke a capability.",
+    "command": "sdoa",
+    "args": ["invoke", "{capability}", "{input}"],
+    "parameters": {
+      "capability": { "type": "string" },
+      "input": { "type": "string" }
+    }
+  }
+]
+You can expand this list as you formalize Antigravity’s MCP schema.
+
+⚙️ 4. VS Code extension commands that call these workflows
+In package.json:
+
+json
+{
+  "contributes": {
+    "commands": [
+      {
+        "command": "antigravity.sdoa.newModule",
+        "title": "Antigravity: New SDOA Module"
+      },
+      {
+        "command": "antigravity.sdoa.validateModule",
+        "title": "Antigravity: Validate SDOA Module"
+      },
+      {
+        "command": "antigravity.sdoa.packAndInstall",
+        "title": "Antigravity: Pack & Install Module"
+      },
+      {
+        "command": "antigravity.sdoa.generateDashboard",
+        "title": "Antigravity: Generate SDOA Dashboard"
+      },
+      {
+        "command": "antigravity.sdoa.generateDocs",
+        "title": "Antigravity: Generate SDOA Docs"
+      },
+      {
+        "command": "antigravity.sdoa.invokeCapability",
+        "title": "Antigravity: Invoke Capability"
+      }
+    ]
+  }
+}
+In extension.ts:
+
+ts
+import * as vscode from 'vscode';
+import { exec } from 'child_process';
+import * as path from 'path';
+import * as os from 'os';
+
+const AG_ROOT = path.join(os.homedir(), 'antigravity', 'sdoa');
+
+function run(cmd: string, cwd?: string) {
+  return new Promise<void>((resolve, reject) => {
+    exec(cmd, { cwd }, (err, stdout, stderr) => {
+      if (stdout) vscode.window.showInformationMessage(stdout);
+      if (stderr) vscode.window.showErrorMessage(stderr);
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+}
+
+export function activate(context: vscode.ExtensionContext) {
+  context.subscriptions.push(
+    vscode.commands.registerCommand('antigravity.sdoa.newModule', async () => {
+      const id = await vscode.window.showInputBox({ prompt: 'Module ID' });
+      if (!id) return;
+      await run(`sdoa new module ${id} --dir "${path.join(AG_ROOT, 'modules')}"`);
+    }),
+
+    vscode.commands.registerCommand('antigravity.sdoa.validateModule', async () => {
+      const uri = await vscode.window.showOpenDialog({ canSelectFolders: true });
+      if (!uri || !uri[0]) return;
+      await run(`sdoa validate module "${uri[0].fsPath}"`);
+    }),
+
+    vscode.commands.registerCommand('antigravity.sdoa.packAndInstall', async () => {
+      const uri = await vscode.window.showOpenDialog({ canSelectFolders: true });
+      if (!uri || !uri[0]) return;
+      const dir = uri[0].fsPath;
+      const out = path.join(dir, 'dist', path.basename(dir) + '.sdoa');
+      await run(`sdoa module pack "${dir}" -o "${out}"`);
+      await run(`sdoa module install "${out}" --engine "${path.join(AG_ROOT, 'engine')}"`);
+    }),
+
+    vscode.commands.registerCommand('antigravity.sdoa.generateDashboard', async () => {
+      await run(
+        `sdoa dashboard "${path.join(AG_ROOT, 'dashboard')}" ` +
+          `--engine "${path.join(AG_ROOT, 'engine')}" ` +
+          `--registry "${path.join(AG_ROOT, 'registry')}" ` +
+          `--traces "${path.join(AG_ROOT, 'traces')}"`
+      );
+    }),
+
+    vscode.commands.registerCommand('antigravity.sdoa.generateDocs', async () => {
+      await run(
+        `sdoa docs "${path.join(AG_ROOT, 'docs')}" --modules "${path.join(AG_ROOT, 'modules')}"`
+      );
+    }),
+
+    vscode.commands.registerCommand('antigravity.sdoa.invokeCapability', async () => {
+      const cap = await vscode.window.showInputBox({ prompt: 'Capability (module.capability)' });
+      if (!cap) return;
+      const input = await vscode.window.showInputBox({ prompt: 'Input payload' });
+      if (!input) return;
+      await run(`sdoa invoke "${cap}" "${input}"`);
+    })
+  );
+}
+
+export function deactivate() 

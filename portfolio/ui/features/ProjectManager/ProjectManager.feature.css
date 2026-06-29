@@ -7,7 +7,7 @@
 .np-overlay {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(var(----size-var(----size-var(----size-var(----size-4px)))));
+    backdrop-filter: blur(var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-4px))))))));
     z-index: 1000;
     display: flex; align-items: center; justify-content: center;
 }
@@ -15,36 +15,36 @@
 /* ── Panel ───────────────────────────────────────────────── */
 .np-panel {
     background: var(--bg-deep, #0a0a1a);
-    border: var(----size-var(----size-var(----size-var(----size-1px)))) solid var(--border-subtle, #2a2a40);
-    border-radius: var(----size-1var(----size-var(----size-var(----size-var(----size-2px)))));
+    border: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid var(--border-subtle, #2a2a40);
+    border-radius: var(----size-1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px))))))));
     width: 860px; max-width: 96vw;
     height: 580px; max-height: 92vh;
     display: flex; flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 var(----size-var(----size-var(----size-var(----size-24px)))) 60px rgba(0,0,0,0.6);
+    box-shadow: 0 var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-24px))))))) 60px rgba(0,0,0,0.6);
     animation: np-slide-in 0.2s ease;
 }
 @keyframes np-slide-in {
-    from { opacity:0; transform:translateY(-var(----size-var(----size-var(----size-12px)))) scale(0.98); }
+    from { opacity:0; transform:translateY(-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-12px))))))) scale(0.98); }
     to   { opacity:1; transform:translateY(0) scale(1); }
 }
 
 /* ── Header ──────────────────────────────────────────────── */
 .np-header {
     display: flex; align-items: center;
-    padding: var(----size-var(----size-var(----size-var(----size-14px)))) var(----size-var(----size-var(----size-var(----size-20px))));
+    padding: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-14px))))))) var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-20px)))))));
     border-bottom: 1px solid var(--border-subtle, #2a2a40);
     flex-shrink: 0;
 }
 .np-title {
-    font-size: var(----size-var(----size-var(----size-var(----size-15px)))); font-weight: 700;
+    font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-15px))))))); font-weight: 700;
     color: var(--text-bright, var(----color-fff));
     flex: 1;
 }
 .np-close-btn {
     background: none; border: none;
     color: var(--text-dim, #666);
-    font-size: 1var(----size-var(----size-var(----size-var(----size-8px)))); cursor: pointer; padding: 2px var(----size-var(----size-var(----size-var(----size-6px))));
+    font-size: 1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-8px))))))); cursor: pointer; padding: 2px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-6px)))))));
     border-radius: 4px; transition: color 0.15s, background 0.15s;
 }
 .np-close-btn:hover {
@@ -59,7 +59,7 @@
 
 /* ── Sidebar ─────────────────────────────────────────────── */
 .np-sidebar {
-    width: var(----size-var(----size-var(----size-var(----size-220px))));
+    width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-220px)))))));
     border-right: 1px solid var(--border-subtle, #2a2a40);
     display: flex; flex-direction: column;
     flex-shrink: 0;
@@ -67,7 +67,7 @@
 }
 .np-sidebar-title {
     padding: 8px 14px;
-    font-size: var(----size-var(----size-var(----size-var(----size-10px)))); font-weight: 700;
+    font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-10px))))))); font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.08em;
     color: var(--text-dim, var(----color-555));
 }
@@ -79,7 +79,7 @@
 .pm-list-item {
     display: flex; align-items: center; gap: 8px;
     padding: 8px 14px;
-    font-size: var(----size-1var(----size-var(----size-var(----size-var(----size-3px)))));
+    font-size: var(----size-1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-3px))))))));
     cursor: pointer;
     color: var(--text, var(----color-ccc));
     border-left: 3px solid transparent;
@@ -118,7 +118,7 @@
 }
 .pm-editor-header {
     display: flex; align-items: center;
-    padding: 10px var(----size-var(----size-var(----size-var(----size-16px))));
+    padding: 10px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-16px)))))));
     border-bottom: 1px solid var(--border-subtle, #2a2a40);
     flex-shrink: 0;
 }
@@ -153,7 +153,7 @@
     background: rgba(255,255,255,0.03);
 }
 .pm-tab.active {
-    color: var(--text-bright, #fff);
+    color: var(--text-bright, var(----color-fff));
     border-bottom-color: var(--accent, #6366f1);
 }
 
@@ -169,9 +169,9 @@
     align-items: center; justify-content: center;
     height: 100%; gap: 12px;
     color: var(--text-dim, #555);
-    font-size: var(----size-var(----size-var(----size-13px)));
+    font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-13px))))));
 }
-.pm-empty-icon { font-size: var(----size-var(----size-var(----size-var(----size-40px)))); opacity: 0.4; }
+.pm-empty-icon { font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-40px))))))); opacity: 0.4; }
 
 /* ── History tab ─────────────────────────────────────────── */
 .pm-history-list {
@@ -198,6 +198,6 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .pm-history-time {
-    font-size: var(----size-var(----size-var(----size-var(----size-11px)))); color: var(--text-dim, #555);
+    font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-11px))))))); color: var(--text-dim, #555);
     margin-top: 2px;
 }

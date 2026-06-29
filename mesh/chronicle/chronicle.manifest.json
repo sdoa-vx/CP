@@ -1,0 +1,7 @@
+{
+  "moduleId": "chronicle",
+  "layer": 3,
+  "runtime": "go",
+  "operationalRole": "mesh:chronicle",
+  "entrypoint": "src/main.go"
+}

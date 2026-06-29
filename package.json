@@ -1,7 +1,7 @@
 {
   "name": "sdoa-mcp-extension",
-  "displayName": "1.1 SDOA MCE",
-  "version": "1.2.0",
+  "displayName": "1.3 SDOA MCE",
+  "version": "1.3.0",
   "description": "SDOA Architecture AI Companion",
   "icon": "extension/assets/seal.png",
   "bin": {
@@ -164,6 +164,17 @@
           "type": "string",
           "default": "",
           "description": "Supabase Key for cloud sync"
+        },
+        "sdoaMcp.scanPacing": {
+          "type": "string",
+          "enum": ["fast", "normal", "slow", "cinematic"],
+          "default": "normal",
+          "description": "Controls the pacing of the MCP scan."
+        },
+        "sdoaMcp.autoloadDashboard": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically open the dashboard before starting a scan."
         }
       }
     }

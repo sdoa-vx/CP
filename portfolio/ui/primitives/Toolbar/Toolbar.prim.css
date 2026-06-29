@@ -8,8 +8,8 @@
   flex-shrink: 0;
 }
 .sdoa-toolbar__separator {
-  width: var(----size-var(----size-var(----size-var(----size-1px))));
-  height: var(----size-var(----size-var(----size-var(----size-16px))));
+  width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px)))))));
+  height: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-16px)))))));
   background: var(--border-subtle);
   margin: 0 var(--space-xs);
 }

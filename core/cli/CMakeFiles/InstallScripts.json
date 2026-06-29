@@ -1,0 +1,11 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/MCP/core/cli/cmake_install.cmake",
+		"C:/MCP/core/cli/core/cmake_install.cmake",
+		"C:/MCP/core/cli/abi/cmake_install.cmake",
+		"C:/MCP/core/cli/cli/cmake_install.cmake",
+		"C:/MCP/core/cli/tests/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

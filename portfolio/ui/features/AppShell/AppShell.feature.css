@@ -3,14 +3,14 @@
 
 #app {
   display: grid;
-  grid-template-columns: var(--sidebar-left-width, 3var(----size-var(----size-var(----size-var(----size-20px))))) minmax(0, 1fr) var(--sidebar-right-width, var(----size-var(----size-var(----size-var(----size-220px)))));
+  grid-template-columns: var(--sidebar-left-width, 3var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-20px)))))))) minmax(0, 1fr) var(--sidebar-right-width, var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-220px))))))));
   grid-template-rows: 100vh;
   overflow: hidden;
 }
 
 aside {
   background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-deep) 100%);
-  border-right: var(----size-var(----size-var(----size-var(----size-1px)))) solid var(--border-subtle);
+  border-right: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid var(--border-subtle);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -28,7 +28,7 @@ body.resizing .resizer { pointer-events: all; }
   position: absolute;
   top: 0;
   bottom: 0;
-  width: var(----size-var(----size-var(----size-var(----size-6px))));
+  width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-6px)))))));
   cursor: col-resize;
   background: transparent;
   transition: background 0.15s;
@@ -36,7 +36,7 @@ body.resizing .resizer { pointer-events: all; }
 }
 
 .resizer:hover { background: var(--accent); opacity: 0.3; }
-.resizer-left { right: -var(----size-var(----size-var(----size-var(----size-3px)))); }
+.resizer-left { right: -var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-3px))))))); }
 .resizer-right { left: -3px; }
 
 .sidebar-header {
@@ -76,13 +76,13 @@ body.resizing .resizer { pointer-events: all; }
 }
 
 #main-header {
-  height: 4var(----size-var(----size-var(----size-var(----size-8px))));
+  height: 4var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-8px)))))));
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--space-md);
   background: rgba(5, 6, 10, 0.8);
-  backdrop-filter: blur(var(----size-1var(----size-var(----size-var(----size-var(----size-2px))))));
+  backdrop-filter: blur(var(----size-1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px)))))))));
   border-bottom: 1px solid var(--border-subtle);
   z-index: 10;
   flex-shrink: 0;
@@ -162,15 +162,15 @@ body.resizing .resizer { pointer-events: all; }
   border-radius: 6px;
   color: var(--text);
   font-family: var(--font-sans);
-  font-size: var(----size-var(----size-var(----size-var(----size-11px))));
-  padding: var(----size-var(----size-var(----size-var(----size-4px)))) 6px;
+  font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-11px)))))));
+  padding: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-4px))))))) 6px;
 }
 
 /* System Status */
 .status-row {
   display: flex;
   align-items: center;
-  gap: var(----size-var(----size-var(----size-var(----size-7px))));
+  gap: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-7px)))))));
   font-size: 11px;
   color: var(--text-muted);
 }
@@ -202,7 +202,7 @@ body.resizing .resizer { pointer-events: all; }
 #shortcutOverlay {
   position: fixed;
   top: 48px;
-  right: var(----size-var(----size-var(----size-12px)));
+  right: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-12px))))));
   z-index: 500;
   display: block;
 }
@@ -210,15 +210,15 @@ body.resizing .resizer { pointer-events: all; }
 
 .overlay-content {
   background: var(--bg-elevated);
-  border-radius: var(----size-var(----size-var(----size-var(----size-10px))));
-  padding: var(----size-var(----size-var(----size-var(----size-14px)))) var(----size-var(----size-var(----size-var(----size-18px))));
+  border-radius: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-10px)))))));
+  padding: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-14px))))))) var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-18px)))))));
   border: 1px solid var(--border-subtle);
   width: 340px;
   box-shadow: var(--shadow-soft);
   max-height: calc(100vh - 72px);
   overflow-y: auto;
 }
-.overlay-content h2 { margin: 0 0 12px; font-size: 1var(----size-var(----size-var(----size-var(----size-5px)))); color: var(--text); }
+.overlay-content h2 { margin: 0 0 12px; font-size: 1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-5px))))))); color: var(--text); }
 .overlay-content ul {
   list-style: none; padding: 0; margin: 0;
   font-size: 12px; color: var(--text-muted);

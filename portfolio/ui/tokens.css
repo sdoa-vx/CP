@@ -19,7 +19,7 @@
   --border-subtle:   #1e2435;
   --border-mid:      rgba(148, 163, 184, 0.15);
   --border-active:   rgba(59, 130, 246, 0.6);
-  --border-default:  var(----size-var(----size-var(----size-var(----size-1px)))) solid var(--border-subtle);
+  --border-default:  var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid var(--border-subtle);
 
   /* ── Accent ───────────────────────────────────── */
   --accent:          var(----color-4f8cff);
@@ -41,12 +41,12 @@
   --color-error:     #f97373;
 
   /* ── Spacing Scale ────────────────────────────── */
-  --space-2xs:       var(----size-var(----size-var(----size-var(----size-2px))));
-  --space-xs:        var(----size-var(----size-var(----size-var(----size-4px))));
-  --space-sm:        var(----size-var(----size-var(----size-var(----size-8px))));
-  --space-md:        var(----size-var(----size-var(----size-var(----size-16px))));
-  --space-lg:        var(----size-var(----size-var(----size-var(----size-24px))));
-  --space-xl:        var(----size-var(----size-var(----size-var(----size-32px))));
+  --space-2xs:       var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px)))))));
+  --space-xs:        var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-4px)))))));
+  --space-sm:        var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-8px)))))));
+  --space-md:        var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-16px)))))));
+  --space-lg:        var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-24px)))))));
+  --space-xl:        var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-32px)))))));
   --space-2xl:       48px;
 
   /* ── Typography ───────────────────────────────── */
@@ -54,12 +54,12 @@
   --font-mono:       "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
                      Consolas, "Liberation Mono", "Courier New", monospace;
 
-  --text-xs:         var(----size-var(----size-var(----size-var(----size-11px))));
-  --text-sm:         var(----size-1var(----size-var(----size-var(----size-var(----size-3px)))));
-  --text-base:       var(----size-var(----size-var(----size-var(----size-14px))));
+  --text-xs:         var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-11px)))))));
+  --text-sm:         var(----size-1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-3px))))))));
+  --text-base:       var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-14px)))))));
   --text-lg:         16px;
-  --text-xl:         var(----size-var(----size-var(----size-var(----size-18px))));
-  --text-2xl:        var(----size-var(----size-var(----size-var(----size-22px))));
+  --text-xl:         var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-18px)))))));
+  --text-2xl:        var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-22px)))))));
 
   --line-height:     1.5;
   --line-height-tight: 1.25;
@@ -68,13 +68,13 @@
   --radius-sm:       4px;
   --radius:          8px;
   --radius-md:       8px;
-  --radius-lg:       var(----size-var(----size-var(----size-var(----size-12px))));
+  --radius-lg:       var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-12px)))))));
   --radius-xl:       16px;
   --radius-pill:     999px;
 
   /* ── Shadows ──────────────────────────────────── */
   --shadow-sm:       0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-soft:     0 12px var(----size-var(----size-var(----size-var(----size-30px)))) rgba(0, 0, 0, 0.45);
+  --shadow-soft:     0 12px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-30px))))))) rgba(0, 0, 0, 0.45);
   --shadow-md:       0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg:       0 8px 24px rgba(0, 0, 0, 0.5);
   --shadow-glow:     0 0 0 1px rgba(59, 130, 246, 0.6);
@@ -94,7 +94,7 @@
 
   /* ── Layout ───────────────────────────────────── */
   --sidebar-left-width:  320px;
-  --sidebar-right-width: var(----size-var(----size-var(----size-var(----size-220px))));
+  --sidebar-right-width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-220px)))))));
 }
 
 /* ── Global Utilities ────────────────────────────── */
@@ -117,7 +117,7 @@ html, body {
 }
 
 /* ── Custom Scrollbars ─────────────────────────────────────── */
-::-webkit-scrollbar               { width: var(----size-var(----size-var(----size-var(----size-5px)))); height: 5px; }
+::-webkit-scrollbar               { width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-5px))))))); height: 5px; }
 ::-webkit-scrollbar-track         { background: transparent; }
 ::-webkit-scrollbar-thumb         { background: var(--border-subtle); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover   { background: rgba(148, 163, 184, 0.3); }

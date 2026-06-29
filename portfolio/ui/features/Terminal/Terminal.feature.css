@@ -9,11 +9,11 @@
     flex-direction: column;
     height: 100%;
     background: #0d0d0f;
-    border: var(----size-var(----size-var(----size-var(----size-1px)))) solid var(--border-subtle, #232329);
-    border-radius: var(--radius-md, var(----size-var(----size-var(----size-var(----size-6px)))));
+    border: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid var(--border-subtle, #232329);
+    border-radius: var(--radius-md, var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-6px))))))));
     overflow: hidden;
     font-family: var(--font-mono, "Cascadia Code", Consolas, monospace);
-    box-shadow: 0 var(----size-var(----size-var(----size-var(----size-4px)))) var(----size-var(----size-var(----size-var(----size-24px)))) rgba(0, 0, 0, 0.4);
+    box-shadow: 0 var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-4px))))))) var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-24px))))))) rgba(0, 0, 0, 0.4);
 }
 
 .sdoa-term-tabbar {
@@ -22,7 +22,7 @@
     justify-content: space-between;
     background: var(--bg-elevated, #141416);
     border-bottom: 1px solid var(--border-subtle, #232329);
-    padding: 0 var(--space-xs, var(----size-var(----size-var(----size-var(----size-8px)))));
+    padding: 0 var(--space-xs, var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-8px))))))));
     min-height: 38px;
     user-select: none;
 }
@@ -42,7 +42,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 6px var(----size-var(----size-var(----size-var(----size-12px))));
+    padding: 6px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-12px)))))));
     border: 1px solid transparent;
     border-radius: var(--radius-sm, 4px);
     color: var(--text-muted, #8e8e9f);
@@ -66,7 +66,7 @@
 }
 
 .sdoa-term-close {
-    font-size: var(----size-var(----size-var(----size-var(----size-10px))));
+    font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-10px)))))));
     opacity: 0.6;
     transition: opacity 100ms ease, color 100ms ease;
 }
@@ -87,7 +87,7 @@
     color: var(--text-muted, #8e8e9f);
     background: transparent;
     cursor: pointer;
-    font-size: var(----size-var(----size-var(----size-var(----size-16px))));
+    font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-16px)))))));
     transition: all var(--duration-fast, 150ms) ease;
 }
 
@@ -118,7 +118,7 @@
     flex: 1;
     overflow-y: auto;
     color: #e2e2e8;
-    font-size: var(----size-1var(----size-var(----size-var(----size-var(----size-3px)))));
+    font-size: var(----size-1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-3px))))))));
     line-height: 1.5;
     white-space: pre-wrap;
     word-break: break-all;
@@ -134,8 +134,8 @@
     border-top: 1px solid var(--border-subtle, #232329);
     color: #e2e2e8;
     font-family: var(--font-mono, "Cascadia Code", Consolas, monospace);
-    font-size: var(----size-var(----size-var(----size-13px)));
-    padding: var(--space-xs, 10px) var(--space-sm, var(----size-var(----size-var(----size-var(----size-14px)))));
+    font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-13px))))));
+    padding: var(--space-xs, 10px) var(--space-sm, var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-14px))))))));
     outline: none;
     caret-color: var(--accent, var(----color-4f8cff));
     transition: border-top-color var(--duration-fast, 150ms) ease;

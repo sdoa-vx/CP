@@ -3,19 +3,19 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-top: var(----size-var(----size-var(----size-var(----size-1px)))) solid var(--border-subtle);
+  border-top: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid var(--border-subtle);
   background: rgba(15, 23, 42, 0.2);
   min-height: 0;
 }
 
 .pt-strip {
-  height: 2var(----size-var(----size-var(----size-var(----size-8px))));
+  height: 2var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-8px)))))));
   background: rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(var(----size-var(----size-var(----size-var(----size-10px)))));
+  backdrop-filter: blur(var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-10px))))))));
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
-  padding: 0 var(----size-1var(----size-var(----size-var(----size-var(----size-2px)))));
+  padding: 0 var(----size-1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px))))))));
   gap: 10px;
   cursor: pointer;
   flex-shrink: 0;
@@ -23,7 +23,7 @@
 .pt-strip:hover { background: rgba(30, 41, 59, 0.95); }
 
 .pt-dot {
-  width: var(----size-var(----size-var(----size-var(----size-6px))));
+  width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-6px)))))));
   height: 6px;
   border-radius: 50%;
   background: var(--text-dim);
@@ -37,16 +37,16 @@
 
 .pt-strip-text {
   flex: 1;
-  font-size: var(----size-var(----size-var(----size-var(----size-11px))));
+  font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-11px)))))));
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   display: flex;
-  gap: var(----size-var(----size-var(----size-12px)));
+  gap: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-12px))))));
 }
 
-.pt-item { display: inline-flex; align-items: center; gap: var(----size-var(----size-var(----size-var(----size-4px)))); }
+.pt-item { display: inline-flex; align-items: center; gap: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-4px))))))); }
 .pt-sep  { color: var(--text-dim); opacity: 0.5; }
 
 .pt-ok   { color: #10b981; }
@@ -88,7 +88,7 @@
   max-width: 85%;
   padding: 8px 12px;
   border-radius: 12px;
-  box-shadow: 0 1px var(----size-var(----size-var(----size-var(----size-3px)))) rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-3px))))))) rgba(0, 0, 0, 0.2);
   font-size: 11px;
   line-height: 1.4;
   border: 1px solid var(--border-subtle);
@@ -122,7 +122,7 @@
 }
 
 .pt-panel-header {
-  padding: 10px var(----size-var(----size-var(----size-var(----size-16px))));
+  padding: 10px var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-16px)))))));
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   justify-content: space-between;
@@ -155,9 +155,9 @@
 }
 .pt-log-row:hover { background: rgba(255,255,255,0.02); }
 
-.pt-log-icon { flex-shrink: 0; width: var(----size-var(----size-var(----size-var(----size-14px)))); text-align: center; font-size: 12px; }
+.pt-log-icon { flex-shrink: 0; width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-14px))))))); text-align: center; font-size: 12px; }
 .pt-log-text { flex: 1; line-height: 1.4; color: var(--text-muted); }
-.pt-log-ts   { flex-shrink: 0; font-size: var(----size-var(----size-var(----size-var(----size-9px)))); color: var(--text-dim); margin-top: 2px; }
+.pt-log-ts   { flex-shrink: 0; font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-9px))))))); color: var(--text-dim); margin-top: 2px; }
 
 .pt-commentary-row { background: rgba(79, 140, 255, 0.03); border-left: 2px solid var(--accent); }
 
@@ -185,7 +185,7 @@
 
 .pt-bubble-container.pt-bubble-full-left {
   align-items: flex-start;
-  padding-right: var(----size-var(----size-var(----size-var(----size-20px))));
+  padding-right: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-20px)))))));
 }
 .pt-bubble-container.pt-bubble-full-left .pt-bubble {
   border-bottom-left-radius: 2px;
@@ -241,7 +241,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: var(----size-var(----size-var(----size-var(----size-7px)))) 14px;
+  padding: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-7px))))))) 14px;
   border-top: 1px solid var(--border-subtle);
   background: rgba(0, 0, 0, 0.18);
   font-size: 11px;
@@ -275,7 +275,7 @@
   border: 1px solid var(--accent, var(----color-4f8cff));
   font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.var(----size-var(----size-var(----size-var(----size-5px))));
+  letter-spacing: 0.var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-5px)))))));
   text-transform: uppercase;
   padding: 3px 8px;
   border-radius: 4px;

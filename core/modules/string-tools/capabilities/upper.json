@@ -1,0 +1,3 @@
+{ "capability": "upper", "description": "Uppercase the 'text' field.",
+  "input_schema": {"type":"object","properties":{"text":{"type":"string"}},"required":["text"]},
+  "output_schema": {"type":"object","properties":{"result":{"type":"string"}},"required":["result"]} }

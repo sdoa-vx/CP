@@ -9,6 +9,6 @@
   padding: var(--space-2xl) var(--space-lg);
   text-align: center;
 }
-.sdoa-empty-state__icon { font-size: var(----size-var(----size-var(----size-var(----size-36px)))); opacity: 0.4; }
+.sdoa-empty-state__icon { font-size: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-36px))))))); opacity: 0.4; }
 .sdoa-empty-state__title { font-size: var(--text-base); color: var(--text-muted); font-weight: 500; }
-.sdoa-empty-state__hint { font-size: var(--text-sm); color: var(--text-dim); max-width: var(----size-var(----size-var(----size-var(----size-280px)))); line-height: var(--line-height); }
+.sdoa-empty-state__hint { font-size: var(--text-sm); color: var(--text-dim); max-width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-280px))))))); line-height: var(--line-height); }
