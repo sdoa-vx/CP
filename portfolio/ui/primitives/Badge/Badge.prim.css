@@ -13,11 +13,11 @@
   vertical-align: middle;
 }
 
-.sdoa-badge--sm { font-size: var(--text-xs); padding: var(----size-var(----size-var(----size-var(----size-2px)))) var(----size-var(----size-var(----size-var(----size-8px)))); }
-.sdoa-badge--md { font-size: var(--text-sm); padding: var(----size-var(----size-var(----size-var(----size-3px)))) var(----size-var(----size-var(----size-var(----size-10px)))); }
+.sdoa-badge--sm { font-size: var(--text-xs); padding: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px))))))) var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-8px))))))); }
+.sdoa-badge--md { font-size: var(--text-sm); padding: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-3px))))))) var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-10px))))))); }
 
 /* Variants */
-.sdoa-badge--default { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: var(----size-var(----size-var(----size-var(----size-1px)))) solid rgba(255, 255, 255, 0.05); backdrop-filter: blur(var(----size-var(----size-var(----size-var(----size-4px))))); }
+.sdoa-badge--default { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid rgba(255, 255, 255, 0.05); backdrop-filter: blur(var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-4px)))))))); }
 .sdoa-badge--success { background: rgba(76, 175, 80, 0.1); color: var(--color-success); border: 1px solid rgba(76, 175, 80, 0.2); }
 .sdoa-badge--warning { background: rgba(245, 158, 11, 0.1); color: var(--color-warning); border: 1px solid rgba(245, 158, 11, 0.2); }
 .sdoa-badge--error   { background: rgba(249, 115, 115, 0.1); color: var(--color-error); border: 1px solid rgba(249, 115, 115, 0.2); }

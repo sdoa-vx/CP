@@ -2,7 +2,7 @@
 /* Panel.prim.css — SDOA v4 */
 
 .sdoa-panel {
-  border: var(----size-var(----size-var(----size-var(----size-1px)))) solid var(--border-subtle);
+  border: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid var(--border-subtle);
   border-radius: var(--radius-md);
   background: var(--bg-elevated);
   overflow: hidden;
@@ -16,7 +16,7 @@
   background: rgba(0, 0, 0, 0.15);
   border-bottom: 1px solid var(--border-subtle);
   user-select: none;
-  min-height: var(----size-var(----size-var(----size-var(----size-36px))));
+  min-height: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-36px)))))));
 }
 
 .sdoa-panel__title-area {
@@ -30,7 +30,7 @@
 .sdoa-panel__chevron {
   font-size: var(--text-xs);
   color: var(--text-dim);
-  width: 1var(----size-var(----size-var(----size-var(----size-4px))));
+  width: 1var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-4px)))))));
   text-align: center;
   transition: transform var(--duration-fast);
 }
@@ -57,7 +57,7 @@
   color: var(--text-muted);
   font-size: var(--text-sm);
   cursor: pointer;
-  padding: var(----size-var(----size-var(----size-var(----size-2px)))) 4px;
+  padding: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px))))))) 4px;
   border-radius: var(--radius-sm);
   transition: all var(--duration-fast);
   line-height: 1;
@@ -122,7 +122,7 @@
 
 /* ── Status Dots ───────────────────────────────────────────── */
 .sdoa-status-dot {
-  width: var(----size-var(----size-var(----size-var(----size-7px))));
+  width: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-7px)))))));
   height: 7px;
   border-radius: 50%;
   background: var(--text-dim);
@@ -130,7 +130,7 @@
   transition: background var(--duration-fast);
 }
 
-.sdoa-status-dot.ready       { background: var(--color-success); box-shadow: 0 0 var(----size-var(----size-var(----size-var(----size-5px)))) rgba(76,175,80,0.5); }
+.sdoa-status-dot.ready       { background: var(--color-success); box-shadow: 0 0 var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-5px))))))) rgba(76,175,80,0.5); }
 .sdoa-status-dot.http        { background: var(--color-info);    box-shadow: 0 0 5px rgba(33,150,243,0.5); }
 .sdoa-status-dot.crashed     { background: var(--color-error);   box-shadow: 0 0 5px rgba(249,115,115,0.5); }
 .sdoa-status-dot.unavailable { background: var(--color-warning); box-shadow: 0 0 5px rgba(245,158,11,0.5); }

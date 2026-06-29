@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C c:/MCP status)",
+      "Bash(git -C c:/MCP log --oneline -8)",
+      "Bash(git -C c:/MCP remote -v)",
+      "Bash(git -C c:/MCP tag --sort=-version:refname)",
+      "Bash(git -C c:/MCP status --short)",
+      "Bash(git -C c:/MCP ls-files --others --exclude-standard portfolio/documentation/)",
+      "Bash(git -C c:/MCP diff --name-only portfolio/)",
+      "Bash(git -C c:/MCP ls-files portfolio/documentation/)",
+      "Bash(git -C c:/MCP status portfolio/)"
+    ]
+  }
+}

@@ -1,0 +1,102 @@
+⭐ SDOA WHITEPAPER — VERSION 5.4 (The Sovereign Integration & Sleeve Amendment)
+Date: 2026‑06‑27
+
+Classification: Canonical — Core Architectural Specification & Design Doctrine
+
+SECTION 1 — EXECUTIVE SUMMARY
+Self-Describing Object Architecture (SDOA) Version 5.4 formally ratifies the Sleeve Module Class (*.sleeve.js), establishing a secure, deterministic boundary topology for the SDOA platform.
+
+As the SDOA Core Platform has transitioned into a stateful, fully unmocked local engine running inside IDE extension daemons, the absolute isolation of its internal state machine from the chaotic mutations of external environments has become a constitutional necessity. The Sleeve module class provides a strict boundary layer that allows the SDOA Engine to govern, communicate with, and orchestrate systems it does not natively own, without compromising internal safety, layer traffic laws, or structural determinism.
+
+SECTION 2 — BOOK II, SECTION 2.7: THE SLEEVE MODULE CLASS
+2.7.1 Functional Definition
+A Sleeve is a sovereign boundary module whose sole purpose is to securely couple the SDOA Engine to an external system (such as local CLIs, system daemons, remote APIs, language models, or legacy operating system utilities) without contaminating core framework safety.
+
+A Sleeve does not compute, orchestrate, or govern. It translates, relays, and normalizes input/output shapes. It is the only module class permitted by the Constitution to expose non-SDOA systems as compliant SDOA capability surfaces.
+
+2.7.2 Layer 3 Placement & Traffic Routing
+Architecturally, Sleeves belong exclusively to Layer 3 (Adapters / Services / Workflows / Infrastructure). They function as a defensive perimeter at the absolute edge of the Layer 3 substrate.
+
+ [ Layer 1: Features (Composition & Intent) ]
+                     │
+                     ▼
+ [ Layer 2: Primitives (Reusable UI Atoms) ]
+                     │
+                     ▼
+ [ Layer 3: Adapters / Services / Workflows ]
+                     │
+                     ▼
+ [ Layer 3: SLEEVE CLASS (Boundary Modules) ]  <── Enforces SDOA I/O Shapes
+                     │
+                     ▼  (Restricted Transport: CLI / HTTP / IPC Bridge)
+             [ External World ]
+Inbound Traffic: External system events are captured by the Sleeve, stripped of chaotic metadata, and normalized into standard SDOA-safe event formats before being broadcast to the internal EventBus.
+
+Outbound Traffic: Only Layer 1 features or specialized Layer 3 workflows may invoke a Sleeve via explicit service calls through the Registry. The Sleeve translates the clean SDOA Command map into the specific transport syntax required by the external target.
+
+SECTION 3 — TECHNICAL MANDATES & CONSTRAINTS
+3.1 Sovereignty Rules (Boundary Defenses)
+Every Sleeve must operate under absolute isolation constraints to prevent architectural drift or security regressions:
+
+Allowed: A Sleeve MAY make raw data calls to external systems via explicitly declared, secure transports (CLI binaries, HTTP requests, or IPC bridges).
+
+Forbidden: A Sleeve MAY NOT directly mutate SDOA source files, modify the internal global state, or monkey-patch live module instances at runtime.
+
+Normalization Requirement: All external raw output formats MUST be passed through the canonical ResponseFormatter.service to be flattened into standardized SDOA response shapes: { ok: true, data: {...} } or { ok: false, error: "..." }.
+
+Path Serialization: Every file path or execution route handled by a Sleeve MUST be declared and evaluated via the system's PathResolver utility to prevent unauthorized file system traversal.
+
+3.2 Manifest Specification (The External Interface)
+Every Sleeve module must explicitly append an external configuration block within its authoritative MANIFEST declaration to map its boundary parameters to the framework.
+
+JavaScript
+// ------------------------------------------------------------------
+// File:    GitSleeve.sleeve.js
+// Version: 1.0.0
+// Updated: 2026-06-27T07:12:00Z
+// Changes: Initial ratification of the Git operational boundary
+// ------------------------------------------------------------------
+
+static MANIFEST = {
+  id: "GitSleeve.sleeve",
+  type: "sleeve",
+  layer: 3,
+  runtime: "NodeJS",
+  version: "1.0.0",
+  operationalRole: "savant",
+  external: {
+    system: "git",
+    transport: "cli",
+    path: "auto",
+    commands: ["status", "commit", "push", "pull"]
+  },
+  capabilities: [
+    "git.status",
+    "git.commit"
+  ],
+  requires: ["ResponseFormatter.service", "PathResolver.service"],
+  lifecycle: ["init", "run", "dispose"]
+};
+SECTION 4 — SYSTEM GOVERNANCE & QUALITY GATES
+The lifecycle and integration of all boundary elements are rigorously policed by SDOA's core governance sub-components to ensure zero-friction, safe execution:
+
+[ Local Workspace Sleeve Code ]
+               │
+               ▼
+[ 1. Probation Officer Gate ] ──> Static analysis check & line limits
+               │
+               ▼
+[ 2. Registrar Indexing Gate ] ──> Validates external fields & handles routing
+               │
+               ▼
+[ 3. Oracle Capability Mesh ]  ──> Exposes normalized commands to workflows
+The Probation Officer Pre-Gate: Before a Sleeve is indexed by the local compiler, it must pass a strict static analysis scan. If the Sleeve's implementation code bypasses standard abstraction layers by embedding raw, untokenized eval(), Function() constructors, or sneaky un-tracked file system writes, the Probation Officer auto-rejects the module. The code must also fit tightly inside the 500-line hard ceiling.
+
+The Registrar Gate: Validates the completeness of the manifest's structural fields and handles dynamic routing registration, matching the external binary targets to verified execution boundaries.
+
+The Oracle Mesh: Dynamically reads the declared capabilities arrays from valid Sleeves and maps them into the system's global system capability surface, allowing automated orchestrators (such as the Innovation Detector) to safely leverage the external tools.
+
+Triage Runtime Monitoring: Continuously tracks the runtime health of active Sleeves. If an underlying system daemon crashes or an external API drops connection, Triage intercepts the exception, prevents it from locking the IDE thread, and queues an explicit tracking item.
+
+SECTION 5 — RATIONALE & SYSTEM SYNTHESIS
+The Sleeve module class formalizes what adapters, cross-language bridges, and rogue local utility scripts were previously attempting informally. By creating an explicit, constrained classification for boundary communication, SDOA v5.4 restores complete structural order, predictable safety, and mathematical determinism to the threshold between your isolated SDOA Engine and the messy realities of the external computing world.

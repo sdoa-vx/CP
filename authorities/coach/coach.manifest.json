@@ -1,0 +1,34 @@
+{
+  "id": "Coach.service",
+  "type": "service",
+  "version": "1.0.0",
+  "runtime": "Rust",
+  "layer": 3,
+  "capabilities": [
+    "governance:coach",
+    "system:guidance"
+  ],
+  "dependencies": [],
+  "requires": [],
+  "dataFiles": [],
+  "lifecycle": [
+    "init",
+    "run",
+    "dispose"
+  ],
+  "actions": {
+    "commands": [],
+    "events": [],
+    "accepts": [],
+    "slots": []
+  },
+  "operationalRole": "coach",
+  "optimization": {
+    "priority": "high",
+    "assertionSuite": "governance"
+  },
+  "docs": {
+    "description": "System guidance and operational constraints sovereign module."
+  },
+  "last_modified": "2026-06-29T00:00:00Z"
+}

@@ -80,6 +80,7 @@
 
 const { randomUUID } = require("crypto");
 const zlib           = require("zlib");
+const http           = require("http");
 
 const TELEMETRY_VERSION = "5.5";
 
@@ -886,6 +887,31 @@ class SleeveBase {
     try {
       const bus = this._registry?.get?.("EventBus.service");
       bus?.emit?.(eventName, payload);
+    } catch (_) {}
+
+    // Chronicle Telemetry Push
+    try {
+      if (typeof eventName === "string" && eventName.startsWith("sleeve:")) {
+        const body = JSON.stringify({
+          ModuleID: payload.moduleId,
+          EventType: eventName,
+          Timestamp: payload.timestamp,
+          Payload: payload
+        });
+        const req = http.request({
+          hostname: "localhost",
+          port: 8081,
+          path: "/chronicle/ingest",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(body)
+          }
+        });
+        req.on("error", () => {}); // Ignore network errors silently (daemon might be down)
+        req.write(body);
+        req.end();
+      }
     } catch (_) {}
   }
 }

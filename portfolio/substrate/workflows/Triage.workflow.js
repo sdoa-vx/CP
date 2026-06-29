@@ -28,6 +28,8 @@
 // ──────────────────────────────────────────────────────────────────
 "use strict";
 
+const http = require("http");
+
 class TriageWorkflow {
   static MANIFEST = {
     id:              "Triage.workflow",
@@ -97,14 +99,15 @@ class TriageWorkflow {
     this._chronicle = registry.get("Chronicle.service");
     this._subscribeEventBus();
     this._startMeshRefresh();
+    this._startSupabaseMeshIntegration();
   }
 
   async run({ capability, payload, sessionId, dryRun } = {}) {
-    if (!this._routingTable.size) this._buildRoutingTable();
+    if (!this._routingTable.size) await this._buildRoutingTable();
 
     // Amendment 3.4: re-score from live Pulse telemetry before every dispatch
     const all = this._routingTable.get(capability) ?? [];
-    this._scoreCandidates(all);
+    await this._scoreCandidates(all);
 
     // Amendment 4.2: DEGRADING modules still route (scored lower by _scoreCandidates)
     const candidates = all.filter(c => {
@@ -268,8 +271,8 @@ class TriageWorkflow {
     schedule();
   }
 
-  _refreshMesh() {
-    this._buildRoutingTable();
+  async _refreshMesh() {
+    await this._buildRoutingTable();
     let changed = 0;
     for (const [cap, candidates] of this._routingTable) {
       const top  = candidates[0]?.moduleId ?? null;
@@ -300,12 +303,26 @@ class TriageWorkflow {
     });
   }
 
-  _buildRoutingTable() {
+  async _buildRoutingTable() {
     this._routingTable.clear();
-    const surface = this._oracle?.dumpSurface({}) ?? [], seen = new Set();
+    let surface = [];
+    try {
+      const res = await new Promise((resolve, reject) => {
+        const req = http.get("http://localhost:8083/oracle/surface", (r) => {
+          let data = "";
+          r.on("data", chunk => data += chunk);
+          r.on("end", () => resolve(JSON.parse(data)));
+        });
+        req.on("error", reject);
+      });
+      surface = res || [];
+    } catch (e) {
+      // fallback to local if rust oracle down
+      surface = this._oracle?.dumpSurface({}) ?? [];
+    }
+
+    const seen = new Set();
     for (const entry of surface) {
-      // v5.1: include both "command" and "boundary" surface entries so
-      // sleeve external connections get circuit-breaker coverage (§4.4)
       if (entry.surfaceType !== "command" && entry.surfaceType !== "boundary") continue;
       const cap = entry.name, key = `${entry.moduleId}:${cap}`;
       if (!this._routingTable.has(cap)) this._routingTable.set(cap, []);
@@ -321,18 +338,33 @@ class TriageWorkflow {
         });
       }
     }
-    for (const [, candidates] of this._routingTable) this._scoreCandidates(candidates);
+    for (const [, candidates] of this._routingTable) await this._scoreCandidates(candidates);
   }
 
-  _scoreCandidates(candidates) {
+  async _scoreCandidates(candidates) {
     for (const c of candidates) {
       const data  = (this._pulse?.getModuleProfile?.({ moduleId: c.moduleId })?.data) ?? {};
       c.p95Ms     = data.p95 ?? 0;
       c.errorRatePct = data.errorRatePct ?? 0;
       c.score     = (1 / (c.p95Ms + 1)) * (1 - c.errorRatePct / 100);
-      // Amendment 4.2: apply Oracle drift penalty
-      const drift = this._oracle?.getDriftPenalty?.({ moduleId: c.moduleId });
-      if (drift?.penalty > 0) c.score -= drift.penalty * 0.1;  // scale to routing score space
+      
+      // Amendment 4.2: apply Oracle drift penalty (fetching from Rust Oracle async)
+      let driftPenalty = 0;
+      try {
+        const res = await new Promise((resolve, reject) => {
+          const req = http.get(`http://localhost:8083/oracle/drift_penalty?moduleId=${c.moduleId}`, (r) => {
+            let d = "";
+            r.on("data", chunk => d += chunk);
+            r.on("end", () => resolve(JSON.parse(d)));
+          });
+          req.on("error", reject);
+        });
+        driftPenalty = res?.penalty ?? 0;
+      } catch (e) {
+        driftPenalty = this._oracle?.getDriftPenalty?.({ moduleId: c.moduleId })?.penalty ?? 0;
+      }
+      
+      if (driftPenalty > 0) c.score -= driftPenalty * 0.1;  // scale to routing score space
       // Amendment 4.2: DEGRADING state further de-preferences module
       if (this._circuits.get(c.moduleId)?.state === "DEGRADING") c.score -= 0.5;
     }
@@ -413,7 +445,104 @@ class TriageWorkflow {
   }
 
   _getBus()             { return this._registry?.get?.("EventBus.service"); }
-  _emit(event, payload) { try { this._getBus()?.emit?.(event, payload); } catch (_) {} }
+  _emit(event, payload) { 
+    try { this._getBus()?.emit?.(event, payload); } catch (_) {} 
+
+    // Chronicle Telemetry Push (Mesh Events)
+    try {
+      if (typeof event === "string" && event.startsWith("triage:")) {
+        const body = JSON.stringify({
+          ModuleID: "Triage.workflow",
+          EventType: event,
+          Timestamp: new Date().toISOString(),
+          Payload: payload || {}
+        });
+        const req = http.request({
+          hostname: "localhost",
+          port: 8081,
+          path: "/chronicle/ingest",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(body)
+          }
+        });
+        req.on("error", () => {}); // Ignore network errors silently (daemon might be down)
+        req.write(body);
+        req.end();
+      }
+    } catch (_) {}
+  }
+  _startSupabaseMeshIntegration() {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_KEY;
+    if (!url || !key) return;
+    
+    const schedule = () => {
+      setTimeout(async () => {
+        try {
+          await this._applyMeshEffects(url, key);
+        } catch (e) {}
+        schedule();
+      }, 5000);
+    };
+    schedule();
+  }
+
+  async _applyMeshEffects(url, key) {
+    const lib = url.startsWith("https") ? require("https") : require("http");
+    return new Promise((resolve, reject) => {
+      const req = lib.request(
+        `${url}/rest/v1/proposal_mesh_effects?applied=eq.false`,
+        {
+          method: "GET",
+          headers: {
+            "apikey": key,
+            "Authorization": `Bearer ${key}`
+          }
+        },
+        (res) => {
+          let data = "";
+          res.on("data", c => data += c);
+          res.on("end", () => {
+            try {
+              if (res.statusCode >= 400) return resolve();
+              const effects = JSON.parse(data);
+              if (Array.isArray(effects)) {
+                for (const effect of effects) {
+                  // Rebuild routing table to apply diffs implicitly
+                  this._refreshMesh();
+                  this._markEffectApplied(url, key, effect.id);
+                }
+              }
+              resolve();
+            } catch (e) { reject(e); }
+          });
+        }
+      );
+      req.on("error", reject);
+      req.end();
+    });
+  }
+
+  _markEffectApplied(url, key, id) {
+    const lib = url.startsWith("https") ? require("https") : require("http");
+    const req = lib.request(
+      `${url}/rest/v1/proposal_mesh_effects?id=eq.${id}`,
+      {
+        method: "PATCH",
+        headers: {
+          "apikey": key,
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json"
+        }
+      },
+      () => {}
+    );
+    req.on("error", () => {});
+    req.write(JSON.stringify({ applied: true }));
+    req.end();
+  }
 }
 
 module.exports = TriageWorkflow;

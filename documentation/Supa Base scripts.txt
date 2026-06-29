@@ -1,0 +1,99 @@
+Supa Base scripts
+
+alter table sdoa_portfolio enable row level security;
+create policy "public read" on sdoa_portfolio for select to anon using (true);
+
+-- Preview the rows the old loose detector mis-tagged:
+select type, count(*) from sdoa_portfolio
+where type not in ('service','adapter','primitive','feature','workflow',
+                   'engine','schema','token','repository','utility','task','authority','module')
+group by type order by count(*) desc;
+
+
+-- Normalize case variants (real modules, wrong case): 'Service' -> 'service'
+update sdoa_portfolio set type = lower(type) where type ~ '^[A-Z]';
+
+-- Delete only the clear non-type values the old loose detector mis-grabbed:
+delete from sdoa_portfolio
+where type in ('application/json','number','equal','password','text','asset',
+               'configuration','send_message','document','__bundler/manifest',
+               '${type}','test','minor — new optional guidance, no new mandatory fields');
+
+select type, module_id, file_path from sdoa_portfolio
+where type in ('component','unknown') order by type;
+
+-- Remove them:
+delete from sdoa_portfolio
+where type not in ('service','adapter','primitive','feature','workflow',
+                   'engine','schema','token','repository','utility','task','authority','module');
+
+-- 1) case normalize ('Service' -> 'service')
+update sdoa_portfolio set type = lower(type) where type ~ '^[A-Z]';
+
+-- 2) clear garbage types from the old loose detector
+delete from sdoa_portfolio
+where type in ('application/json','number','equal','password','text','asset',
+               'configuration','send_message','document','__bundler/manifest',
+               '${type}','test','minor — new optional guidance, no new mandatory fields');
+
+-- 3) non-module noise (docs + stubs), keeping real-but-incomplete modules
+delete from sdoa_portfolio
+where module_id in ('unknown','assistantSettingsBtn')
+   or file_path ilike '%.md';
+-- optional: also drop the rules artifact ->  or module_id like 'SR-%'
+
+
+--------------------------------------------------------------------------------------------------
+
+-- 1. Create the Global SDOA Portfolio Table
+CREATE TABLE IF NOT EXISTS public.sdoa_portfolio (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    module_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    source_code TEXT NOT NULL,
+    workspace_hash TEXT NOT NULL,
+    file_hash TEXT,
+    version TEXT,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    UNIQUE(module_id, workspace_hash)
+);
+-- 2. Create the Portfolio Telemetry / Usage Table
+CREATE TABLE IF NOT EXISTS public.portfolio_usage (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    workspace_hash TEXT NOT NULL,
+    primitive_count INT DEFAULT 0,
+    workflow_count INT DEFAULT 0,
+    schema_count INT DEFAULT 0,
+    token_count INT DEFAULT 0,
+    engine_count INT DEFAULT 0,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+-- 3. Create the Innovation Events Table
+CREATE TABLE IF NOT EXISTS public.innovation_events (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    workspace_hash TEXT NOT NULL,
+    detector TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    matches INT DEFAULT 1,
+    ast_signature TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+-- 4. Create the Extraction History Table
+CREATE TABLE IF NOT EXISTS public.extraction_history (
+  id uuid PRIMARY KEY,
+  file text NOT NULL,
+  module_path text NOT NULL,
+  drift_score numeric DEFAULT 0,
+  extraction_score numeric DEFAULT 0,
+  payload jsonb NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+-- 5. Add indexes for faster querying
+CREATE INDEX IF NOT EXISTS idx_extraction_history_created_at ON public.extraction_history(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_extraction_history_file ON public.extraction_history(file);
+-- 6. Disable RLS (Row Level Security) so the backend can freely read/write
+ALTER TABLE public.sdoa_portfolio DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.portfolio_usage DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.innovation_events DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.extraction_history DISABLE ROW LEVEL SECURITY;

@@ -14,6 +14,7 @@ import { registerExtractionDiffCommands } from "./commands/extractionDiffCommand
 import { registerExtractionHistoryPanel } from "./ui/extractionHistoryPanel";
 import { registerExtractionAnalyticsPanel, updateExtractionAnalytics } from "./ui/extractionAnalyticsPanel";
 import { registerExtractionDriftHeatmapPanel, updateDriftHeatmap } from "./ui/extractionDriftHeatmapPanel";
+import { runWorkspaceScan } from "./scanner";
 import WebSocket from 'ws';
 
 let serverProcess: cp.ChildProcess | undefined;
@@ -467,8 +468,10 @@ export async function activate(context: vscode.ExtensionContext) {
       vscode.env.openExternal(vscode.Uri.parse(`${endpoint()}/dashboard`));
     }),
     vscode.commands.registerCommand("sdoa.scanWorkspace", async () => {
-      const roots = vscode.workspace.workspaceFolders;
-      const root = roots?.[0]?.uri.fsPath || process.cwd();
+      const config = vscode.workspace.getConfiguration("sdoaMcp");
+      if (config.get("autoloadDashboard")) {
+        vscode.commands.executeCommand("sdoa.openDashboardLocal");
+      }
 
       await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -476,24 +479,13 @@ export async function activate(context: vscode.ExtensionContext) {
         cancellable: false
       }, async (progress) => {
         progress.report({ message: "Running full workspace scan..." });
-
+        
         try {
-          const res = await fetch(`${endpoint()}/dashboard/api/actions/scan-workspace`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: "Basic " + getAuthToken() },
-            body: JSON.stringify({ workspaceRoot: root }),
-          });
-          
-          if (res.ok) {
-            const data = await res.json();
-            outputChannel.appendLine(`[Scan] ${data.filesScanned} files scanned on server.`);
-            vscode.window.showInformationMessage(`✅ Workspace scan completed. ${data.filesScanned} files processed.`);
-            controlPanelProvider.refresh();
-          } else {
-            vscode.window.showErrorMessage("Workspace scan failed on server.");
-          }
+          await runWorkspaceScan(outputChannel);
+          vscode.window.showInformationMessage(`✅ Workspace scan completed.`);
+          controlPanelProvider.refresh();
         } catch (err) {
-          vscode.window.showErrorMessage("Failed to connect to SDOA Engine.");
+          vscode.window.showErrorMessage("Workspace scan failed.");
         }
       });
     }),

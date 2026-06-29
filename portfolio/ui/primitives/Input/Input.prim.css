@@ -16,7 +16,7 @@
 
 .sdoa-input {
   background: var(--bg-elevated);
-  border: var(----size-var(----size-var(----size-var(----size-1px)))) solid var(--border-subtle);
+  border: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-1px))))))) solid var(--border-subtle);
   border-radius: var(--radius-sm);
   color: var(--text);
   font-family: var(--font-sans);
@@ -26,7 +26,7 @@
   transition: border-color var(--duration-fast) var(--ease-default),
               box-shadow var(--duration-fast) var(--ease-default);
   width: 100%;
-  min-height: var(----size-var(----size-var(----size-var(----size-34px))));
+  min-height: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-34px)))))));
 }
 
 .sdoa-input::placeholder {
@@ -35,7 +35,7 @@
 
 .sdoa-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 var(----size-var(----size-var(----size-var(----size-2px)))) var(--accent-soft);
+  box-shadow: 0 0 0 var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-2px))))))) var(--accent-soft);
 }
 
 .sdoa-input:disabled {
@@ -74,7 +74,7 @@ textarea.sdoa-input {
 .sdoa-input__hint {
   font-size: var(--text-xs);
   color: var(--text-dim);
-  min-height: var(----size-var(----size-var(----size-var(----size-14px))));
+  min-height: var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-var(----size-14px)))))));
 }
 .sdoa-input__hint--error {
   color: var(--color-error);

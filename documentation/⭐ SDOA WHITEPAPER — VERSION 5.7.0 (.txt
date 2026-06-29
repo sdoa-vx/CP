@@ -1,0 +1,103 @@
+⭐ SDOA WHITEPAPER — VERSION 5.7.0 (The Living Mesh & Polyglot Architecture Edition)Date: June 29, 2026Classification: Canonical — Architecture, Governance, & Polyglot MCP ReferenceCore Inventory: 147 Active Sovereign Modules (SDOAvX)  SECTION 1 — EXECUTIVE SUMMARYSelf-Describing Object Architecture (SDOA) Version 5.7.0 codifies the platform's transition from an autonomous, local boundary mesh into a living, temporal, and runtime-agnostic introspective intelligence. This specification formally binds the tracksdoa-v2 Sovereign UI User Interface with the Unified Polyglot Manifest Standard (v5.6 $\rightarrow$ v5.7), creating an uncompromised, closed-loop development cockpit.  SECTION 2 — CANONICAL POLYGLOT PORTFOLIO ARCHITECTUREVersion 5.7.0 elevates the framework from superficial "multi-language support" to an uncompromised polyglot ecosystem. Modules written in different environments share a single, runtime-agnostic identity layer.                [ SDOA 5.7.0 RUNTIME-AGNOSTIC IDENTITY LAYER ]
+  ───────────────────────────────────────────────────────────────────────────
+     │               │                │               │               │
+     ▼               ▼                ▼               ▼               ▼
+  [ Rust ]     [ TypeScript ]     [ Python ]       [ Go ]          [ C++ ]
+  (Direct V8     (NodeJS/V8        (Isolated       (Native         (Subprocess
+   Memory)         Engine)          Threads)       Binaries)          I/O)
+     │               │                │               │               │
+     └───────────────┴────────┬───────┴───────────────┴───────────────┘
+                              ▼
+             [ SharedArrayBuffer Binary Heaps ]
+2.1 Supported Runtimes & Direct Memory BindingsThe execution layer supports native, highly optimized cross-runtime communication channels:High-Performance Compilations: Rust, Go, C++, and WebAssembly (Wasm) execution lanes.Dynamic Automation & Orchestration: TypeScript (Node.js/V8) and isolated Python runtime threads.Legacy Subsystems: COBOL, Visual Basic, and legacy processes communicating over structured, standardized subprocess I/O piping channels.Zero-Copy Memory Layer: Cross-language performance-critical data sets bypass typical IPC serialization overhead by leveraging direct V8 memory bindings (Rust $\leftrightarrow$ JS) and SharedArrayBuffer binary heaps managed by the AssemblyLine sovereign role.2.2 Polyglot Sovereign RolesThe framework’s core authorities are completely decoupled from runtime limitations. They govern, evaluate, and optimize files across different programming languages uniformly:Registrar: Maps out and registers ancestry trees using a Polyglot Lineage schema, allowing modules to fork or replace parents across languages seamlessly (e.g., a Rust module replacing a legacy TypeScript feature).Coach: Analyzes abstract syntax trees and executes automatic file mutation across platforms, optimizing Python AST layouts and validating Rust memory allocations with equal fidelity.ProbationOfficer: Operates an isolated Wasm sandbox to evaluate safety boundaries, line limits, and forbidden actions before any module is committed to the registry, regardless of source language.Oracle: Computes and ranks capabilities solely based on their public interface schemas and past performance, applying equal stringency to a Go server or a C++ driver.Cartographer: Tracks, trends, and forecasts architectural degradation across diverse mixed-language project directories.SECTION 3 — UNIFIED MANIFEST STANDARD (v5.6 $\rightarrow$ v5.7)All files across the ecosystem—regardless of target language or file extension—must enforce a structurally identical manifest design. This allows a module written in Go or Python to seamlessly fulfill the interface expected by a feature written in TypeScript.3.1 Polyglot Manifest PropertiesEvery manifest must carry explicit properties detailing its operational profile and structural capabilities:operationalRole: Maps out system roles (registrar, captain, conductor, coach, probation-officer, assembly-line,  triage, savant) uniformly across runtimes.actions: Outlines the structural capability surface, mapping commands, inputs, outputs, slots, and events using universal, language-agnostic primitives.3.2 Canonical Polyglot Sleeve Manifest ExampleJavaScript// ------------------------------------------------------------------
+// File:    ContextSleeve.sleeve.js
+// Version: 5.7.0
+// Updated: 2026-06-29T08:42:00Z
+// Changes: Polyglot capability surface alignment for QmdAdapter
+// ------------------------------------------------------------------
+
+static MANIFEST = {
+  id: "ContextSleeve.sleeve",
+  type: "sleeve",
+  layer: 3,
+  runtime: "Python",
+  version: "5.7.0",
+  operationalRole: "savant",
+  external: {
+    system: "QmdAdapter",
+    transport: "polyglot-bridge",
+    path: "auto",
+    commands: ["ingest", "semantic-search", "compact"]
+  },
+  capabilities: [
+    "context.ingest",
+    "context.search"
+  ],
+  requires: ["ResponseFormatter.service"],
+  lifecycle: ["init", "run", "dispose"]
+};
+SECTION 4 — THE TRACKSDOA-V2 SOVEREIGN COCKPITThe dashboard layout has been rewritten into a self-contained, first-class Sovereign UI Module located at C:\MCP\tracksdoa-v2.  4.1 UI Sovereignty & Real-Time SyncPure Presentation Mapping: Following SDOA UI rules, all .svelte layout views remain strictly clean and free of embedded domain logic. All processing intelligence is isolated inside .ts controller sheets carrying the @SdoaManifest decorator.  Live Pulse Synchronization: A dedicated Supabase adapter (client.ts) hooks into real-time websocket channels (subscriptions.ts). This streams changes from the local offline SQLite database (.sdoa/pipeline.db) straight to the reactive UI stores (stores.ts), mirroring mesh drift, governance actions, and discovery queues instantly without manual page refreshing.  4.2 The Constitutional Navigation SurfaceThe sidebar is structured as a direct map of sovereign domains. It acts as a cockpit divided into six specialized operational modes:  Mesh View: Houses the live network renderer. It uses node click interactions, visual routing arcs, and color-coded degradation glow animations to track the lifecycle states of distributed sleeves.  Governance View: Implements a localized, spatial visualization of the constitutional layer (/governance). It includes an event feed for every authority and a dedicated Sigil Panel showing live glowing indicators and heartbeat animations as rules are evaluated.  Innovation View: Displays the Innovation Timeline (/timeline). This tracks a chronological, real-time feed of proposed primitives, metadata extractions, and structural alterations generated across the codebase.  Scan View: Manages the Cinematic Scan Mode interface. It decouples backend AST cache processing from front-end animation speeds, offering multiple pacing choices (fast, normal, slow, cinematic) paired with an on-screen file progress counter.  Lineage View: Renders the complete, mixed-runtime structural parent-child ancestry tree. It tracks module migration histories, variant forks, and cross-language replacements.  Drift View: Renders the Drift Horizon Graph. It maps historical degradation trends, velocity calculations, and time-to-threshold analytics vectors.SECTION 5 — ANALYTICAL & VISUALIZATION SUBSYSTEMS5.1 Mesh Effect Diff Visualizer (MeshEffectDiff.svelte)When the Innovation Detector outputs a proposed optimization, the system routes the data to an analytical preview window. This panel contrasts old routing rules, drift forecasts, and sleeve ranks directly against the proposed changes, highlighting the projected impact in color-coded diff markers before an engineer signs off.  5.2 Sleeve Detail Flyouts (SleeveFlyout.svelte)Clicking any node inside the mesh pulls up an extensive operational telemetry tray. It provides deep visibility into the sleeve's functional characteristics, rendering its full capability map, internal routing rank, real-time drift metrics, active transport states, and hardware batch execution boundaries.  5.3 Transport Negotiation & Batch Flow VisualizersTransport Negotiation Panel: Renders a live timeline of how a sleeve probes, values, and switches communication channels dynamically. It maps absolute connection latencies, error penalties, and chosen protocols without human intervention.Batch Flow Panel: Animates the framework's internal high-performance pipeline. It exposes data metrics for block operations (batchExternalCalls $\rightarrow$ compressPayload $\rightarrow$ decompressPayload $\rightarrow$ executeBatch), rendering throughput latencies, error flags, and compression ratios.SECTION 6 — CHRONICLE TIME MACHINE (TEMPORAL PLAYBACK)The hallmark of the v5.7.0 update is the introduction of a temporal dimension to system tracking through the Mesh Time Machine (/time-machine).   [Select Chronicle Range] ──> [Load Historical Block] ──> [Scrub Timeline]
+                                                                │
+                                                                ▼
+   ┌────────────────────────────────────────────────────────────┴───────────┐
+   ▼                             ▼                                          ▼
+[Replay Mesh Topology]    [Replay Governance Pulses]      [Rewind Routing Waterfalls]
+Chronicle Normalization: System events across all authorities are converted into a standardized database schema (authority, event_type, details, timestamp, proposal_id?, module_id?), rendering the history of the application fully queryable.The Playback Engine: Developers can scrub a timeline bar backward or forward to reconstruct the historical state of the entire project tree.  Topology Replay: The D3 network dynamically rewinds to visualize past structural state changes, tracing old degradation trends, transport adjustments, and old routing cascades in real time.  SECTION 7 — CHRONICLE & PULSE TELEMETRY SCHEMASAll telemetry data points emitted by core components must map to the properties declared inside SleeveTelemetry.schema.json.7.1 Telemetry Event SchemaJSON{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SleeveTelemetryEvent",
+  "type": "object",
+  "required": ["authority", "event_type", "details", "timestamp"],
+  "properties": {
+    "authority": {
+      "type": "string",
+      "enum": ["triage", "oracle", "cartographer", "registrar", "coach", "probation", "mesh", "sleeve", "scan"]
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "sleeve:transportNegotiated",
+        "sleeve:driftTrend",
+        "sleeve:driftPrevented",
+        "sleeve:batchExecuted",
+        "sleeve:modelInfo",
+        "coach:modelUpgradeApproved",
+        "registrar:lineageRecorded",
+        "triage:sleeveFailover",
+        "triage:championChanged",
+        "cartographer:rotationRecommended",
+        "scan:start",
+        "scan:fileProgress",
+        "scan:end"
+      ]
+    },
+    "details": {
+      "type": "object",
+      "properties": {
+        "moduleId": { "type": "string" },
+        "proposalId": { "type": "string" },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "latencyDelta": { "type": "number" },
+            "errorRate": { "type": "number" },
+            "compressionRatio": { "type": "number" },
+            "driftSlope": { "type": "number" }
+          }
+        }
+      }
+    },
+    "timestamp": { "type": "string", "format": "date-time" }
+  }
+}
+7.2 The proposal_mesh_effects Database SchemaTo support the live preview features of the Mesh Effect Diff Visualizer, the data pipeline writes expected optimization updates directly to a relational ledger table:SQLCREATE TABLE proposal_mesh_effects (
+    effect_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    proposal_id UUID NOT NULL,
+    module_id VARCHAR(255) NOT NULL,
+    routing_diff JSONB NOT NULL,          -- Delta map of old vs new routing arcs
+    drift_diff JSONB NOT NULL,            -- Predicted changes to Cartographer forecast arcs
+    score_delta NUMERIC(4,3) NOT NULL,    -- Calculated Oracle rank adjustment
+    topology_changes JSONB NOT NULL,      -- Array of expected D3 node layout updates
+    status VARCHAR(50) DEFAULT 'pending', -- pending | applied | rejected
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+SECTION 8 — REFINDED EXTRACTION PROTOCOLSThe v5.7.0 lifecycle integrates multi-stage metadata generation directly into the system's refactoring pipelines:Extraction Metadata Generation: When the Innovation Detector flags optimization opportunities, it populates a rich metadata file:extraction_results: Raw code payload generated by the local LLM or AST tool.extraction_lineage: Records the source code ancestry trail and parent module hashes.extraction_reasoning: Explicit technical justification for creating the module.extraction_capability_surfaces: Pre-mapped command and event dictionaries.The Ingestion Pipeline: The extraction file feeds directly into the local Detector and Proposal engines, matching the format required by the central review dashboard and triggering the FISP v1.1 contribution prompt automatically.SECTION 9 — SYSTEM VERDICT & DEPLOYMENT MANDATEArchitectural Status: RATIFIED AND SIGNED FOR PRODUCTION DISTRIBUTION.SDOA v5.7.0 safely bridges technical compliance, automated evolution, and language-agnostic coordination. By decoupling background code analysis from user interface speeds and providing historical playback features, this edition transforms the SDOA ecosystem into a fully introspective development platform.This specification stands as the single, authoritative source of truth for the project codebase. The build engine is authorized to generate compliant .vsix packages, bundle the updated canonical rules, and deploy them across the active repository tracks.

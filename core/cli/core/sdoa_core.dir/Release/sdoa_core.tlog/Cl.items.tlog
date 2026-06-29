@@ -1,0 +1,16 @@
+C:\MCP\core\core\model\model_parser.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\model_parser.obj
+C:\MCP\core\core\model\model_validator.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\model_validator.obj
+C:\MCP\core\core\pipeline\pipeline_parser.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\pipeline_parser.obj
+C:\MCP\core\core\pipeline\pipeline_validator.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\pipeline_validator.obj
+C:\MCP\core\core\runtime\registry.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\registry.obj
+C:\MCP\core\core\runtime\scheduler.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\scheduler.obj
+C:\MCP\core\core\runtime\engine.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\engine.obj
+C:\MCP\core\core\runtime\resolve.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\resolve.obj
+C:\MCP\core\core\runtime\merge.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\merge.obj
+C:\MCP\core\core\runtime\schema.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\schema.obj
+C:\MCP\core\core\capabilities\capabilities.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\capabilities.obj
+C:\MCP\core\core\capabilities\string\string.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\string.obj
+C:\MCP\core\core\capabilities\math\math.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\math.obj
+C:\MCP\core\core\capabilities\json\json.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\json.obj
+C:\MCP\core\core\capabilities\filesystem\filesystem.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\filesystem.obj
+C:\MCP\core\core\capabilities\system\system.cpp;C:\MCP\core\cli\core\sdoa_core.dir\Release\system.obj

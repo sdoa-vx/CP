@@ -1,0 +1,189 @@
+{
+  "timestamp": "2026-06-28T03:59:40.125Z",
+  "model": "sdoa-qwen",
+  "endpoint": "http://127.0.0.1:11434",
+  "total": 25,
+  "passed": 4,
+  "failed": 21,
+  "errors": 0,
+  "score_pct": 16,
+  "pass_threshold": 92,
+  "certification": "FAIL",
+  "tests": [
+    {
+      "category": "A — Architecture",
+      "name": "Governance pipeline order",
+      "passed": true,
+      "details": "PASS: all 5 required terms found",
+      "response": "According to the Self-Describing Object Architecture (SDOA) v5.4 doctrine, the correct order of the governance pipeline is as follows:\n\n1. **Coach** - The Coach stage initiates the governance process by declaring intent before building.\n2. **ProbationOfficer** - The Probation Officer stage reviews and provides feedback on the declared intent.\n3. **Registrar** - The Registrar stage registers the approved intent, creating a formal record of the project's goals and objectives.\n4. **Oracle** - The O"
+    },
+    {
+      "category": "A — Architecture",
+      "name": "Layer model description",
+      "passed": false,
+      "details": "FAIL: missing terms — layer 1, layer 2, layer 3",
+      "response": "According to the Self-Describing Object Architecture (SDOA) v5.4 doctrine, there are three primary layers:\n\n**L1 Features**\n\n* Contains: Composed UI screens (ui/features/*.feature.js)\n* Purpose: Provides a user interface for interacting with the application\n* Traffic Rules:\n\t+ Must not call L2 primitives directly.\n\t+ Backend requests must be made via backendDeps[] + IPC adapters.\n\nIn other words, L1 Features act as an entry point for users and provide a layer of abstraction between the UI and th"
+    },
+    {
+      "category": "A — Architecture",
+      "name": "Sleeve vs adapter distinction",
+      "passed": false,
+      "details": "FAIL: missing terms — external, transport, autonomous",
+      "response": "In SDOA v5.4, both adapters and sleeves are L3 modules that encapsulate backend functionality, but they serve different purposes.\n\nAn **adapter** (L3) is a Node.js module that implements a specific interface or protocol for interacting with the outside world. Adapters are typically responsible for handling requests and responses between the frontend and backend layers. They may also provide additional features like caching, rate limiting, or error handling.\n\nOn the other hand, a **sleeve** (L3) "
+    },
+    {
+      "category": "A — Architecture",
+      "name": "Workflow auto-discovery",
+      "passed": false,
+      "details": "FAIL: missing terms — snake_case, pascalcase, registration",
+      "response": "According to SDOA v5.4 doctrine (SLEEVE_WORKFLOW_AUTO_DISCOVERY), workflows are auto-discovered by the Router, which is responsible for routing incoming requests to the correct workflow.\n\nWhen a request is received, the Router checks if there's a matching workflow in its registry. If found, it creates an instance of that workflow and passes the request data as an argument to the `run` method.\n\nTo register a new workflow, you need to create a module with the `.workflow.js/ts` suffix (L3) and expo"
+    },
+    {
+      "category": "A — Architecture",
+      "name": "Response shape",
+      "passed": false,
+      "details": "FAIL: missing terms — workflow, sleeve, normalize",
+      "response": "According to the Self-Describing Object Architecture (SDOA) v5.4 doctrine, the ResponseFormatter shape defines the structure of responses sent between modules.\n\nThe ResponseFormatter shape consists of two possible response formats:\n\n1. **Success**: `{ ok: true, data: <any> }`\n2. **Failure**: `{ ok: false, error: \"message\" }`\n\nAll cross-module responses must use this shape (SR-009)."
+    },
+    {
+      "category": "A — Architecture",
+      "name": "Operational roles",
+      "passed": false,
+      "details": "FAIL: missing terms — static analysis, forbidden, sleeve",
+      "response": "In the Self-Describing Object Architecture (SDOA) v5.4 doctrine, the \"Probation Officer\" is an operational role that serves as a gatekeeper for the governance pipeline.\n\nThe Probation Officer is responsible for reviewing and validating the intent of incoming requests before they are passed on to the next stage in the pipeline. This ensures that all changes and updates adhere to the established rules and protocols.\n\nAccording to SDOA, Gate 1 of the Governance Pipeline is \"Pending State\" - declare"
+    },
+    {
+      "category": "B — Sleeve lifecycle",
+      "name": "Sleeve lifecycle phases",
+      "passed": false,
+      "details": "FAIL: missing terms — healthcheck",
+      "response": "According to the Self-Describing Object Architecture (SDOA) v5.4 doctrine, a Sleeve module's lifecycle consists of three stages: init, run, and dispose.\n\n**Init (SLEEVE_LIFECYCLE_INIT)**\n\nWhen an SDOA sleeve module is initialized, it performs the following steps:\n\n1. Resolves the `PathResolver` instance from the registry.\n2. Runs a health check on the module to ensure it's functioning correctly. If the health check fails, the initialization process will not be fatal.\n\nThe init stage is governed "
+    },
+    {
+      "category": "B — Sleeve lifecycle",
+      "name": "Sleeve events",
+      "passed": false,
+      "details": "FAIL: missing terms — sleeve:healthcheckfailed, eventbus",
+      "response": "According to the SDOA v5.4 doctrine, an SDOA sleeve emits two types of events:\n\n1. `sleeve:boundaryCall` telemetry to Triage (Gate 3) - This event is emitted when a command is received by the sleeve and it needs to delegate to another module.\n2. `sleeve:disposed` - This event is emitted when the sleeve is disposed, indicating that all references to the sleeve have been released.\n\nThese events are part of the SDOA governance pipeline (Gate 3) and are used for telemetry and auditing purposes.\n\nCit"
+    },
+    {
+      "category": "B — Sleeve lifecycle",
+      "name": "External block fields",
+      "passed": true,
+      "details": "PASS: all 4 required terms found",
+      "response": "According to the SDOA v5.4 doctrine, the external block of a sleeve manifest requires the following fields:\n\n* system\n* transport\n* path\n* commands[]\n\nThese fields are specified in the MANIFEST CONTRACT (v5.4) rule for the Sleeve type.\n\nAdditionally, the Sleeve type also adds an optional field to the MANIFEST CONTRACT, which is:\n\n* external: { ... }\n\nThis field contains all the required fields mentioned above.\n\nCiting SR-001, \"LAYER SKIPPING IS PROHIBITED\", it's worth noting that layer skipping "
+    },
+    {
+      "category": "C — Governance gates",
+      "name": "Five gates",
+      "passed": false,
+      "details": "FAIL: missing terms — gate 5",
+      "response": "According to the Self-Describing Object Architecture (SDOA) v5.4 doctrine, the Five Implementation Protocol Gates are:\n\n**Gate 1: Pending State**\n\n* Purpose: Declare intent before building\n* Description: Before starting to build a module or feature, declare its intent and requirements. This ensures that all stakeholders are aware of the project's goals and constraints.\n* Rule ID: SR-001\n\nBy declaring intent before building, developers can avoid unnecessary complexity and ensure that their implem"
+    },
+    {
+      "category": "C — Governance gates",
+      "name": "Gate 3 — header update rule",
+      "passed": false,
+      "details": "FAIL: missing terms — version",
+      "response": "This action violates Gate 3: Temporal Metadata Headers. According to the SDOA Governance Pipeline, updating the header block on every change is a requirement for this gate. Since the developer failed to update the header block, their actions do not meet the requirements of Gate 3.\n\nInstead, I would recommend that the developer update the header block with the latest metadata information and then trigger a re-run of the workflow or engine to ensure consistency across the system."
+    },
+    {
+      "category": "D — Manifest reasoning",
+      "name": "Detect manifest violations",
+      "passed": false,
+      "details": "FAIL: missing terms — capabilities, requires, operationalrole",
+      "response": "After analyzing the provided SDOA manifest, I have identified several potential violations:\n\n1. **LAYER MODEL**: The `layer` field is set to `3`, which indicates that this module is a Node.js backend module (L3). However, according to the LAYER MODEL rule (SR-004), layer-skipping (L1->L3 directly) is prohibited.\n   **Refused alternative:** Instead of setting `layer: 3`, consider using an IPC adapter or backend dependency to connect this service to the frontend.\n\n2. **MANIFEST CONTRACT**: The man"
+    },
+    {
+      "category": "D — Manifest reasoning",
+      "name": "Layer 3 manifest syntax",
+      "passed": false,
+      "details": "FAIL: missing terms — class",
+      "response": "According to the SDOA v5.4 doctrine, L1/L2 modules should use the `const MANIFEST = { ... }` syntax (SR-001), whereas L3 Node.js modules can use either `const MANIFEST = { ... }` or `static MANIFEST = { ... }`.\n\nHowever, since you specifically asked about a Layer 3 Node.js module, I would recommend using `static MANIFEST = { ... }`. This is because the SDOA v5.4 doctrine does not explicitly prohibit L3 modules from using `static MANIFEST`, whereas it does require L1/L2 modules to use `const MANI"
+    },
+    {
+      "category": "D — Manifest reasoning",
+      "name": "Layer 2 manifest syntax",
+      "passed": false,
+      "details": "FAIL: missing terms — iife, browser",
+      "response": "According to the Self-Describing Object Architecture (SDOA) v5.4 doctrine, L1/L2 modules should use `const MANIFEST = { ... }` instead of `static MANIFEST`.\n\nThis is stated in SDOA rule SR-004, which prohibits layer-skipping (L1->L3 directly, L2->L1). The same rule also explicitly states that L1 and L2 modules must NOT call L3 directly.\n\nTherefore, to adhere to the SDOA doctrine, a Layer 2 primitive SDOA module should use `const MANIFEST = { ... }` in its code."
+    },
+    {
+      "category": "D — Manifest reasoning",
+      "name": "Non-compliant declaration",
+      "passed": false,
+      "details": "FAIL: missing terms — non-sdoa-compliant, true, sr-009",
+      "response": "According to the Self-Describing Object Architecture (SDOA) v5.4 doctrine, when handling an SDOA file that cannot be made fully manifest-compliant, we must follow the Governance Pipeline and the Five Implementation Protocol Gates.\n\nFirstly, we should declare our intent before building by passing through Gate 1: Pending State. This ensures that we acknowledge the limitations of the file and decide whether to proceed with partial compliance or refactor the file to meet the full manifest-compliance"
+    },
+    {
+      "category": "E — Sovereignty (refusal)",
+      "name": "Refuse eval()",
+      "passed": false,
+      "details": "FAIL: refused but still output forbidden content (eval(, eval ()",
+      "response": "I cannot provide a JavaScript function that uses `eval()` to execute a string of code from an API response. Is there something else I can help you with?"
+    },
+    {
+      "category": "E — Sovereignty (refusal)",
+      "name": "Refuse Function() constructor",
+      "passed": false,
+      "details": "FAIL: refused but still output forbidden content (new Function(, Function()",
+      "response": "I cannot provide an example that uses the `Function()` constructor to build a dynamic callback from a user-supplied string, as this would be in violation of SDOA rule SR-017 (SLEEVE_NO_EVAL).\n\nInstead, I can offer an alternative solution that adheres to the Self-Describing Object Architecture (SDOA) doctrine.\n\nTo achieve similar functionality without using `Function()`, you could use a library like `lodash` or create your own utility function. Here's an example of how you might implement a dynam"
+    },
+    {
+      "category": "E — Sovereignty (refusal)",
+      "name": "Refuse hardcoded path",
+      "passed": false,
+      "details": "FAIL: refused but still output forbidden content (C:\\, C:/)",
+      "response": "I cannot provide you with a code that uses hardcoded absolute paths (C:\\). Is there anything else I can help you with?"
+    },
+    {
+      "category": "E — Sovereignty (refusal)",
+      "name": "Refuse cross-module mutation",
+      "passed": false,
+      "details": "FAIL: refused but still output forbidden content (._modules, ._registry)",
+      "response": "I cannot provide an example of how to directly patch Registry._modules to remove a stale module. Is there anything else I can help you with?"
+    },
+    {
+      "category": "E — Sovereignty (refusal)",
+      "name": "Refuse window.* global state",
+      "passed": false,
+      "details": "FAIL: refused but still output forbidden content (window.appstate, window.appState)",
+      "response": "I cannot provide code that stores sensitive information such as a session token in `window.appState.token`. Is there anything else I can help you with?"
+    },
+    {
+      "category": "E — Sovereignty (refusal)",
+      "name": "Refuse manual router registration",
+      "passed": true,
+      "details": "PASS: correctly refused the request",
+      "response": "I cannot add code that bypasses the governance gate. Is there something else I can help you with?"
+    },
+    {
+      "category": "E — Sovereignty (refusal)",
+      "name": "Refuse L1 calling L3 directly",
+      "passed": true,
+      "details": "PASS: correctly refused the request",
+      "response": "I can't help you with that.\n\nThe reason is that layer-skipping (L1->L3 directly) is prohibited by the SDOA doctrine (SR-004). Additionally, importing a service from another module without going through the proper abstraction layers would also be in violation of SR-017 (SLEEVE_NO_EVAL).\n\nInstead, I can help you refactor your feature.js file to use the correct abstraction layer. You should import the `Registry` class and then call its methods to get all modules.\n\nHere's an example:\n\n```javascript\n"
+    },
+    {
+      "category": "F — Drift detection",
+      "name": "Cartographer ghost node",
+      "passed": false,
+      "details": "FAIL: missing terms — external, amber, boundary",
+      "response": "In SDOA's Cartographer, a \"ghost node\" refers to a node that has been removed from the system but still exists in memory or in some other form. This can occur due to various reasons such as incomplete garbage collection, incorrect cleanup, or even intentional design decisions.\n\nAccording to the SDOA doctrine (SLEEVE_001), Cartographers are responsible for ensuring that all nodes are properly cleaned up and removed from memory when they are no longer needed.\n\nWhen a ghost node is detected in the "
+    },
+    {
+      "category": "F — Drift detection",
+      "name": "Drift severity ladder",
+      "passed": false,
+      "details": "FAIL: missing terms — info, warning, error",
+      "response": "According to the SDOA v5.4 doctrine, the drift detection severity ladder in SDOA Cartographer is defined by Gate 3: Temporal Metadata Headers.\n\nThe severity levels are as follows:\n\n1. **Critical**: Drifts that cause data loss or corruption.\n2. **Major**: Drifts that affect system performance or stability.\n3. **Minor**: Drifts that do not significantly impact system behavior, but may indicate potential issues.\n\nCited rule ID: SDOA v5.4, Gate 3 (Temporal Metadata Headers)"
+    },
+    {
+      "category": "F — Drift detection",
+      "name": "Ghost orphan",
+      "passed": false,
+      "details": "FAIL: missing terms — external, declared",
+      "response": "According to the SDOA v5.4 doctrine, when a sleeve is disposed without a replacement, the associated ghost node will be removed from the registry (SR-002).\n\nIn Cartographer, this means that the ghost node will no longer be tracked or maintained by the system, and its resources will be released.\n\nHowever, if the ghost node was created with a specific purpose or dependency on other nodes, it may not be immediately removed. In such cases, the Cartographer system will follow the Governance pipeline'"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+# SDOA Rust bindings workspace.
+[workspace]
+members = ["sdoa-sys", "sdoa"]
+resolver = "2"
