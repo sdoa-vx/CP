@@ -26,7 +26,9 @@ jobs:
 
       - name: Publish to Open VSX Registry
         if: env.OVSX_PAT != ''
-        run: npx ovsx publish *.vsix -p $OVSX_PAT
+        run: |
+          npx ovsx create-namespace sdoa-vx -p $OVSX_PAT || true
+          npx ovsx publish *.vsix -p $OVSX_PAT
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
