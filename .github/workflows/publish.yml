@@ -25,11 +25,13 @@ jobs:
         run: npm run release
 
       - name: Publish to Open VSX Registry
+        if: env.OVSX_PAT != ''
         run: npx ovsx publish *.vsix -p $OVSX_PAT
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
       - name: Publish to VS Code Marketplace
+        if: env.VSCE_PAT != ''
         run: npx vsce publish --packagePath *.vsix -p $VSCE_PAT
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
