@@ -1,0 +1,9 @@
+C:/MCP/core/cli/CMakeFiles/ALL_BUILD.dir
+C:/MCP/core/cli/CMakeFiles/ZERO_CHECK.dir
+C:/MCP/core/cli/core/CMakeFiles/sdoa_core.dir
+C:/MCP/core/cli/abi/CMakeFiles/sdoa_abi.dir
+C:/MCP/core/cli/cli/CMakeFiles/sdoa.dir
+C:/MCP/core/cli/cli/CMakeFiles/ALL_BUILD.dir
+C:/MCP/core/cli/tests/CMakeFiles/test_core.dir
+C:/MCP/core/cli/tests/CMakeFiles/test_stdlib.dir
+C:/MCP/core/cli/tests/CMakeFiles/test_phase5x.dir

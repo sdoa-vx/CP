@@ -1,0 +1,168 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sdoa.protoai/manifest.schema.json",
+  "title": "SDOA Module Manifest",
+  "description": "JSON Schema for a valid SDOA v5.0 module manifest. Extracted from Registry.service.ts, registry.ts, sdoa-linter.js, linter.ts, and ConfigValidator.service.js.",
+  "type": "object",
+  "required": ["id", "type", "version", "runtime", "layer"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique module identifier across the entire system. Format: Name.type (e.g., 'Button.prim', 'Chat.workflow'). Variant format: Name.type.variant (e.g., 'Workspace.feature.compact').",
+      "examples": ["Button.prim", "Registry.service", "ProbationOfficer.workflow"]
+    },
+    "type": {
+      "type": "string",
+      "description": "Module type. Determines which layer the module belongs to and its file suffix convention.",
+      "enum": ["primitive", "feature", "adapter", "service", "workflow", "repository", "task", "engine", "utility", "component", "dashboard", "validator"]
+    },
+    "layer": {
+      "type": "integer",
+      "description": "Architectural layer. 1=feature, 2=primitive, 3=adapter/service/workflow/repository/engine.",
+      "enum": [1, 2, 3]
+    },
+    "runtime": {
+      "type": "string",
+      "description": "Execution environment where this module runs.",
+      "enum": ["Browser", "NodeJS", "Universal", "Wasm", "Python", "Rust", "C++", "COBOL", "VB"]
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version string. Must use three-part versioning (major.minor.patch). Patch increments on every change.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "examples": ["5.0.0", "4.0.0", "1.0.05"]
+    },
+    "capabilities": {
+      "type": "array",
+      "description": "Array of capability strings this module provides to the system. v1.2 mandatory field.",
+      "items": { "type": "string" }
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "Array of module IDs this module requires. v1.2 name; aliased by 'requires' in v4.0+.",
+      "items": { "type": "string" }
+    },
+    "requires": {
+      "type": "array",
+      "description": "Array of module IDs this module depends on. v4.0 name; equivalent to 'dependencies'.",
+      "items": { "type": "string" }
+    },
+    "docs": {
+      "type": "object",
+      "description": "Documentation object. v1.2 mandatory field.",
+      "required": ["description"],
+      "properties": {
+        "description": { "type": "string", "description": "Human-readable description of what this module does." },
+        "author": { "type": "string", "description": "Author or team that created the module." },
+        "sdoa": { "type": "string", "description": "SDOA specification version this module conforms to." }
+      }
+    },
+    "last_modified": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of the most recent change. v1.2 mandatory field. Must be updated on every change (Gate 4 — Micro-Incrementation).",
+      "format": "date-time",
+      "examples": ["2026-06-17T00:00:00Z"]
+    },
+    "dataFiles": {
+      "type": "array",
+      "description": "Paths to external .json data files loaded at runtime. v4.0 field.",
+      "items": { "type": "string" }
+    },
+    "lifecycle": {
+      "type": "array",
+      "description": "Array of lifecycle method names this module implements. v4.0 field. UI modules: [init, mount, update, unmount, destroy]. Backend modules: [init, run, dispose].",
+      "items": {
+        "type": "string",
+        "enum": ["init", "mount", "update", "unmount", "destroy", "run", "dispose"]
+      }
+    },
+    "actions": {
+      "type": "object",
+      "description": "Action surface describing what this module can do, what events it emits, what events it accepts, and what slots it exposes. v4.0 field.",
+      "properties": {
+        "commands": {
+          "type": "object",
+          "description": "Named callable functions this module exposes. Each key is a command name.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "description": { "type": "string" },
+              "input": {},
+              "output": {}
+            }
+          }
+        },
+        "events": {
+          "type": "object",
+          "description": "Events this module emits. Key is event name, value describes the payload.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "payload": {}
+            }
+          }
+        },
+        "accepts": {
+          "type": "object",
+          "description": "Events this module listens for and reacts to. Key is event name.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "slots": {
+          "type": "object",
+          "description": "Named content insertion points for composition (UI modules)."
+        }
+      }
+    },
+    "backendDeps": {
+      "type": "array",
+      "description": "Backend dependency declarations for adapter modules. Each entry declares which backend actions this module needs. v4.0 field.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": { "type": "string" },
+          "via": { "type": "string" },
+          "params": {}
+        }
+      }
+    },
+    "operationalRole": {
+      "type": "string",
+      "description": "System-level operational role classification. v5.0 field. Use 'savant' for domain-expert modules with no system governance role.",
+      "enum": ["registrar", "captain", "conductor", "coach", "probation-officer", "assembly-line", "triage", "savant", "assemblyline", "oracle"]
+    },
+    "optimization": {
+      "type": "object",
+      "description": "Optimization targeting. v5.0 field.",
+      "required": ["priority", "assertionSuite"],
+      "properties": {
+        "priority": {
+          "type": "string",
+          "description": "Optimization target for this module.",
+          "enum": ["speed", "safety", "readability", "memory-footprint"]
+        },
+        "assertionSuite": {
+          "type": "string",
+          "description": "Path to the test suite JSON for this module. Empty string if no suite yet."
+        }
+      }
+    },
+    "variant_of": {
+      "type": "string",
+      "description": "ID of the parent sovereign module. Required for variant modules. Declares parentage.",
+      "examples": ["Workspace.feature", "Queue.service"]
+    },
+    "compliance": {
+      "description": "Compliance declaration. Set to {'non-sdoa-compliant': true} if module cannot fully comply. Undeclared non-compliance is a governance violation."
+    },
+    "non-sdoa-compliant": {
+      "type": "boolean",
+      "description": "Set to true if this file cannot be made fully manifest-compliant. The registry logs but does not reject such files."
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,99 @@
+# ---------------------------------------------------------
+# Node / TypeScript
+# ---------------------------------------------------------
+node_modules/
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+package-lock.json
+*.tsbuildinfo
+
+# Build output
+dist/
+build/
+out/
+coverage/
+.cache/
+.eslintcache
+
+# ---------------------------------------------------------
+# MCP Server / CLI / VSX
+# ---------------------------------------------------------
+# Local runtime artifacts
+runtime/
+data/
+logs/
+*.log
+
+# CLI packaged builds
+*.tgz
+cli/dist/
+cli/build/
+
+# VS Code extension build output
+*.vsix
+extension/*.vsix
+extension/out/
+extension/dist/
+
+# Release binaries
+release-binaries/
+
+# ---------------------------------------------------------
+# OS junk
+# ---------------------------------------------------------
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# Windows 8.3 short-name artifacts
+*~1/
+*~2/
+*~3/
+
+# ---------------------------------------------------------
+# Claude sandbox exports
+# ---------------------------------------------------------
+LOCAL_*/
+outputs/
+
+# ---------------------------------------------------------
+# Environment files (ABSOLUTELY NEVER COMMIT)
+# ---------------------------------------------------------
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Supabase keys, local secrets, tokens
+supabase/.env
+*.key
+*.pem
+
+# ---------------------------------------------------------
+# TypeScript build artifacts
+# ---------------------------------------------------------
+*.d.ts
+*.map
+
+# ---------------------------------------------------------
+# Misc
+# ---------------------------------------------------------
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*.swo
+HANDOFF.md
+
+# ---------------------------------------------------------
+# Local engine state, rescue + verification artifacts
+# ---------------------------------------------------------
+.sdoa/
+**/.sdoa/
+rescue.log
+_verify_pipeline.js
+tsc_out.txt

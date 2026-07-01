@@ -1,0 +1,33 @@
+{
+	"/": [
+		"src/routes/+layout.js",
+		"src/routes/+layout.js"
+	],
+	"/drift": [
+		"src/routes/+layout.js"
+	],
+	"/governance": [
+		"src/routes/+layout.js"
+	],
+	"/lineage": [
+		"src/routes/+layout.js"
+	],
+	"/mesh": [
+		"src/routes/+layout.js"
+	],
+	"/proposals": [
+		"src/routes/+layout.js"
+	],
+	"/routing": [
+		"src/routes/+layout.js"
+	],
+	"/scan": [
+		"src/routes/+layout.js"
+	],
+	"/time-machine": [
+		"src/routes/+layout.js"
+	],
+	"/timeline": [
+		"src/routes/+layout.js"
+	]
+}
