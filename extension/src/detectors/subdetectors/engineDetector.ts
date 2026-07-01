@@ -58,9 +58,7 @@ export class EngineDetector {
           name
         }));
         
-        import('../../extraction/index').then(({ runExtraction }) => {
-          runExtraction('engine', hits);
-        }).catch(err => console.error("Extraction error:", err));
+
 
         proposals.push({
           id: `${name}.engine.js`,

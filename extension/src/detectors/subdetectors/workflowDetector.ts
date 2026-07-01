@@ -57,9 +57,7 @@ export class WorkflowDetector {
           name
         }));
         
-        import('../../extraction/index').then(({ runExtraction }) => {
-          runExtraction('workflow', hits);
-        }).catch(err => console.error("Extraction error:", err));
+
 
         proposals.push({
           id: `${name}.workflow.js`,

@@ -1,0 +1,18 @@
+{
+  "authority": "TimeMachine",
+  "version": "1.0.0",
+  "role": "Mesh Time Machine Reconstruction Engine",
+  "capabilities": {
+    "chronicle_replay": true,
+    "topology_reconstruction": true,
+    "drift_rewind": true
+  },
+  "governance": {
+    "lineage": "parent: MCP",
+    "drift_threshold": 0.05
+  },
+  "endpoints": {
+    "health": "/health",
+    "replay": "/time/replay"
+  }
+}

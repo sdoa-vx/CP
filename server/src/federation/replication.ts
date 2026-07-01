@@ -1,6 +1,7 @@
 import { generateSignature } from './handshake';
 import { logger } from '../utils/logger';
 import { db } from '../fisp/database';
+import { scheduleFlush } from '../workers/offlineSync';
 
 export const MANIFEST = {
   id: "replication.ts",
@@ -34,6 +35,7 @@ export async function replicateProposalToPeers(envelope: any) {
     } catch(e) { 
       try {
         db.prepare('INSERT INTO offline_queue (type, target, payload, created_at) VALUES (?, ?, ?, ?)').run('FEDERATION', peer, JSON.stringify(envelope), new Date().toISOString());
+        scheduleFlush();
       } catch (err) { /* silent */ }
     }
   }

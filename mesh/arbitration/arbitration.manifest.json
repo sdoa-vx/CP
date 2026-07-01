@@ -1,0 +1,19 @@
+{
+  "authority": "Arbitrator",
+  "version": "1.0.0",
+  "role": "Transport Arbitration Engine",
+  "capabilities": {
+    "transport_switching": true,
+    "latency_scoring": true,
+    "drift_penalties": true
+  },
+  "governance": {
+    "lineage": "parent: MCP",
+    "drift_threshold": 0.05
+  },
+  "endpoints": {
+    "health": "/health",
+    "negotiate": "/transport/negotiate",
+    "score": "/transport/score"
+  }
+}

@@ -20,7 +20,7 @@
             <div class="event-marker"></div>
             <div class="event-content" class:merged={event.status === 'merged'} class:pending={event.status === 'pending'}>
               <div class="event-header">
-                <strong>{event.type.toUpperCase()}: {event.name || event.id}</strong>
+                <strong>{(event.type || 'proposal').toUpperCase()}: {event.name || event.id}</strong>
                 <span class="status {event.status}">{event.status}</span>
               </div>
               <div class="event-body">

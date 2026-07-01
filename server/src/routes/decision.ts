@@ -4,6 +4,7 @@ import { loadProposal } from "../fisp/loadProposal";
 import { runCreationPipeline } from "../pipeline/CreationPipeline";
 import { updateProposalStatus } from "../fisp/loadProposal";
 import { broadcastDashboardUpdate } from "../ws";
+import { emit } from "../engine/events";
 
 export const MANIFEST = {
   id: "decision.ts",
@@ -43,15 +44,17 @@ export async function handleDecision(req: IncomingMessage, res: ServerResponse) 
   if (decision === "reject" || !applyToCanonical) {
     await updateProposalStatus(id, "rejected", notes);
     broadcastDashboardUpdate('proposal_update', { id, status: 'rejected' });
+    emit('proposal:updated', { id, state: 'rejected' });
     res.statusCode = 200;
     return res.end(JSON.stringify({ status: "rejected", notes }));
   }
 
   const result = await runCreationPipeline(proposal as any);
-  
+
   if (result.ok) {
     await updateProposalStatus(id, "accepted", notes);
     broadcastDashboardUpdate('proposal_update', { id, status: 'accepted' });
+    emit('proposal:updated', { id, state: 'accepted' });
   }
 
   res.statusCode = result.ok ? 200 : 400;

@@ -1,0 +1,23 @@
+{
+  "authority": "Lifecycle",
+  "version": "1.0.0",
+  "role": "Mesh Sleeve Lifecycle Manager",
+  "capabilities": {
+    "sleeve_spawning": true,
+    "sleeve_retirement": true,
+    "failover_management": true,
+    "drift_deactivation": true,
+    "rotation_orchestration": true
+  },
+  "governance": {
+    "lineage": "parent: MCP",
+    "drift_threshold": 0.05
+  },
+  "endpoints": {
+    "health": "/health",
+    "spawn": "/lifecycle/spawn",
+    "retire": "/lifecycle/retire",
+    "rotate": "/lifecycle/rotate",
+    "failover": "/lifecycle/failover"
+  }
+}

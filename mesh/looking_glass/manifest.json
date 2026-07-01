@@ -1,0 +1,31 @@
+{
+  "id": "LookingGlass.sleeve",
+  "type": "sleeve",
+  "layer": 3,
+  "runtime": "TypeScript",
+  "version": "5.7.0",
+  "operationalRole": "savant",
+  "external": {
+    "system": "SDOA-Mesh",
+    "transport": "http",
+    "path": "/looking-glass",
+    "commands": ["reason", "plan", "generate", "review"]
+  },
+  "capabilities": [
+    "reason.filter",
+    "reason.sdoa-align",
+    "reason.runtime-select",
+    "reason.module-reuse",
+    "reason.module-design",
+    "reason.mesh-awareness"
+  ],
+  "requires": [
+    "Registrar.service",
+    "Oracle.service",
+    "Cartographer.service",
+    "Chronicle.service",
+    "Pulse.service",
+    "AssemblyLine.service"
+  ],
+  "lifecycle": ["init", "run", "dispose"]
+}

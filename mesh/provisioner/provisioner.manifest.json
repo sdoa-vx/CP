@@ -1,0 +1,19 @@
+{
+  "authority": "Provisioner",
+  "version": "1.0.0",
+  "role": "Polyglot Sleeve Provisioning Engine",
+  "capabilities": {
+    "sleeve_spawning": ["rust", "python", "go", "c++", "wasm"],
+    "sleeve_retirement": true,
+    "mesh_registration": true
+  },
+  "governance": {
+    "lineage": "parent: MCP",
+    "drift_threshold": 0.05
+  },
+  "endpoints": {
+    "health": "/health",
+    "spawn": "/spawn",
+    "retire": "/retire"
+  }
+}

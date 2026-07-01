@@ -14,7 +14,6 @@ import { registerExtractionDiffCommands } from "./commands/extractionDiffCommand
 import { registerExtractionHistoryPanel } from "./ui/extractionHistoryPanel";
 import { registerExtractionAnalyticsPanel, updateExtractionAnalytics } from "./ui/extractionAnalyticsPanel";
 import { registerExtractionDriftHeatmapPanel, updateDriftHeatmap } from "./ui/extractionDriftHeatmapPanel";
-import { runWorkspaceScan } from "./scanner";
 import WebSocket from 'ws';
 
 let serverProcess: cp.ChildProcess | undefined;
@@ -260,6 +259,56 @@ export async function activate(context: vscode.ExtensionContext) {
     return btoa(`${u}:${p}`);
   };
 
+  /**
+   * Best-effort: brings the VS Code window to the foreground before showing a native
+   * dialog. Windows blocks background apps from stealing focus outright, so a plain
+   * showOpenDialog()/showWarningMessage() triggered from the browser dashboard can pop up
+   * behind whatever the user is actually looking at. WScript.Shell's AppActivate is granted
+   * more leeway than a raw SetForegroundWindow call and is the standard workaround for this.
+   */
+  function bringVsCodeToForeground() {
+    if (process.platform !== "win32") return;
+    try {
+      cp.exec(`powershell -NoProfile -Command "(New-Object -ComObject WScript.Shell).AppActivate('Visual Studio Code')"`);
+    } catch {
+      // Not fatal - the dialog still opens, just possibly behind other windows.
+    }
+  }
+
+  async function postScanWorkspace(root: string, confirmed: boolean): Promise<any> {
+    const res = await fetch(`${endpoint()}/dashboard/api/actions/scan-workspace`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Basic " + getAuthToken() },
+      body: JSON.stringify({ workspaceRoot: root, confirmed }),
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, status: res.status, data };
+  }
+
+  /** Shared by sdoa.scanFolder and sdoa.scanWorkspace - confirms with the user before
+   * scanning a target the server flags as very large (huge folder / drive root). */
+  async function scanWorkspaceWithConfirmation(root: string, label: string) {
+    let result = await postScanWorkspace(root, false);
+
+    if (result.status === 409 && result.data?.needsConfirmation) {
+      bringVsCodeToForeground();
+      const choice = await vscode.window.showWarningMessage(
+        result.data.message || `${label} looks very large - scanning it may take a long time. Continue?`,
+        "Scan Anyway", "Cancel"
+      );
+      if (choice !== "Scan Anyway") return;
+      result = await postScanWorkspace(root, true);
+    }
+
+    if (result.ok) {
+      outputChannel.appendLine(`[Scan] ${result.data.filesScanned} files scanned in ${label}.`);
+      vscode.window.showInformationMessage(`✅ Scan completed. ${result.data.filesScanned} files processed.`);
+      controlPanelProvider.refresh();
+    } else {
+      vscode.window.showErrorMessage(`Scan of ${label} failed on server.`);
+    }
+  }
+
   context.subscriptions.push(
     vscode.commands.registerCommand("sdoa.viewLastSubmission", async () => {
       try {
@@ -415,6 +464,7 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     }),
     vscode.commands.registerCommand("sdoa.scanFile", async () => {
+      bringVsCodeToForeground();
       const uris = await vscode.window.showOpenDialog({ canSelectFiles: true, canSelectFolders: false, canSelectMany: false });
       if (uris?.[0]) {
         const doc = await vscode.workspace.openTextDocument(uris[0]);
@@ -429,6 +479,7 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     }),
     vscode.commands.registerCommand("sdoa.scanFolder", async () => {
+      bringVsCodeToForeground();
       const uris = await vscode.window.showOpenDialog({ canSelectFiles: false, canSelectFolders: true, canSelectMany: false });
       if (uris?.[0]) {
         const root = uris[0].fsPath;
@@ -439,19 +490,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }, async (progress) => {
           progress.report({ message: `Scanning folder: ${path.basename(root)}...` });
           try {
-            const res = await fetch(`${endpoint()}/dashboard/api/actions/scan-workspace`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", Authorization: "Basic " + getAuthToken() },
-              body: JSON.stringify({ workspaceRoot: root }),
-            });
-            if (res.ok) {
-              const data = await res.json();
-              outputChannel.appendLine(`[Scan] ${data.filesScanned} files scanned in folder.`);
-              vscode.window.showInformationMessage(`✅ Folder scan completed. ${data.filesScanned} files processed.`);
-              controlPanelProvider.refresh();
-            } else {
-              vscode.window.showErrorMessage("Folder scan failed on server.");
-            }
+            await scanWorkspaceWithConfirmation(root, `folder "${path.basename(root)}"`);
           } catch (err) {
             vscode.window.showErrorMessage("Failed to connect to SDOA Engine.");
           }
@@ -473,17 +512,21 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.executeCommand("sdoa.openDashboardLocal");
       }
 
+      const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      if (!root) {
+        vscode.window.showErrorMessage("No workspace folder open to scan.");
+        return;
+      }
+
       await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: "SDOA Engine",
         cancellable: false
       }, async (progress) => {
         progress.report({ message: "Running full workspace scan..." });
-        
+
         try {
-          await runWorkspaceScan(outputChannel);
-          vscode.window.showInformationMessage(`✅ Workspace scan completed.`);
-          controlPanelProvider.refresh();
+          await scanWorkspaceWithConfirmation(root, "workspace");
         } catch (err) {
           vscode.window.showErrorMessage("Workspace scan failed.");
         }
@@ -847,6 +890,14 @@ function connectToBackend(workspaceRoot: string) {
     console.log('[SDOA] Backend bridge disconnected, retrying in 2s');
     setTimeout(() => connectToBackend(workspaceRoot), 2000);
   });
+
+  socket.on('error', (err) => {
+    // Without a listener here, an unhandled 'error' event throws and can abort
+    // the reconnect chain before 'close' ever fires - this happens on every
+    // activation, since connectToBackend() is called before the backend server
+    // is forked, so the very first connection attempt always gets ECONNREFUSED.
+    console.error('[SDOA] Backend bridge connection error:', err);
+  });
 }
 
 function sendToBackend(event: string, payload: any) {
@@ -863,6 +914,8 @@ function handleBackendEvent(event: string, payload: any) {
     updateExtractionAnalytics(payload);
   } else if (event === 'extraction.driftHeatmap') {
     updateDriftHeatmap(payload);
+  } else if (event === 'vscode:executeCommand') {
+    vscode.commands.executeCommand(payload.command, ...(payload.args || []));
   }
 }
 
@@ -876,32 +929,37 @@ function updateCognizancePanel(data: any) {
 }
 
 function getPanelHtml(): string {
+  const config = vscode.workspace.getConfiguration("sdoaMcp");
+  const ep = config.get<string>("fispEndpoint") || "http://127.0.0.1:8080";
   return `
-    <html>
-      <body style="font-family: sans-serif; padding: 10px;">
-        <h2>SDOA Cognizance</h2>
-        <div id="content">Waiting for updates...</div>
-
+    <!DOCTYPE html>
+    <html lang="en" style="width: 100%; height: 100%; margin: 0; padding: 0;">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SDOA Cognizance</title>
+        <style>
+          body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--vscode-editor-background);
+          }
+          iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+          }
+        </style>
+      </head>
+      <body>
+        <iframe src="${ep}/dashboard?cb=${Date.now()}" title="SDOA Dashboard"></iframe>
         <script>
           const vscode = acquireVsCodeApi();
-
-          window.addEventListener('message', (event) => {
-            const msg = event.data;
-
-            if (msg.type === 'update') {
-              const d = msg.data;
-
-              document.getElementById('content').innerHTML = \`
-                <strong>File:</strong> \${d.file}<br>
-                <strong>Score:</strong> \${d.score}<br>
-                <strong>Cognitive Load:</strong> \${d.cognitiveLoad}<br>
-                <h3>Issues</h3>
-                <ul>\${d.issues.map(i => '<li>' + i + '</li>').join('')}</ul>
-                <h3>Suggestions</h3>
-                <ul>\${d.suggestions.map(s => '<li>' + s + '</li>').join('')}</ul>
-              \`;
-            }
-          });
+          // We can add message passing here if needed, but tracksdoa-v2
+          // communicates directly with the backend via WebSocket/SSE.
         </script>
       </body>
     </html>

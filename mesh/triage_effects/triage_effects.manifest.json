@@ -1,0 +1,18 @@
+{
+  "authority": "TriageEffects",
+  "version": "1.0.0",
+  "role": "Mesh Effects Application Engine",
+  "capabilities": {
+    "routing_diff_application": true,
+    "topology_updates": true,
+    "drift_delta_application": true
+  },
+  "governance": {
+    "lineage": "parent: MCP",
+    "drift_threshold": 0.05
+  },
+  "endpoints": {
+    "health": "/health",
+    "apply": "/effects/apply"
+  }
+}

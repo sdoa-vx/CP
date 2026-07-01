@@ -53,9 +53,7 @@ export class SchemaDetector {
           name
         }));
         
-        import('../../extraction/index').then(({ runExtraction }) => {
-          runExtraction('schema', hits);
-        }).catch(err => console.error("Extraction error:", err));
+
 
         proposals.push({
           id: `schema-${counter}.json`,

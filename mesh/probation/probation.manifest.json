@@ -1,0 +1,20 @@
+{
+  "authority": "ProbationOfficer",
+  "version": "1.0.0",
+  "role": "Wasm Sandbox Enforcement & Pre-commit Gate",
+  "capabilities": {
+    "forbidden_action_detection": true,
+    "line_limit_enforcement": true,
+    "memory_boundary_enforcement": true,
+    "pre_commit_module_gate": true
+  },
+  "governance": {
+    "lineage": "parent: MCP",
+    "drift_threshold": 0.05
+  },
+  "endpoints": {
+    "health": "/health",
+    "validate_module": "/validate",
+    "sandbox_check": "/sandbox"
+  }
+}

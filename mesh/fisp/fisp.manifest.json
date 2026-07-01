@@ -1,0 +1,19 @@
+{
+  "authority": "FISPPipeline",
+  "version": "1.1.0",
+  "role": "FISP Contribution Pipeline Engine",
+  "capabilities": {
+    "innovation_validation": true,
+    "proposal_schema_checking": true,
+    "assembly_line_handoff": true
+  },
+  "governance": {
+    "lineage": "parent: MCP",
+    "drift_threshold": 0.05
+  },
+  "endpoints": {
+    "health": "/health",
+    "validate": "/fisp/validate",
+    "submit": "/fisp/submit"
+  }
+}

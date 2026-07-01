@@ -17,6 +17,7 @@ export const routingStore = writable<any[]>([]);
 export const meshStore = writable<any>({});
 export const pulseStore = writable<any>({});
 export const driftStore = writable<any>({});
+export const meshLogsStore = writable<any[]>([]);
 
 export const scanStore = writable({
   index: 0,
@@ -25,5 +26,6 @@ export const scanStore = writable({
   previousFile: null,
   nextFile: null,
   percent: 0,
-  active: false
+  active: false,
+  source: 'none' as 'sse' | 'chronicle' | 'none'
 });

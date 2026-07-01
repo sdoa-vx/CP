@@ -1,9 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import * as vscode from "vscode";
+import * as crypto from "node:crypto";
 
-let supabase: ReturnType<typeof createClient> | null = null;
+let supabase: any = null;
 
-function getSupabaseClient() {
+function getSupabaseClient(): any {
   if (supabase) return supabase;
 
   const config = vscode.workspace.getConfiguration("sdoaMcp");
@@ -34,7 +35,7 @@ export interface ExtractionMetadata {
 }
 
 export async function writeProposal(proposal: InnovationProposal): Promise<any> {
-  const client = getSupabaseClient();
+  const client: any = getSupabaseClient();
   if (!client) return null;
 
   const { data, error } = await client
@@ -58,7 +59,7 @@ export async function writeProposal(proposal: InnovationProposal): Promise<any> 
 }
 
 export async function writeExtraction(proposalId: string, extraction: ExtractionMetadata): Promise<void> {
-  const client = getSupabaseClient();
+  const client: any = getSupabaseClient();
   if (!client) return;
 
   const { error } = await client.from("proposal_extractions").insert({

@@ -60,9 +60,7 @@ export class UIPrimitiveDetector {
         }));
         
         // Auto-extract and queue
-        import('../../extraction/index').then(({ runExtraction }) => {
-          runExtraction('primitive', hits);
-        }).catch(err => console.error("Extraction error:", err));
+
 
         proposals.push({
           id: `${name}.prim`,

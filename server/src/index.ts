@@ -16,11 +16,20 @@ const app = new Router();
 
 // Auth Middleware wrapper
 app.use("/dashboard", (req, res, next) => {
-  if (req.url && req.url.startsWith("/api/events")) {
+  const isLocal = req.socket.remoteAddress === "127.0.0.1" || req.socket.remoteAddress === "::1" || req.socket.remoteAddress === "::ffff:127.0.0.1";
+  if (isLocal) {
     if (next) return next();
     return;
   }
-  const auth = req.headers.authorization;
+  if (req.method === "GET" && !req.url?.startsWith("/api/")) {
+    if (next) return next();
+    return;
+  }
+  const authHeader = req.headers.authorization;
+  const urlParams = new URL(req.url || "/", "http://localhost").searchParams;
+  const tokenQuery = urlParams.get("token");
+  const auth = authHeader || (tokenQuery ? `Basic ${tokenQuery}` : null);
+
   const adminCreds = (process.env.ADMIN_USER || "admin") + ":" + (process.env.ADMIN_PASS || "admin");
   const expected = "Basic " + Buffer.from(adminCreds).toString("base64");
   if (auth !== expected) {
@@ -31,6 +40,15 @@ app.use("/dashboard", (req, res, next) => {
   if(next) next();
 });
 app.use("/public", (req, res, next) => {
+  const isLocal = req.socket.remoteAddress === "127.0.0.1" || req.socket.remoteAddress === "::1" || req.socket.remoteAddress === "::ffff:127.0.0.1";
+  if (isLocal) {
+    if (next) return next();
+    return;
+  }
+  if (req.method === "GET") {
+    if (next) return next();
+    return;
+  }
   const auth = req.headers.authorization;
   const adminCreds = (process.env.ADMIN_USER || "admin") + ":" + (process.env.ADMIN_PASS || "admin");
   const expected = "Basic " + Buffer.from(adminCreds).toString("base64");
@@ -45,8 +63,24 @@ app.use("/public", (req, res, next) => {
 import configRouter from "./routes/config";
 
 // Mount modular routers
+app.use("/dashboard", staticRouter);
 app.use("/dashboard", dashboardRouter);
 app.use("/dashboard", configRouter);
+app.use("/dashboard", (req, res) => {
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "text/html");
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const htmlPath = path.join(__dirname, "..", "..", "server", "public", "index.html");
+  if (fs.existsSync(htmlPath)) res.end(fs.readFileSync(htmlPath));
+  else {
+    res.statusCode = 404;
+    res.end("Dashboard HTML not found at " + htmlPath);
+  }
+});
 app.use("/public", staticRouter);
 
 

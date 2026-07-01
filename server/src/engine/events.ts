@@ -73,7 +73,7 @@ export function emit(type: string, payload: Record<string, unknown> = {}) {
   buffer.push(event);
   if (buffer.length > BUFFER_SIZE) buffer.shift();
 
-  const data = `data: ${JSON.stringify(event)}\n\n`;
+  const data = `event: ${type}\ndata: ${JSON.stringify(event)}\n\n`;
   for (const res of sseClients) {
     try { res.write(data); }
     catch { sseClients.delete(res); }
@@ -83,6 +83,11 @@ export function emit(type: string, payload: Record<string, unknown> = {}) {
 /** Get recent events from the rolling buffer */
 export function getRecentEvents(n = 100): EngineEvent[] {
   return buffer.slice(-n);
+}
+
+/** True if at least one browser is currently attached to the SSE stream */
+export function hasSseClients(): boolean {
+  return sseClients.size > 0;
 }
 
 /** Attach a response as an SSE client. Sends backlog then streams live. */
@@ -95,7 +100,7 @@ export function attachSseClient(res: ServerResponse) {
 
   // Send current buffer as backlog
   for (const event of getRecentEvents(50)) {
-    res.write(`data: ${JSON.stringify(event)}\n\n`);
+    res.write(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
   }
 
   sseClients.add(res);

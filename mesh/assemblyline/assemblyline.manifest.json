@@ -1,0 +1,22 @@
+{
+  "authority": "AssemblyLine",
+  "version": "1.0.0",
+  "role": "Polyglot Build Orchestrator & V8 Memory Provisioner",
+  "capabilities": {
+    "build_orchestration": ["rust", "python", "go", "c++", "wasm"],
+    "v8_provisioning": true,
+    "shared_array_buffer_management": true,
+    "subprocess_io": ["cobol", "vb", "legacy"],
+    "packaging": [".vsix", "npm", "cargo"]
+  },
+  "governance": {
+    "lineage": "parent: MCP",
+    "drift_threshold": 0.05
+  },
+  "endpoints": {
+    "health": "/health",
+    "build": "/build",
+    "provision": "/provision",
+    "package": "/package"
+  }
+}

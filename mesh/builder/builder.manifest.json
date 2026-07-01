@@ -1,0 +1,21 @@
+{
+  "authority": "Builder",
+  "version": "1.0.0",
+  "role": "Polyglot Build Pipeline Engine",
+  "capabilities": {
+    "rust_lane": true,
+    "go_lane": true,
+    "python_lane": true,
+    "cpp_lane": true,
+    "wasm_lane": true,
+    "concurrent_orchestration": true
+  },
+  "governance": {
+    "lineage": "parent: MCP",
+    "drift_threshold": 0.05
+  },
+  "endpoints": {
+    "health": "/health",
+    "build": "/build"
+  }
+}

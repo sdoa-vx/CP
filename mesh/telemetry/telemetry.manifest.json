@@ -1,0 +1,17 @@
+{
+  "authority": "TelemetryEngine",
+  "version": "1.0.0",
+  "role": "Sleeve Telemetry Ingestion Engine",
+  "capabilities": {
+    "high_throughput_ingestion": true,
+    "pulse_normalization": true
+  },
+  "governance": {
+    "lineage": "parent: MCP",
+    "drift_threshold": 0.05
+  },
+  "endpoints": {
+    "health": "/health",
+    "ingest": "/telemetry/ingest"
+  }
+}

@@ -102,3 +102,12 @@ db.prepare(`
   )
 `).run();
 
+// Ensure modules table exists - the catalog checkSemanticSimilarity() matches against
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS modules (
+    id TEXT PRIMARY KEY,
+    manifestJson TEXT,
+    updated_at TEXT
+  )
+`).run();
+

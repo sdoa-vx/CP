@@ -1,0 +1,19 @@
+{
+  "authority": "BatchEngine",
+  "version": "1.0.0",
+  "role": "Batch Execution & Compression Engine",
+  "capabilities": {
+    "concurrent_execution": true,
+    "payload_compression": true,
+    "drift_scoring": true
+  },
+  "governance": {
+    "lineage": "parent: MCP",
+    "drift_threshold": 0.05
+  },
+  "endpoints": {
+    "health": "/health",
+    "execute": "/batch/execute",
+    "compress": "/batch/compress"
+  }
+}

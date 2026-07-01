@@ -27,12 +27,14 @@ export function startVscodeBridge(port = 7337) {
   });
 }
 
-export function sendToExtension(event: string, payload: any) {
+/** Returns true only if the message was actually handed to a connected extension socket. */
+export function sendToExtension(event: string, payload: any): boolean {
   if (!extensionSocket || extensionSocket.readyState !== WebSocket.OPEN) {
-    return;
+    return false;
   }
 
   extensionSocket.send(JSON.stringify({ event, payload }));
+  return true;
 }
 
 import { watchWorkspace } from '../engine/cognizance/fileWatcher';

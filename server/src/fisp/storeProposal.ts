@@ -1,6 +1,7 @@
 import { db } from './database';
 import { broadcastDashboardUpdate } from '../ws';
 import { recordPipelineStep } from '../utils/telemetry';
+import { emit } from '../engine/events';
 
 export const MANIFEST = {
   id: "storeProposal.ts",
@@ -28,10 +29,22 @@ export const MANIFEST = {
 
 
 export async function storeProposal(envelope: any) {
+  const timestamp = new Date().toISOString();
   db.prepare('INSERT INTO proposals (id, status, data, timestamp) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data')
-    .run(envelope.proposalId, 'queued', JSON.stringify(envelope), new Date().toISOString());
-  
+    .run(envelope.proposalId, 'queued', JSON.stringify(envelope), timestamp);
+
   broadcastDashboardUpdate('proposal_update', { id: envelope.proposalId });
+
+  const innovation = (envelope.innovations || [])[0] || {};
+  emit('proposal:created', {
+    id: envelope.proposalId,
+    state: 'pending',
+    module_suggestion: innovation.manifest?.id || envelope.summary || envelope.proposalId,
+    reasoning: envelope.motivation || envelope.summary || '',
+    capability_surface: innovation.capability_surface || {},
+    timestamp
+  });
+
   return { id: envelope.proposalId };
 }
 

@@ -1,7 +1,7 @@
 {
   "name": "sdoa-mcp-extension",
-  "displayName": "1.3 SDOA MCE",
-  "version": "1.3.0",
+  "displayName": "1.4.9 SDOA MCE",
+  "version": "1.4.9",
   "description": "SDOA Architecture AI Companion",
   "icon": "extension/assets/seal.png",
   "bin": {
@@ -17,6 +17,8 @@
   },
   "publisher": "sdoa",
   "activationEvents": [
+    "onView:sdoa-control-panel",
+    "onView:sdoaCognizancePanel",
     "onStartupFinished"
   ],
   "contributes": {
@@ -34,7 +36,8 @@
         {
           "id": "sdoaCognizancePanel",
           "name": "SDOA Cognizance",
-          "type": "webview"
+          "type": "webview",
+          "icon": "SDOA.seal.outline.svg"
         },
         {
           "id": "sdoa-control-panel",
@@ -197,9 +200,11 @@
   },
   "scripts": {
     "build:server": "tsc -p server/tsconfig.json || echo 'Add tsconfig'",
+    "build:dashboard": "cd tracksdoa-v2 && npm run build && xcopy /E /I /Y build\\* ..\\server\\public\\",
     "build:extension": "node esbuild.extension.js",
     "package:extension": "npx vsce package",
-    "release": "npm run build:server && npm run build:extension && npm run package:extension"
+    "dashboard": "cd tracksdoa-v2 && npm run dev",
+    "release": "npm run build:server && npm run build:dashboard && npm run build:extension && npm run package:extension"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

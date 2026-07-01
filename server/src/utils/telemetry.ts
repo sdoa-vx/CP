@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { logger } from './logger';
 import { db } from '../fisp/database';
+import { scheduleFlush } from '../workers/offlineSync';
 
 export const MANIFEST = {
   id: "telemetry.ts",
@@ -28,6 +29,7 @@ export const MANIFEST = {
 function queueOfflineItem(target: string, payload: any) {
   try {
     db.prepare('INSERT INTO offline_queue (type, target, payload, created_at) VALUES (?, ?, ?, ?)').run('SUPABASE', target, JSON.stringify(payload), new Date().toISOString());
+    scheduleFlush();
   } catch (e) {
     // totally silent
   }

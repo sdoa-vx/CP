@@ -53,9 +53,7 @@ export class TokenDetector {
           originalSnippet: val
         }));
         
-        import('../../extraction/index').then(({ runExtraction }) => {
-          runExtraction('token', hits);
-        }).catch(err => console.error("Extraction error:", err));
+
 
         proposals.push({
           name,

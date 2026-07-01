@@ -70,7 +70,8 @@ export class Router {
         isPathMatch = url.startsWith(route.path);
         matchedPrefix = route.path === "/" ? "" : route.path;
       } else {
-        isPathMatch = url === route.path || (route.path.includes(":") && this.matchDynamic(route.path, url));
+        const pathname = url.split("?")[0];
+        isPathMatch = pathname === route.path || (route.path.includes(":") && this.matchDynamic(route.path, pathname));
       }
 
       if (isMethodMatch && isPathMatch) {

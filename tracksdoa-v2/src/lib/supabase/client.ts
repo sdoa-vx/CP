@@ -9,10 +9,16 @@
  */
 import { createClient } from '@supabase/supabase-js';
 
-export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
-  {
-    realtime: { params: { eventsPerSecond: 10 } }
+export let supabase: any = null;
+
+export function initSupabase(url: string, key: string) {
+  if (url && key) {
+    try {
+      supabase = createClient(url, key, {
+        realtime: { params: { eventsPerSecond: 10 } }
+      });
+    } catch (e) {
+      console.error("[Supabase Client] Failed to create client:", e);
+    }
   }
-);
+}

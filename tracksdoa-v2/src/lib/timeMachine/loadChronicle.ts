@@ -10,6 +10,10 @@
 import { supabase } from '$lib/supabase/client';
 
 export async function loadChronicleRange(start: string, end: string) {
+  if (!supabase) {
+    console.warn("[TimeMachine] Supabase client is not initialized.");
+    return [];
+  }
   const { data, error } = await supabase
     .from('chronicle_events')
     .select('*')
@@ -25,6 +29,10 @@ export async function loadChronicleRange(start: string, end: string) {
 }
 
 export async function loadRecentChronicle(limit = 1000) {
+  if (!supabase) {
+    console.warn("[TimeMachine] Supabase client is not initialized.");
+    return [];
+  }
   const { data, error } = await supabase
     .from('chronicle_events')
     .select('*')

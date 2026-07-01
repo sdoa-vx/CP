@@ -15,7 +15,7 @@ func main() {
 
 	// Initialize API
 	initChronicleAPI(events)
-	go http.ListenAndServe(":8081", nil)
+	go http.ListenAndServe("127.0.0.1:8081", nil)
 
 	// Keep daemon alive
 	select {}

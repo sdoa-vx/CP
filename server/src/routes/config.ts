@@ -36,11 +36,15 @@ const DEFAULT_CONFIG = {
 
 function getConfig() {
   const row = db.prepare("SELECT value FROM metadata_store WHERE key = 'engine_config'").get() as any;
-  if (!row) return DEFAULT_CONFIG;
+  const envConfig = {
+    supabaseUrl: process.env.SUPABASE_URL || "",
+    supabaseKey: process.env.SUPABASE_KEY || ""
+  };
+  if (!row) return { ...DEFAULT_CONFIG, ...envConfig };
   try {
-    return { ...DEFAULT_CONFIG, ...JSON.parse(row.value) };
+    return { ...DEFAULT_CONFIG, ...envConfig, ...JSON.parse(row.value) };
   } catch (e) {
-    return DEFAULT_CONFIG;
+    return { ...DEFAULT_CONFIG, ...envConfig };
   }
 }
 

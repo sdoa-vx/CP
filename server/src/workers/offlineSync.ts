@@ -10,6 +10,7 @@ export const MANIFEST = {
   capabilities: [
     "startOfflineSync",
     "stopOfflineSync",
+    "scheduleFlush",
     "flushQueue"
   ],
   dependencies: [
@@ -29,17 +30,70 @@ import { telemetry } from '../engine/telemetry';
 import { emit } from '../engine/events';
 
 let syncInterval: NodeJS.Timeout | null = null;
+let debounceTimer: NodeJS.Timeout | null = null;
+let isFlushing = false;
+let backoffMs = 0;
+
+const DEBOUNCE_MS = 2000;
+const MIN_BACKOFF_MS = 5000;
+const MAX_BACKOFF_MS = 180000;
+const FALLBACK_TICK_MS = 180000;
 
 export function startOfflineSync() {
   if (syncInterval) return;
-  // Run every 3 minutes (180000 ms)
-  syncInterval = setInterval(processQueue, 180000);
+  // Pure safety net in case scheduleFlush() is ever missed - the real cadence is event-driven.
+  syncInterval = setInterval(() => scheduleFlush(), FALLBACK_TICK_MS);
 }
 
 export function stopOfflineSync() {
   if (syncInterval) {
     clearInterval(syncInterval);
     syncInterval = null;
+  }
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
+}
+
+/**
+ * Call this whenever a row is inserted into offline_queue. Debounces a burst of inserts
+ * into one flush and, while backing off after real failures, respects the current backoff
+ * delay instead of hammering an unreachable endpoint.
+ */
+export function scheduleFlush() {
+  if (debounceTimer) return;
+  const delay = backoffMs > 0 ? backoffMs : DEBOUNCE_MS;
+  debounceTimer = setTimeout(() => {
+    debounceTimer = null;
+    runFlushLoop();
+  }, delay);
+}
+
+async function runFlushLoop() {
+  if (isFlushing) return;
+  isFlushing = true;
+  try {
+    await evaluateConnection();
+
+    let result = await flushQueue();
+    while (result.flushed > 0) {
+      const depth = (db.prepare('SELECT COUNT(*) as c FROM offline_queue').get() as { c: number }).c;
+      if (depth === 0) break;
+      result = await flushQueue();
+    }
+
+    if (result.failed > 0) {
+      // Real congestion/outage - back off instead of retrying at a fixed cadence.
+      backoffMs = backoffMs > 0 ? Math.min(backoffMs * 2, MAX_BACKOFF_MS) : MIN_BACKOFF_MS;
+      scheduleFlush();
+    } else {
+      backoffMs = 0;
+    }
+
+    await pullCanonicalLibrary();
+  } finally {
+    isFlushing = false;
   }
 }
 
@@ -76,6 +130,15 @@ async function processItem(item: any): Promise<boolean> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-mcp-signature': signature },
         body
+      });
+      if (res.ok) success = true;
+    } else if (item.type === 'CHRONICLE') {
+      // payload is the full {module_id, event_type, timestamp, payload} envelope built by chronicleBridge.ts
+      const res = await fetch('http://127.0.0.1:8081/chronicle/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(1500)
       });
       if (res.ok) success = true;
     }
@@ -152,10 +215,4 @@ async function pullCanonicalLibrary() {
   } catch (err) {
     console.error("[OfflineSync] Error pulling canonical library:", err);
   }
-}
-
-async function processQueue() {
-  await evaluateConnection();
-  await flushQueue();
-  await pullCanonicalLibrary();
 }

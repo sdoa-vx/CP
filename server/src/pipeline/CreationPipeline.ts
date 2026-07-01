@@ -129,6 +129,7 @@ export async function runCreationPipeline(envelope: any): Promise<PipelineResult
   return { ok: isOk, errors, prUrl: prUrls[0] };
 }
 
+
 function buildAuditHeader(proposal: any, envelopeId: string): string {
   const now = new Date().toISOString();
   const ext = inferExtensionFromType(proposal.type, proposal.source.language);
@@ -150,4 +151,34 @@ function inferExtensionFromType(type: string, language: string): string {
   if (language === "yaml") return "yaml";
   // extend as needed
   return language || "txt";
+}
+
+export async function createModuleProposal(input: { filePath: string, source: string }): Promise<{ manifest: any, capabilitySurface: any, runtime: string }> {
+  const pathParts = input.filePath.split(/[\\/]/);
+  const basename = pathParts.pop() || "unknown";
+  const name = basename.split('.')[0] || "UnknownModule";
+  
+  let runtime = "TypeScript";
+  if (basename.endsWith(".py")) runtime = "Python";
+  if (basename.endsWith(".go")) runtime = "Go";
+  if (basename.endsWith(".rs")) runtime = "Rust";
+  if (basename.endsWith(".js")) runtime = "JavaScript";
+  
+  return {
+    manifest: {
+      id: `${name}.module`,
+      type: "module",
+      layer: 3,
+      runtime: runtime,
+      version: "1.0.0",
+      operationalRole: "extracted-innovation",
+      optimization: { priority: "speed" },
+      docs: `Auto-extracted from ${basename}`
+    },
+    capabilitySurface: {
+      inferredFrom: basename,
+      linesOfCode: input.source.split('\n').length
+    },
+    runtime: runtime
+  };
 }

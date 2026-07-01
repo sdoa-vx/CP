@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+type WindowSlice struct {
+	Timestamp time.Time
+	Score     float64
+}
+
 func startDriftLoop() {
 	ticker := time.NewTicker(10 * time.Second)
 	go func() {

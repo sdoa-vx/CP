@@ -1,21 +1,74 @@
 <script lang="ts">
   import { proposalStore } from '../state/stores';
   import { supabase } from '../supabase/client';
+  import { base } from '$app/paths';
 
   let selected: string | null = null;
 
   async function approve(id: string) {
-    await supabase
-      .from('proposals')
-      .update({ state: 'approved' })
-      .eq('id', id);
+    try {
+      const res = await fetch(`/fisp/v1/proposals/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision: 'approve', applyToCanonical: true, notes: 'Approved via dashboard' })
+      });
+      if (res.ok) {
+        proposalStore.update(s => {
+          if (s[id]) {
+            s[id].state = 'accepted';
+          }
+          return s;
+        });
+      } else {
+        console.error("Approve failed on backend:", await res.text());
+      }
+    } catch (err) {
+      console.error("Failed to approve proposal on backend:", err);
+    }
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('proposals')
+          .update({ state: 'approved' })
+          .eq('id', id);
+      } catch (err) {
+        console.warn("Failed to sync approval to Supabase:", err);
+      }
+    }
   }
 
   async function reject(id: string) {
-    await supabase
-      .from('proposals')
-      .update({ state: 'rejected' })
-      .eq('id', id);
+    try {
+      const res = await fetch(`/fisp/v1/proposals/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision: 'reject', applyToCanonical: false, notes: 'Rejected via dashboard' })
+      });
+      if (res.ok) {
+        proposalStore.update(s => {
+          if (s[id]) {
+            s[id].state = 'rejected';
+          }
+          return s;
+        });
+      } else {
+        console.error("Reject failed on backend:", await res.text());
+      }
+    } catch (err) {
+      console.error("Failed to reject proposal on backend:", err);
+    }
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('proposals')
+          .update({ state: 'rejected' })
+          .eq('id', id);
+      } catch (err) {
+        console.warn("Failed to sync rejection to Supabase:", err);
+      }
+    }
   }
 </script>
 
