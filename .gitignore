@@ -95,3 +95,13 @@ HANDOFF.md
 rescue.log
 _verify_pipeline.js
 tsc_out.txt
+
+# ---------------------------------------------------------
+# Vendored toolchains / SDKs / scratch build trees (Post-Audit Phase 0)
+# These are third-party or generated, not first-party source.
+# ---------------------------------------------------------
+wix314/
+git-filter-repo-2.47.0/
+build_staging/
+extract_vsix/
+portfolio/evolution/legacy/antigravity-sdk-python/
