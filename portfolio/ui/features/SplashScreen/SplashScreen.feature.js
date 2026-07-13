@@ -254,7 +254,7 @@
                         <span>P</span>
                     </div>
                     <div class="splash-title-wrap">
-                        <h2>ProtoAI</h2>
+                        <h2>ProtoAI <span style="font-size: 12px; color: #ff00ff; border: 1px solid #ff00ff; padding: 2px 6px; border-radius: 4px; vertical-align: middle; margin-left: 6px;">v1.5.0</span></h2>
                         <div class="splash-subtitle">Initialization & Launch Manager</div>
                     </div>
                     <div class="splash-status-indicator">

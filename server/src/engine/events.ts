@@ -1,4 +1,5 @@
 import { ServerResponse } from "node:http";
+import { EventEmitter } from "node:events";
 
 export const MANIFEST = {
   id: "events.ts",
@@ -36,6 +37,8 @@ const BUFFER_SIZE = 200;
 let seq = 0;
 const buffer: EngineEvent[] = [];
 const sseClients = new Set<ServerResponse>();
+const internalEmitter = new EventEmitter();
+const anyListeners = new Set<(eventName: string, payload: any) => void>();
 
 // ── Formatting ────────────────────────────────────────────────────────────────
 function formatMessage(type: string, payload: Record<string, unknown>): string {
@@ -73,11 +76,37 @@ export function emit(type: string, payload: Record<string, unknown> = {}) {
   buffer.push(event);
   if (buffer.length > BUFFER_SIZE) buffer.shift();
 
-  const data = `data: ${JSON.stringify(event)}\n\n`;
+  const dataStr = `event: ${type}\ndata: ${JSON.stringify(event.payload)}\n\n`;
   for (const res of sseClients) {
-    try { res.write(data); }
+    try { res.write(dataStr); }
     catch { sseClients.delete(res); }
   }
+
+  // Fire internal listeners
+  internalEmitter.emit(type, payload);
+  for (const listener of anyListeners) {
+    try { listener(type, payload); } catch (e) { /* ignore */ }
+  }
+}
+
+/** Subscribe to an event */
+export function subscribe(type: string, callback: (...args: any[]) => void) {
+  internalEmitter.on(type, callback);
+}
+
+/** Unsubscribe from an event */
+export function unsubscribe(type: string, callback: (...args: any[]) => void) {
+  internalEmitter.off(type, callback);
+}
+
+/** Subscribe to all events */
+export function subscribeAll(callback: (eventName: string, payload: any) => void) {
+  anyListeners.add(callback);
+}
+
+/** Unsubscribe from all events */
+export function unsubscribeAll(callback: (eventName: string, payload: any) => void) {
+  anyListeners.delete(callback);
 }
 
 /** Get recent events from the rolling buffer */
@@ -95,7 +124,7 @@ export function attachSseClient(res: ServerResponse) {
 
   // Send current buffer as backlog
   for (const event of getRecentEvents(50)) {
-    res.write(`data: ${JSON.stringify(event)}\n\n`);
+    res.write(`event: ${event.type}\ndata: ${JSON.stringify(event.payload)}\n\n`);
   }
 
   sseClients.add(res);
@@ -116,4 +145,8 @@ export const eventBus = {
   emitEvent(type: string, payload: Record<string, unknown> = {}) {
     emit(type, payload);
   },
+  subscribe,
+  unsubscribe,
+  subscribeAll,
+  unsubscribeAll
 };

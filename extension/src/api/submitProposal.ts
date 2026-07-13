@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import * as crypto from "crypto";
+import { resolveEndpoint } from "./cloudClient";
 
 export const MANIFEST = {
   id: "submitProposal.ts",
@@ -56,21 +58,30 @@ export async function submitProposal(
   innovation: InnovationPayload
 ): Promise<SubmitResult> {
   try {
-    const endpoint = vscode.workspace
-      .getConfiguration("sdoaMcp")
-      .get<string>("fispEndpoint") || "http://localhost:8080";
+    const endpoint = await resolveEndpoint();
+    const isCloud = endpoint.includes("tracksdoa.us");
+    const urlPath = isCloud ? "/api/proposals" : "/fisp/v1/proposals";
 
-    const envelope: FispProposalEnvelope = {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.toString() || "";
+    const workspaceHash = workspaceFolder 
+      ? crypto.createHash("sha256").update(workspaceFolder).digest("hex")
+      : "unknown-workspace";
+
+    const envelope: any = {
       proposalId: `prop-${Date.now()}`,
       origin: "vsx-extension",
       timestamp: new Date().toISOString(),
       innovations: [innovation],
     };
 
-    const response = await fetch(`${endpoint}/fisp/v1/proposals`, {
+    const payload = isCloud 
+      ? { ...envelope, workspace_hash: workspaceHash }
+      : envelope;
+
+    const response = await fetch(`${endpoint}${urlPath}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(envelope),
+      body: JSON.stringify(payload),
     });
 
     const json: any = await response.json();

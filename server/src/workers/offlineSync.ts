@@ -64,7 +64,12 @@ async function processItem(item: any): Promise<boolean> {
           // If it still throws a unique constraint error on another table, consider it already synced
           success = true;
         } else {
-          console.error(`[SDOA MCP] Supabase insert error on ${item.target}:`, result.error);
+          const errMsg = result.error.message || '';
+          if (errMsg.includes('fetch failed') || errMsg.includes('ECONNRESET') || errMsg.includes('Network request failed')) {
+            console.warn(`[SDOA MCP] Supabase network unreachable (${item.target}). Keeping in offline queue.`);
+          } else {
+            console.error(`[SDOA MCP] Supabase insert error on ${item.target}: ${errMsg}`);
+          }
         }
       } else {
         success = false; // Supabase not configured, keep in queue

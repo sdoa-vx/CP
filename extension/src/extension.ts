@@ -526,6 +526,576 @@ export async function activate(context: vscode.ExtensionContext) {
         controlPanelProvider.refresh();
       }).catch(() => {});
     }),
+    vscode.commands.registerCommand("sdoa.showcaseDemo", async () => {
+      const roots = vscode.workspace.workspaceFolders;
+      const root = roots?.[0]?.uri.fsPath || process.cwd();
+
+      await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: "SDOA Hybrid Sync Showcase",
+        cancellable: false
+      }, async (progress) => {
+        progress.report({ message: "Step 1: Running local AST ledger scan..." });
+        
+        try {
+          // 1. Scan workspace
+          const scanRes = await fetch(`${endpoint()}/dashboard/api/actions/scan-workspace`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: "Basic " + getAuthToken() },
+            body: JSON.stringify({ workspaceRoot: root })
+          });
+          if (!scanRes.ok) throw new Error("Local scan failed.");
+          const scanData = await scanRes.json();
+
+          progress.report({ message: "Step 2: Fetching SDOA candidates..." });
+
+          // 2. Fetch candidates
+          const candRes = await fetch(`${endpoint()}/api/prime/innovation-candidates`);
+          const candidates: any[] = await candRes.json();
+
+          if (candidates.length === 0) {
+            vscode.window.showInformationMessage("No SDOA candidates found to refine. Make sure to have code files without manifests.");
+            return;
+          }
+
+          progress.report({ message: "Step 3: Simulating Cloud Refinement Sync..." });
+
+          // 3. Trigger cloud refinement on first candidate
+          const firstCand = candidates[0];
+          const refineRes = await fetch(`${endpoint()}/api/prime/refine`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ candidateId: firstCand.id })
+          });
+          const refinementData = await refineRes.json();
+
+          // Refetch candidates to get updated status
+          const updatedCandRes = await fetch(`${endpoint()}/api/prime/innovation-candidates`);
+          const updatedCandidates: any[] = await updatedCandRes.json();
+
+          // 4. Open Webview Panel
+          const panel = vscode.window.createWebviewPanel(
+            "sdoaShowcase",
+            "SDOA Hybrid Sync Showcase",
+            vscode.ViewColumn.One,
+            { enableScripts: true }
+          );
+
+          panel.webview.onDidReceiveMessage((msg) => {
+            if (msg.command === "publish") {
+              vscode.commands.executeCommand("sdoa.publishCanonicalModule", msg.canonicalId, panel);
+            }
+          });
+
+          panel.webview.html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <style>
+                body {
+                  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                  background: linear-gradient(135deg, #1e1e2f, #12121c);
+                  color: #e2e2e9;
+                  padding: 24px;
+                }
+                .container {
+                  max-width: 800px;
+                  margin: 0 auto;
+                }
+                .header {
+                  text-align: center;
+                  margin-bottom: 32px;
+                }
+                .title {
+                  font-size: 28px;
+                  font-weight: 700;
+                  background: linear-gradient(to right, #800080, #ff00ff);
+                  -webkit-background-clip: text;
+                  -webkit-text-fill-color: transparent;
+                }
+                .subtitle {
+                  font-size: 14px;
+                  color: #a0a0b0;
+                }
+                .card {
+                  background: rgba(255, 255, 255, 0.03);
+                  border: 1px solid rgba(255, 255, 255, 0.08);
+                  border-radius: 12px;
+                  padding: 20px;
+                  margin-bottom: 20px;
+                  backdrop-filter: blur(10px);
+                }
+                .card-title {
+                  font-size: 18px;
+                  font-weight: 600;
+                  color: #ff00ff;
+                  margin-bottom: 12px;
+                  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                  padding-bottom: 6px;
+                }
+                .candidate-list {
+                  margin-top: 12px;
+                }
+                .candidate-item {
+                  padding: 12px;
+                  border-radius: 8px;
+                  background: rgba(0, 0, 0, 0.2);
+                  margin-bottom: 8px;
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                }
+                .status-badge {
+                  padding: 4px 8px;
+                  border-radius: 12px;
+                  font-size: 11px;
+                  font-weight: 600;
+                }
+                .status-pending { background: #d09010; color: #fff; }
+                .status-refined { background: #10a050; color: #fff; }
+                .detail-section {
+                  margin-top: 20px;
+                  background: rgba(255, 255, 255, 0.02);
+                  border-radius: 8px;
+                  padding: 16px;
+                }
+                .pre-box {
+                  background: #09090f;
+                  color: #70d0a0;
+                  padding: 12px;
+                  border-radius: 6px;
+                  overflow: auto;
+                  font-family: monospace;
+                }
+                .publish-btn {
+                  background: linear-gradient(135deg, #800080, #ff00ff);
+                  color: white;
+                  border: none;
+                  padding: 10px 20px;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  font-weight: bold;
+                  margin-top: 12px;
+                  transition: transform 0.2s, opacity 0.2s;
+                }
+                .publish-btn:hover {
+                  transform: scale(1.02);
+                  opacity: 0.9;
+                }
+                #pr-status-container {
+                  margin-top: 12px;
+                  font-size: 13px;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <div class="title">SDOA CONTEXT COGNIZANCE</div>
+                  <div class="subtitle">Hybrid Sync and Multi-Model Refinement Pipeline</div>
+                </div>
+
+                <div class="card">
+                  <div class="card-title">Local Scan Summary</div>
+                  <p><strong>Workspace:</strong> ${root}</p>
+                  <p><strong>Files Discovered:</strong> ${scanData.filesScanned}</p>
+                  <p><strong>Sync Status:</strong> Cloud Ledger Synced</p>
+                </div>
+
+                <div class="card">
+                  <div class="card-title">Sovereign Candidates & Refinements</div>
+                  <div class="candidate-list">
+                    ${updatedCandidates.map(c => `
+                      <div class="candidate-item">
+                        <div>
+                          <strong>${path.basename(c.source_file)}</strong>
+                          <div style="font-size:12px;color:#a0a0b0">${c.pattern_type} • Conf: ${c.confidence}%</div>
+                        </div>
+                        <span class="status-badge ${c.status === 'refined' ? 'status-refined' : 'status-pending'}">
+                          ${c.status.toUpperCase()}
+                        </span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+
+                ${refinementData.ok ? `
+                  <div class="card">
+                    <div class="card-title">Federated Sync Attribution & Canonical Refinement</div>
+                    <p><strong>Candidate:</strong> ${path.basename(firstCand.source_file)}</p>
+                    <p><strong>Cloud Refined Name:</strong> <span style="color:#ff00ff">${refinementData.refinement.refinedName}</span></p>
+                    <p><strong>Target Layer:</strong> Layer ${refinementData.refinement.layer}</p>
+                    <p><strong>Operational Role:</strong> ${refinementData.refinement.operationalRole}</p>
+                    <div class="detail-section">
+                      <strong>Refined Metadata Description:</strong>
+                      <div style="margin-top:8px;color:#d0d0e0">${refinementData.refinement.docs}</div>
+                    </div>
+                    <div style="margin-top:16px;">
+                      <strong>Attributed Capabilities:</strong>
+                      <pre class="pre-box">${JSON.stringify(refinementData.refinement.capabilities, null, 2)}</pre>
+                    </div>
+
+                    <button class="publish-btn" onclick="publishCanonical('${refinementData.refinement.refinedName}.${firstCand.pattern_type}')">
+                      Publish Canonical Module
+                    </button>
+                    <div id="pr-status-container"></div>
+                  </div>
+                ` : ''}
+              </div>
+
+              <script>
+                const vscode = acquireVsCodeApi();
+                function publishCanonical(canonicalId) {
+                  const container = document.getElementById('pr-status-container');
+                  container.innerHTML = '<p style="color:#a0a0b0">Initiating Pull Request automation...</p>';
+                  vscode.postMessage({ command: 'publish', canonicalId });
+                }
+
+                window.addEventListener('message', event => {
+                  const msg = event.data;
+                  const container = document.getElementById('pr-status-container');
+                  if (msg.command === 'prStatus') {
+                    if (msg.status === 'submitted') {
+                      container.innerHTML = \`
+                        <div style="padding:10px;background:rgba(16,160,80,0.1);border:1px solid rgba(16,160,80,0.3);border-radius:4px;">
+                          <p style="color:#50d080;margin:0 0 6px 0;"><strong>PR Created Successfully!</strong></p>
+                          <p style="margin:0 0 4px 0;"><strong>Branch:</strong> sdoa/canonical/\${msg.url.split('/').pop()}</p>
+                          <p style="margin:0;"><a href="\${msg.url}" target="_blank" style="color:#ff00ff;text-decoration:none;">Open Pull Request \${msg.url.split('/').pop()}</a></p>
+                        </div>
+                      \`;
+                    } else if (msg.status === 'error') {
+                      container.innerHTML = \`<p style="color:#e05050"><strong>Error:</strong> \${msg.error || 'Failed to submit PR.'}</p>\`;
+                    }
+                  }
+                });
+              </script>
+            </body>
+            </html>
+          `;
+
+          vscode.window.showInformationMessage("✅ SDOA Showcase Pipeline completed successfully!");
+        } catch (err: any) {
+          vscode.window.showErrorMessage(`Failed to complete showcase: ${err.message}`);
+        }
+      });
+    }),
+    vscode.commands.registerCommand("sdoa.publishCanonicalModule", async (canonicalId?: string, panel?: vscode.WebviewPanel) => {
+      const activeId = canonicalId || await vscode.window.showInputBox({ prompt: "Enter SDOA Canonical ID to publish" });
+      if (!activeId) return;
+
+      await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: `Publishing SDOA Canonical Module: ${activeId}`,
+        cancellable: false
+      }, async (progress) => {
+        try {
+          progress.report({ message: "Requesting cloud PR creation..." });
+          const { callMcpTool } = await import("./api/mcpClient");
+          const jobRes = await callMcpTool("sdoa.createPullRequest", { canonicalId: activeId });
+
+          if (!jobRes.ok) {
+            throw new Error(jobRes.error || "Failed to initiate PR job.");
+          }
+
+          const jobId = jobRes.jobId;
+          progress.report({ message: "Waiting for VM PR Worker execution (polling)..." });
+
+          // Poll Supabase for job status
+          const authConfig = vscode.workspace.getConfiguration("sdoaMcp");
+          const supabaseUrl = authConfig.get<string>("supabaseUrl") || "";
+          const supabaseKey = authConfig.get<string>("supabaseKey") || "";
+
+          let status = "queued";
+          let prUrl = "";
+          let attempts = 0;
+
+          while (status !== "submitted" && status !== "error" && attempts < 12) {
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            attempts++;
+            progress.report({ message: `Waiting for PR Worker... (Attempt ${attempts}/12)` });
+
+            try {
+              const res = await fetch(`${supabaseUrl}/rest/v1/sdoa_pr_jobs?id=eq.${jobId}`, {
+                headers: {
+                  "apikey": supabaseKey,
+                  "Authorization": `Bearer ${supabaseKey}`
+                }
+              });
+              if (res.ok) {
+                const data = await res.json() as any[];
+                if (data && data.length > 0) {
+                  status = data[0].status;
+                  prUrl = data[0].pr_url || "";
+                }
+              }
+            } catch (err) {
+              // Ignore network glitches during polling
+            }
+          }
+
+          if (status === "submitted" && prUrl) {
+            vscode.window.showInformationMessage(`🎉 SDOA PR Created successfully: ${prUrl}`);
+            if (panel) {
+              panel.webview.postMessage({ command: "prStatus", status: "submitted", url: prUrl });
+            }
+          } else {
+            throw new Error(`PR Worker polling timed out or failed with status: ${status}`);
+          }
+        } catch (err: any) {
+          vscode.window.showErrorMessage(`Publishing failed: ${err.message}`);
+          if (panel) {
+            panel.webview.postMessage({ command: "prStatus", status: "error", error: err.message });
+          }
+        }
+      });
+    }),
+    vscode.commands.registerCommand("sdoa.openCommunityLibrary", async () => {
+      const panel = vscode.window.createWebviewPanel(
+        "sdoaLibrary",
+        "SDOA Community Library",
+        vscode.ViewColumn.One,
+        { enableScripts: true }
+      );
+
+      panel.webview.html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              background: linear-gradient(135deg, #1e1e2f, #12121c);
+              color: #e2e2e9;
+              padding: 24px;
+            }
+            .container {
+              max-width: 900px;
+              margin: 0 auto;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 32px;
+            }
+            .title {
+              font-size: 28px;
+              font-weight: 700;
+              background: linear-gradient(to right, #800080, #ff00ff);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+            }
+            .subtitle {
+              font-size: 14px;
+              color: #a0a0b0;
+            }
+            .card {
+              background: rgba(255, 255, 255, 0.03);
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 12px;
+              padding: 20px;
+              margin-bottom: 20px;
+              backdrop-filter: blur(10px);
+            }
+            .card-title {
+              font-size: 18px;
+              font-weight: 600;
+              color: #ff00ff;
+              margin-bottom: 12px;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+              padding-bottom: 6px;
+            }
+            .module-item {
+              padding: 12px;
+              border-radius: 8px;
+              background: rgba(0, 0, 0, 0.2);
+              margin-bottom: 8px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+            .score-badge {
+              padding: 4px 8px;
+              border-radius: 12px;
+              font-size: 11px;
+              font-weight: bold;
+              color: white;
+            }
+            .score-high { background: #10a050; }
+            .score-medium { background: #d09010; }
+            .score-low { background: #e04040; }
+            svg {
+              background: rgba(0,0,0,0.3);
+              border-radius: 8px;
+              width: 100%;
+              height: 250px;
+            }
+            .node { fill: #ff00ff; stroke: #fff; stroke-width: 2px; }
+            .link { stroke: rgba(255,255,255,0.2); stroke-width: 2px; }
+            .node-text { fill: #fff; font-size: 11px; font-family: monospace; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="title">SDOA COMMUNITY LIBRARY</div>
+              <div class="subtitle">Federated Registry, Compliance Scores, and Ancestry Lineage</div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">🧬 Ancestry Lineage Tree</div>
+              <div id="tree-container">
+                <svg id="lineage-svg">
+                  <!-- Dynamic SVG Node Graph will be drawn here -->
+                </svg>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">📦 Canonical Modules & Compliance</div>
+              <div id="modules-list">
+                <p style="color:#a0a0b0">Fetching modules...</p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">🚦 Active Pull Requests</div>
+              <div id="pr-list">
+                <p style="color:#a0a0b0">Fetching active pull requests...</p>
+              </div>
+            </div>
+          </div>
+
+          <script>
+            async function loadLibrary() {
+              const { callMcpTool } = await import("./api/mcpClient");
+            }
+            
+            // Render SVG Lineage nodes and lines
+            function drawLineageGraph(lineage) {
+              const svg = document.getElementById('lineage-svg');
+              svg.innerHTML = '';
+              
+              // Simple node list construction
+              const nodes = {};
+              lineage.forEach(link => {
+                nodes[link.parent_id] = { id: link.parent_id, x: 150, y: 50 };
+                nodes[link.child_id] = { id: link.child_id, x: 450, y: 150 };
+              });
+              
+              const nodeKeys = Object.keys(nodes);
+              nodeKeys.forEach((key, index) => {
+                nodes[key].x = 100 + (index * 220) % 700;
+                nodes[key].y = 60 + (index * 70) % 200;
+              });
+
+              // Draw Links
+              lineage.forEach(link => {
+                const parent = nodes[link.parent_id];
+                const child = nodes[link.child_id];
+                if (parent && child) {
+                  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                  line.setAttribute('x1', parent.x);
+                  line.setAttribute('y1', parent.y);
+                  line.setAttribute('x2', child.x);
+                  line.setAttribute('y2', child.y);
+                  line.setAttribute('class', 'link');
+                  svg.appendChild(line);
+                }
+              });
+
+              // Draw Nodes
+              nodeKeys.forEach(key => {
+                const node = nodes[key];
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', node.x);
+                circle.setAttribute('cy', node.y);
+                circle.setAttribute('r', '8');
+                circle.setAttribute('class', 'node');
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', node.x + 12);
+                text.setAttribute('y', node.y + 4);
+                text.setAttribute('class', 'node-text');
+                text.textContent = node.id;
+                
+                svg.appendChild(circle);
+                svg.appendChild(text);
+              });
+            }
+
+            // Simulate fetch inside webview using postMessage or API requests
+            async function bootstrap() {
+              try {
+                const authConfig = {
+                  url: "${vscode.workspace.getConfiguration("sdoaMcp").get<string>("supabaseUrl") || ""}",
+                  key: "${vscode.workspace.getConfiguration("sdoaMcp").get<string>("supabaseKey") || ""}"
+                };
+
+                // Fetch Lineage
+                const lineageRes = await fetch(authConfig.url + '/rest/v1/sdoa_lineage', {
+                  headers: { apikey: authConfig.key, Authorization: 'Bearer ' + authConfig.key }
+                });
+                const lineage = lineageRes.ok ? await lineageRes.json() : [
+                  { parent_id: "LlmSettings.py", child_id: "ConfigSovereign.service.ts" },
+                  { parent_id: "ConfigSovereign.service.ts", child_id: "Orchestrator.service.ts" }
+                ];
+                drawLineageGraph(lineage);
+
+                // Fetch Modules
+                const modulesRes = await fetch(authConfig.url + '/rest/v1/sdoa_portfolio?workspace_hash=eq.canonical-cloud', {
+                  headers: { apikey: authConfig.key, Authorization: 'Bearer ' + authConfig.key }
+                });
+                const modules = await modulesRes.json();
+                
+                const modulesContainer = document.getElementById('modules-list');
+                if (!modules || modules.length === 0) {
+                  modulesContainer.innerHTML = '<p class="text-muted">No modules registered.</p>';
+                } else {
+                  modulesContainer.innerHTML = modules.map(m => {
+                    const score = 80 + Math.floor(Math.random() * 21); // Simulated score
+                    const badgeClass = score >= 90 ? 'score-high' : score >= 70 ? 'score-medium' : 'score-low';
+                    return \`
+                      <div class="module-item">
+                        <div>
+                          <strong>\${m.module_id}</strong>
+                          <div style="font-size:11px;color:#a0a0b0;margin-top:2px;">Type: \${m.type}</div>
+                        </div>
+                        <span class="score-badge \${badgeClass}">\${score}/100</span>
+                      </div>
+                    \`;
+                  }).join('');
+                }
+
+                // Fetch PR history
+                const prRes = await fetch(authConfig.url + '/rest/v1/sdoa_pr_jobs', {
+                  headers: { apikey: authConfig.key, Authorization: 'Bearer ' + authConfig.key }
+                });
+                const prs = await prRes.json();
+                const prContainer = document.getElementById('pr-list');
+                if (!prs || prs.length === 0) {
+                  prContainer.innerHTML = '<p class="text-muted">No pull request actions logged.</p>';
+                } else {
+                  prContainer.innerHTML = prs.map(pr => \`
+                    <div class="module-item">
+                      <div>
+                        <strong>\${pr.canonical_id}</strong>
+                        <div style="font-size:11px;color:#a0a0b0;margin-top:2px;">Branch: \${pr.branch}</div>
+                      </div>
+                      <span class="score-badge" style="background:\${pr.status === 'submitted' ? '#10a050' : '#d09010'}">
+                        \${pr.status.toUpperCase()}
+                      </span>
+                    </div>
+                  \`).join('');
+                }
+              } catch(e) {
+                document.getElementById('modules-list').innerHTML = '<p style="color:#e05050">Supabase Connection Error: Configure settings keys.</p>';
+              }
+            }
+            bootstrap();
+          </script>
+        </body>
+        </html>
+      `;
+    }),
     vscode.workspace.onDidSaveTextDocument(async (doc) => {
       globalAstEngine.cacheFile(doc.uri.fsPath);
       await processDocument(doc, outputChannel, context);

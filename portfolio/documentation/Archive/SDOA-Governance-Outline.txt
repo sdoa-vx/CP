@@ -476,6 +476,19 @@ Known ratified amendments:
     Per-type targets: Primitives 150-250, Features 200-350, Adapters 200-350,
     Workflows 200-400, Repositories 200-400.
 
+--------------------------------------------------------------------------------
+SECTION 11 — HYBRID INFRASTRUCTURE & CLOUD WORKER GOVERNANCE
+--------------------------------------------------------------------------------
+
+11.1 Cloud Worker Isolation
+---------------------------
+The cloud worker (mcp-worker) is explicitly classified as external serverless routing infrastructure and falls OUTSIDE the local SDOA constraint-solving validation checks. 
+
+Rules:
+  - It does not require SDOA manifest headers on its routing/entrypoint files.
+  - It is hosted on Cloudflare Workers (V8 isolate serverless platform) and is not subject to directory placement or line-limit constraints of local sovereigns.
+  - It communicates with the SDOA local engine strictly via the Federated Innovation Sync Protocol (FISP) JSON envelopes.
+
 ================================================================================
 END OF SDOA GOVERNANCE OUTLINE v5.0
 ================================================================================

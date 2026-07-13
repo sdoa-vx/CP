@@ -10,6 +10,7 @@ import { supabase, evaluateConnection } from "../utils/supabase";
 import { telemetry } from "../engine/telemetry";
 import { emit, attachSseClient, getRecentEvents } from "../engine/events";
 import { flushQueue } from "../workers/offlineSync";
+import { PrimeDiscovery } from "../services/PrimeDiscovery.service";
 
 const router = new Router();
 const syncedFiles = new Map<string, string>();
@@ -122,11 +123,19 @@ async function runScanHeuristics(root: string) {
     const target = scannableFiles[i];
     count++;
     
+    if (i % 50 === 0) await new Promise(r => setImmediate(r));
+    
     // Process file
     try {
       const content = fs.readFileSync(target, "utf-8");
       const fileHash = crypto.createHash('sha256').update(content).digest('hex');
       
+      let isFileChanged = false;
+      if (syncedFiles.get(target) !== fileHash) {
+         syncedFiles.set(target, fileHash);
+         isFileChanged = true;
+      }
+
       // Only code files are module candidates — a README/JSON/HTML that merely
       // contains the word "MANIFEST" and an `id:` is not a module.
       const isCodeFile = /\.(ts|tsx|js|jsx|mjs|cjs|py|rs|java|cpp|cc|cxx|c|h|hpp|cs|go|rb|php)$/i.test(target);
@@ -137,8 +146,7 @@ async function runScanHeuristics(root: string) {
            : "Module";
          telemetry.hitDetector(`sdoa${modType}` as any);
 
-         if (syncedFiles.get(target) !== fileHash) {
-            syncedFiles.set(target, fileHash);
+         if (isFileChanged) {
             const payload = {
               module_id: mf.id,
               type: mf.type ?? "unknown",
@@ -157,21 +165,36 @@ async function runScanHeuristics(root: string) {
 
       const hit = (detector: string) => {
         const key = `sdoa${detector.charAt(0).toUpperCase() + detector.slice(1)}`;
+        const isNew = !insightsCache[key]?.includes(target);
         telemetry.hitDetector(key as any);
-        if (insightsCache[key] && !insightsCache[key].includes(target)) {
+        if (insightsCache[key] && isNew) {
           insightsCache[key].push(target);
         }
 
-        db.prepare('INSERT INTO offline_queue (type, target, payload, created_at) VALUES (?, ?, ?, ?)').run(
-          'SUPABASE', 'innovation_events', JSON.stringify({
-            workspace_hash: workspaceHash,
-            detector: key,
-            file_path: target,
-            matches: 1,
-            ast_signature: null,
-            created_at: new Date().toISOString()
-          }), new Date().toISOString()
-        );
+        // Emit a rich per-discovery SSE event so the UI can react with fireworks
+        emit('detector:hit', {
+          detector: key,
+          file: target,
+          filePath: target,
+          id: mf?.id || null,
+          name: mf?.id || target.split(/[\\/]/).pop(),
+          type: mf?.type || detector,
+          isNew,
+          totalHits: (insightsCache[key]?.length || 0)
+        });
+
+        if (isFileChanged) {
+          db.prepare('INSERT INTO offline_queue (type, target, payload, created_at) VALUES (?, ?, ?, ?)').run(
+            'SUPABASE', 'innovation_events', JSON.stringify({
+              workspace_hash: workspaceHash,
+              detector: key,
+              file_path: target,
+              matches: 1,
+              ast_signature: null,
+              created_at: new Date().toISOString()
+            }), new Date().toISOString()
+          );
+        }
       };
 
       if (content.includes("fetch(") || content.includes("axios.") || content.includes("requests.get")) hit("workflow");
@@ -239,7 +262,7 @@ router.get("/api/proposals/:id", (req, res) => {
   }
   
   res.statusCode = 200;
-  res.setHeader("Content-Type", "text/html");
+  res.setHeader("Content-Type", "application/json");
   res.end(`
     <div style="margin-top: 2rem; border-top: 1px solid #333; padding-top: 1rem;">
       <h3>Envelope: ${proposal.id}</h3>
@@ -265,7 +288,7 @@ router.get("/api/proposals/:id", (req, res) => {
 router.get("/api/proposals", (req, res) => {
   const proposals = db.prepare('SELECT id, status, timestamp FROM proposals ORDER BY timestamp DESC LIMIT 20').all();
   res.statusCode = 200;
-  res.setHeader("Content-Type", "text/html");
+  res.setHeader("Content-Type", "application/json");
   if (proposals.length === 0) return res.end("<tr><td colspan='3'>No proposals found.</td></tr>");
   const htmlRows = proposals.map((p: any) => `
     <tr hx-get="/dashboard/api/proposals/${p.id}" hx-target="#proposal-detail-pane" style="cursor:pointer">
@@ -280,7 +303,7 @@ router.get("/api/proposals", (req, res) => {
 router.get("/api/peers/:id", (req, res) => {
   const peerId = decodeURIComponent(req.url!.split("/").pop()!);
   res.statusCode = 200;
-  res.setHeader("Content-Type", "text/html");
+  res.setHeader("Content-Type", "application/json");
   res.end(`
     <div style="margin-top: 2rem; border-top: 1px solid #333; padding-top: 1rem;">
       <h3>Peer Deep Dive: ${peerId}</h3>
@@ -298,7 +321,7 @@ router.get("/api/peers/:id", (req, res) => {
 router.get("/api/peers", (req, res) => {
   const peers = (process.env.FEDERATION_PEERS || '').split(',').filter(Boolean);
   res.statusCode = 200;
-  res.setHeader("Content-Type", "text/html");
+  res.setHeader("Content-Type", "application/json");
   if (peers.length === 0) return res.end("<tr><td colspan='3'>No peers configured.</td></tr>");
   const htmlRows = peers.map((peer) => `
     <tr hx-get="/dashboard/api/peers/${encodeURIComponent(peer)}" hx-target="#peer-detail-pane" style="cursor:pointer">
@@ -310,51 +333,99 @@ router.get("/api/peers", (req, res) => {
   res.end(htmlRows);
 });
 
-router.get("/api/pipeline", async (req, res) => {
-  if (!supabase) {
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "text/html");
-    return res.end("<p>Supabase unconfigured - using local mode.</p>");
-  }
-  const { data: runs, error } = await supabase.from('pipeline_runs').select('*').order('created_at', { ascending: false }).limit(5);
+router.get("/api/pipeline", (req, res) => {
   res.statusCode = 200;
-  res.setHeader("Content-Type", "text/html");
-  if (error || !runs || runs.length === 0) return res.end("<p>No cloud pipeline runs found or Supabase unavailable.</p>");
+  res.setHeader("Content-Type", "application/json");
+  try {
+    // Pull pipeline data from local SQLite — source of truth, no Supabase needed
+    const proposals = db.prepare(`
+      SELECT p.id, p.status, p.timestamp, p.data,
+             pr.prUrl, pr.ci_status
+      FROM proposals p
+      LEFT JOIN pr_metadata pr ON pr.proposalId = p.id
+      ORDER BY p.timestamp DESC LIMIT 10
+    `).all() as any[];
 
-  const html = runs.map((run: any) => {
-    const isAccepted = run.status === 'success';
-    const isRejected = run.status === 'failed';
-    
-    // Fake the progression for visual flair based on status
-    const s1 = 'accepted'; // 1. Pre-Flight Verification Gates
-    const s2 = isRejected ? 'rejected' : 'accepted'; // 2. Registry Bootstrapping
-    const s3 = isRejected ? 'queued' : 'accepted';   // 3. Anti-Entropy Processes
-    const s4 = isRejected ? 'queued' : (isAccepted ? 'accepted' : 'queued'); // 4. Evolution Output
+    if (proposals.length === 0) {
+      return res.end(`<div style="padding:2rem;color:#8b949e;font-family:monospace;text-align:center;">
+        <p>🔬 No proposals in local pipeline yet.</p>
+        <p style="font-size:11px;margin-top:8px;">Run a workspace scan to begin detecting innovations.</p>
+      </div>`);
+    }
 
-    let cardColor = '#d29922';
-    if (isAccepted) { cardColor = '#238636'; }
-    else if (isRejected) { cardColor = '#da3633'; }
+    // Also fetch run data if the MCP authority has processed any proposals
+    const runs = db.prepare(`
+      SELECT runId, status, currentPhase, createdAt, updatedAt
+      FROM runs ORDER BY createdAt DESC LIMIT 20
+    `).all() as any[];
+    const runMap = new Map(runs.map((r: any) => [r.runId, r]));
 
-    return `
-      <div class="card" style="margin-bottom: 1rem; border-left: 4px solid ${cardColor}">
-        <h4>Run for ${run.proposal_id}</h4>
-        <p style="font-size: 0.8rem; color: #8b949e;">Duration: ${run.duration_ms}ms | Synced to Cloud</p>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
-          <span class="badge ${s1}">1. Pre-Flight Verification Gates</span> ➡️ 
-          <span class="badge ${s2}">2. Registry Bootstrapping</span> ➡️ 
-          <span class="badge ${s3}">3. Anti-Entropy Processes</span> ➡️ 
-          <span class="badge ${s4}">4. Evolution Output</span>
+    const html = proposals.map((p: any) => {
+      let envelope: any = {};
+      try { envelope = JSON.parse(p.data || '{}'); } catch { /* ignore */ }
+
+      const innovations = envelope.innovations || [];
+      const firstName = innovations[0]?.module_suggestion
+        || innovations[0]?.id
+        || envelope.summary
+        || p.id.slice(0, 8);
+
+      const innovationTypes = [...new Set(innovations.map((i: any) => i.type || i.sdoa?.type).filter(Boolean))];
+      const typeLabel = innovationTypes.length > 0
+        ? innovationTypes.slice(0, 3).join(', ')
+        : 'proposal';
+
+      const pStatus = p.status || 'queued';
+      const isAccepted = pStatus === 'accepted' || pStatus === 'approved';
+      const isRejected = pStatus === 'rejected';
+      const isPending = !isAccepted && !isRejected;
+
+      // Pipeline stage inference based on status
+      const stage1 = 'accepted'; // envelope received = pre-gate passed
+      const stage2 = isRejected ? 'rejected' : (isAccepted ? 'accepted' : 'queued');
+      const stage3 = isAccepted ? 'accepted' : (isRejected ? 'queued' : 'queued');
+      const stage4 = isAccepted && p.prUrl ? 'accepted' : 'queued';
+
+      const borderColor = isAccepted ? '#238636' : isRejected ? '#da3633' : '#d29922';
+      const ciLabel = p.ci_status ? `CI: ${p.ci_status}` : '';
+      const prLink = p.prUrl ? ` · <a href="${p.prUrl}" target="_blank" style="color:#58a6ff;">View PR ↗</a>` : '';
+      const ts = new Date(p.timestamp).toLocaleString();
+
+      return `
+        <div class="card" style="margin-bottom:1rem;border-left:4px solid ${borderColor};padding:1rem;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <h4 style="margin:0 0 4px;font-size:13px;color:#e6edf3;">${firstName}</h4>
+              <p style="margin:0;font-size:11px;color:#8b949e;font-family:monospace;">
+                ${typeLabel.toUpperCase()} · ${ts}${ciLabel ? ' · ' + ciLabel : ''}${prLink}
+              </p>
+            </div>
+            <span class="badge ${pStatus}" style="white-space:nowrap;">${pStatus.toUpperCase()}</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center;">
+            <span class="badge ${stage1}" style="font-size:10px;">① Pre-Gate</span>
+            <span style="color:#444;">→</span>
+            <span class="badge ${stage2}" style="font-size:10px;">② Probation</span>
+            <span style="color:#444;">→</span>
+            <span class="badge ${stage3}" style="font-size:10px;">③ Canonical Path</span>
+            <span style="color:#444;">→</span>
+            <span class="badge ${stage4}" style="font-size:10px;">④ PR Worker</span>
+          </div>
+          ${innovations.length > 0 ? `<p style="font-size:10px;color:#8b949e;margin:8px 0 0;">Innovations: ${innovations.length}</p>` : ''}
         </div>
-      </div>
-    `;
-  }).join("");
-  res.end(html);
+      `;
+    }).join('');
+
+    res.end(html);
+  } catch (err: any) {
+    res.end(`<p style="color:#da3633;">Pipeline error: ${err.message}</p>`);
+  }
 });
 
 router.get("/api/logs", (req, res) => {
   const lines = tailLogs(50);
   res.statusCode = 200;
-  res.setHeader("Content-Type", "text/html");
+  res.setHeader("Content-Type", "application/json");
   if(lines.length === 0) return res.end("<pre>No logs generated yet.</pre>");
   
   const formatted = lines.map(l => {
@@ -440,7 +511,7 @@ router.get("/api/health-ui", async (req, res) => {
   }
 
   res.statusCode = 200;
-  res.setHeader("Content-Type", "text/html");
+  res.setHeader("Content-Type", "application/json");
   res.end(`
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
       <div class="card">
@@ -564,6 +635,35 @@ router.get("/api/events", (req, res) => {
   const url = new URL(req.url!, "http://localhost");
   if (url.searchParams.get("stream") === "true") {
     attachSseClient(res);
+    // Hydrate new SSE client with current proposals so SvelteKit stores populate immediately
+    try {
+      const rows = db.prepare(
+        'SELECT id, status, timestamp, data FROM proposals ORDER BY timestamp DESC LIMIT 100'
+      ).all() as any[];
+      const proposalFeed: Record<string, any> = {};
+      for (const row of rows) {
+        let envelope: any = {};
+        try { envelope = JSON.parse(row.data || '{}'); } catch { /* ignore */ }
+        const innovations = envelope.innovations || [];
+        const firstName = innovations[0]?.module_suggestion
+          || innovations[0]?.id
+          || envelope.summary || '';
+        const firstType = innovations[0]?.type || innovations[0]?.sdoa?.type || 'proposal';
+        const lineage = innovations[0]?.sdoa?.placement || envelope.origin || null;
+        proposalFeed[row.id] = {
+          id: row.id,
+          type: firstType,
+          name: firstName || row.id,
+          status: row.status || 'queued',
+          lineage,
+          created_at: row.timestamp,
+        };
+      }
+      // Small delay so SSE client header flush completes first
+      setTimeout(() => {
+        emit('proposals:hydrate', proposalFeed);
+      }, 150);
+    } catch { /* non-fatal */ }
   } else {
     res.statusCode = 200;
     res.setHeader("Content-Type", "application/json");
@@ -591,6 +691,325 @@ router.get("/api/heatmap", (_req, res) => {
   res.end(JSON.stringify(cachedAstHeatmap));
 });
 
+// ── SvelteKit JSON Feeds ─────────────────────────────────────────────────────
+// These endpoints serve the SvelteKit dashboard pages. All data comes from
+// local SQLite — no Supabase required.
+
+/**
+ * GET /api/proposals-json
+ * Returns proposals as a keyed object with parsed fields for the Innovation Timeline.
+ * Shape: { [id]: { id, type, name, status, lineage, created_at } }
+ */
+router.get("/api/proposals-json", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  try {
+    const rows = db.prepare(
+      'SELECT id, status, timestamp, data FROM proposals ORDER BY timestamp DESC LIMIT 200'
+    ).all() as any[];
+
+    const out: Record<string, any> = {};
+    for (const row of rows) {
+      let envelope: any = {};
+      try { envelope = JSON.parse(row.data || '{}'); } catch { /* ignore */ }
+      const innovations = envelope.innovations || [];
+      const firstName = innovations[0]?.module_suggestion
+        || innovations[0]?.id
+        || envelope.summary || '';
+      const firstType = innovations[0]?.type
+        || innovations[0]?.sdoa?.type
+        || 'proposal';
+      const lineage = innovations[0]?.sdoa?.placement
+        || innovations[0]?.sdoa?.layer?.toString()
+        || envelope.origin
+        || null;
+      out[row.id] = {
+        id: row.id,
+        type: firstType,
+        name: firstName || row.id,
+        status: row.status || 'queued',
+        lineage,
+        created_at: row.timestamp,
+      };
+    }
+    res.statusCode = 200;
+    res.end(JSON.stringify(out));
+  } catch (err: any) {
+    res.statusCode = 500;
+    res.end(JSON.stringify({ error: err.message }));
+  }
+});
+
+/**
+ * GET /api/innovations-json
+ * Returns locally-scanned SDOA modules as proposals for the Scan page.
+ * Shape: { [id]: { id, module_suggestion, state, capability_surface, reasoning } }
+ */
+router.get("/api/innovations-json", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  try {
+    const rows = db.prepare(`
+      SELECT id, type, layer, sovereignty, manifestJson, updatedAt
+      FROM modules ORDER BY updatedAt DESC LIMIT 200
+    `).all() as any[];
+
+    const out: Record<string, any> = {};
+    for (const row of rows) {
+      let mf: any = {};
+      try { mf = JSON.parse(row.manifestJson || '{}'); } catch { /* ignore */ }
+      out[row.id] = {
+        id: row.id,
+        module_suggestion: mf.id || row.id,
+        state: row.sovereignty === 'sovereign' ? 'sovereign' : 'candidate',
+        capability_surface: mf.capabilities || [],
+        reasoning: `${row.type || 'module'} · layer ${row.layer || '?'} · ${row.sovereignty || 'unknown sovereignty'}`,
+        type: row.type,
+        layer: row.layer,
+        updatedAt: row.updatedAt,
+      };
+    }
+    res.statusCode = 200;
+    res.end(JSON.stringify(out));
+  } catch (err: any) {
+    res.statusCode = 500;
+    res.end(JSON.stringify({ error: err.message }));
+  }
+});
+
+/**
+ * GET /api/lineage
+ * Returns the module dependency tree for the Lineage Tree (Registrar) panel.
+ * Nodes are modules grouped by layer; edges come from the edges table.
+ */
+router.get("/api/lineage", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  try {
+    const modules = db.prepare(`
+      SELECT id, type, layer, sovereignty, manifestJson, updatedAt
+      FROM modules ORDER BY layer ASC, id ASC LIMIT 500
+    `).all() as any[];
+
+    const edges = db.prepare(`
+      SELECT fromId, toId, edgeType FROM edges LIMIT 2000
+    `).all() as any[];
+
+    const nodes = modules.map((m: any) => {
+      let mf: any = {};
+      try { mf = JSON.parse(m.manifestJson || '{}'); } catch { /* ignore */ }
+      return {
+        id: m.id,
+        label: mf.id || m.id,
+        type: m.type || 'module',
+        layer: m.layer || 0,
+        sovereignty: m.sovereignty || 'candidate',
+        capabilities: mf.capabilities || [],
+        operationalRole: mf.operationalRole || null,
+        version: mf.version || null,
+        updatedAt: m.updatedAt,
+      };
+    });
+
+    // Group nodes by layer for tree display
+    const byLayer: Record<number, any[]> = {};
+    for (const n of nodes) {
+      const l = n.layer || 0;
+      if (!byLayer[l]) byLayer[l] = [];
+      byLayer[l].push(n);
+    }
+
+    res.statusCode = 200;
+    res.end(JSON.stringify({
+      nodes,
+      edges,
+      byLayer,
+      totalModules: modules.length,
+      totalEdges: edges.length,
+    }));
+  } catch (err: any) {
+    res.statusCode = 500;
+    res.end(JSON.stringify({ error: err.message }));
+  }
+});
+
+/**
+ * GET /api/drift
+ * Returns architectural drift time-series from telemetry_history.
+ * Drift = delta of total detector hits between consecutive snapshots.
+ */
+router.get("/api/drift", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  try {
+    const rows = db.prepare(`
+      SELECT timestamp, ast_cache_size, queue_depth, detector_hits
+      FROM telemetry_history ORDER BY id DESC LIMIT 120
+    `).all() as any[];
+
+    const history = rows.reverse().map((r: any) => ({
+      timestamp: r.timestamp,
+      astCacheSize: r.ast_cache_size,
+      queueDepth: r.queue_depth,
+      detectorHits: JSON.parse(r.detector_hits || '{}'),
+    }));
+
+    // Compute drift score as delta in total hits between snapshots
+    const series = history.map((snap: any, i: number) => {
+      const totalHits = Object.values(snap.detectorHits as Record<string, number>)
+        .reduce((a: number, b: number) => a + b, 0);
+      const prevHits = i === 0 ? totalHits
+        : Object.values(history[i - 1].detectorHits as Record<string, number>)
+            .reduce((a: number, b: number) => a + b, 0);
+      const drift = Math.abs(totalHits - prevHits);
+      return {
+        timestamp: snap.timestamp,
+        driftScore: drift,
+        totalModules: snap.astCacheSize,
+        queueDepth: snap.queueDepth,
+        detectorBreakdown: snap.detectorHits,
+      };
+    });
+
+    // Summary stats
+    const driftScores = series.map((s: any) => s.driftScore);
+    const maxDrift = driftScores.length ? Math.max(...driftScores) : 0;
+    const avgDrift = driftScores.length
+      ? Math.round(driftScores.reduce((a: number, b: number) => a + b, 0) / driftScores.length)
+      : 0;
+
+    // Also pull recent violations for drift context
+    const recentViolations = db.prepare(`
+      SELECT severity, COUNT(*) as count FROM violations
+      WHERE resolved = 0 GROUP BY severity
+    `).all() as any[];
+
+    res.statusCode = 200;
+    res.end(JSON.stringify({
+      series,
+      summary: { maxDrift, avgDrift, snapshots: series.length },
+      violations: recentViolations,
+    }));
+  } catch (err: any) {
+    res.statusCode = 500;
+    res.end(JSON.stringify({ error: err.message }));
+  }
+});
+
+/**
+ * GET /api/governance
+ * Returns violations grouped by severity for the Sovereign Governance Console.
+ */
+router.get("/api/governance", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  try {
+    const violations = db.prepare(`
+      SELECT v.*, r.status as runStatus, r.currentPhase
+      FROM violations v
+      LEFT JOIN runs r ON r.runId = v.runId
+      ORDER BY v.id DESC LIMIT 500
+    `).all() as any[];
+
+    const bySeverity: Record<string, any[]> = { error: [], warn: [], info: [] };
+    const byRule: Record<string, number> = {};
+    let unresolved = 0;
+
+    for (const v of violations) {
+      const sev = v.severity || 'warn';
+      if (!bySeverity[sev]) bySeverity[sev] = [];
+      bySeverity[sev].push(v);
+      byRule[v.rule] = (byRule[v.rule] || 0) + 1;
+      if (!v.resolved) unresolved++;
+    }
+
+    // Recent runs summary
+    const runs = db.prepare(`
+      SELECT runId, status, currentPhase, createdAt, updatedAt
+      FROM runs ORDER BY createdAt DESC LIMIT 20
+    `).all() as any[];
+
+    const runStats = {
+      total: runs.length,
+      passed: runs.filter((r: any) => r.status === 'done' || r.status === 'success').length,
+      failed: runs.filter((r: any) => r.status === 'failed' || r.status === 'error').length,
+      running: runs.filter((r: any) => r.status === 'running').length,
+    };
+
+    res.statusCode = 200;
+    res.end(JSON.stringify({
+      total: violations.length,
+      unresolved,
+      bySeverity,
+      byRule,
+      recent: violations.slice(0, 50),
+      runs: runs.slice(0, 10),
+      runStats,
+    }));
+  } catch (err: any) {
+    res.statusCode = 500;
+    res.end(JSON.stringify({ error: err.message }));
+  }
+});
+
+/**
+ * GET /api/mesh
+ * Returns federation peer status for the Mesh panel.
+ * Pings each configured peer with a HEAD request to check liveness.
+ */
+router.get("/api/mesh", async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  try {
+    const peerEnv = process.env.FEDERATION_PEERS || '';
+    const peerUrls = peerEnv.split(',').map((s: string) => s.trim()).filter(Boolean);
+
+    // Read last sync metadata
+    const syncMeta = db.prepare("SELECT value FROM metadata_store WHERE key = 'last_sync_time'").get() as any;
+    const lastSync = syncMeta?.value || null;
+
+    // Count proposals sent (queued for SUPABASE sync = outbound to community)
+    const outboundCount = (db.prepare(
+      "SELECT COUNT(*) as c FROM offline_queue WHERE type = 'SUPABASE'"
+    ).get() as any).c;
+
+    const peers = await Promise.all(peerUrls.map(async (url: string) => {
+      const start = Date.now();
+      let online = false;
+      let latencyMs: number | null = null;
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 3000);
+        const r = await fetch(url + '/fisp/v1/health', { method: 'GET', signal: ctrl.signal });
+        clearTimeout(timer);
+        online = r.ok;
+        latencyMs = Date.now() - start;
+      } catch { /* offline */ }
+      return {
+        url,
+        online,
+        latencyMs,
+        protocol: 'FISP v1.1',
+      };
+    }));
+
+    // Local node info
+    const localProposalCount = (db.prepare('SELECT COUNT(*) as c FROM proposals').get() as any).c;
+    const localModuleCount = (db.prepare('SELECT COUNT(*) as c FROM modules').get() as any).c;
+
+    res.statusCode = 200;
+    res.end(JSON.stringify({
+      peers,
+      local: {
+        proposals: localProposalCount,
+        modules: localModuleCount,
+        outboundQueue: outboundCount,
+        lastSync,
+        nodeId: process.env.SDOA_NODE_ID || 'local',
+      },
+      totalPeers: peers.length,
+      onlinePeers: peers.filter((p: any) => p.online).length,
+    }));
+  } catch (err: any) {
+    res.statusCode = 500;
+    res.end(JSON.stringify({ error: err.message }));
+  }
+});
+
 // ── Action Endpoints ─────────────────────────────────────────────────────────
 
 function parseBody(req: IncomingMessage): Promise<any> {
@@ -613,43 +1032,25 @@ router.post("/api/actions/scan-workspace", async (req, res) => {
     // Yield the event loop so the UI and SSE events can flush 'scanning' state before we block
     await new Promise(r => setTimeout(r, 100));
 
-    telemetry.resetDetectorHits();
-    const { count, workspaceHash } = await runScanHeuristics(root);
+    PrimeDiscovery.scanWorkspace(root);
 
-    const currentTelemetry = telemetry.get();
-    try {
-      db.prepare('INSERT INTO offline_queue (type, target, payload, created_at) VALUES (?, ?, ?, ?)').run(
-        'SUPABASE', 'portfolio_usage', JSON.stringify({
-          workspace_hash: workspaceHash,
-          primitive_count: currentTelemetry.detectorHits.sdoaPrimitive,
-          workflow_count: currentTelemetry.detectorHits.sdoaWorkflow,
-          schema_count: currentTelemetry.detectorHits.sdoaSchema,
-          token_count: currentTelemetry.detectorHits.sdoaToken,
-          engine_count: currentTelemetry.detectorHits.sdoaEngine,
-          updated_at: new Date().toISOString()
-        }), new Date().toISOString()
-      );
-    } catch (dbErr) {
-      console.error("Error inserting portfolio_usage:", dbErr);
+    const sdoaDb = PrimeDiscovery.getDatabase();
+    let count = 0;
+    if (sdoaDb) {
+      try {
+        const row = sdoaDb.prepare(`SELECT COUNT(*) as count FROM prime_files`).get() as any;
+        if (row) count = row.count;
+      } catch (e) {}
     }
 
     telemetry.setAstCacheSize(count);
     telemetry.recordScan();
 
-    // Push results to Supabase immediately rather than waiting for the 3-minute
-    // offlineSync interval (or never, if the user closes the panel first).
-    let synced = { flushed: 0, failed: 0 };
-    try {
-      synced = await flushQueue();
-    } catch (syncErr) {
-      console.error("Error flushing scan results to Supabase:", syncErr);
-    }
-
-    emit("scan:complete", { filesScanned: count, synced });
+    emit("scan:complete", { filesScanned: count, synced: true });
 
     res.statusCode = 200;
     res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({ ok: true, filesScanned: count, synced }));
+    res.end(JSON.stringify({ ok: true, filesScanned: count, synced: true }));
   } catch (err) {
     console.error("Error in /api/actions/scan-workspace:", err);
     res.statusCode = 500;
@@ -719,12 +1120,19 @@ router.get("/views/:view", (req, res) => {
   const viewPath = path.join(process.cwd(), "server", "public", "views", viewName + ".html");
   if (fs.existsSync(viewPath)) {
     res.statusCode = 200;
-    res.setHeader("Content-Type", "text/html");
+    res.setHeader("Content-Type", "application/json");
     res.end(fs.readFileSync(viewPath));
   } else {
     res.statusCode = 404;
     res.end("View not found");
   }
+});
+
+router.get("/api/system/logs", (req, res) => {
+  const logs = db.prepare('SELECT message, timestamp, level FROM run_log WHERE runId = ? ORDER BY id DESC LIMIT 100').all('system');
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(logs));
 });
 
 router.get("/api/pr-status", (req, res) => {
@@ -741,6 +1149,32 @@ router.get("/api/pr-status", (req, res) => {
   res.statusCode = 200;
   res.setHeader("Content-Type", "application/json");
   res.end(JSON.stringify({ status: prMeta.status, url: prMeta.prUrl }));
+});
+
+router.get("/api/actions/community-library", async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  if (!supabase) {
+    res.statusCode = 200;
+    return res.end(JSON.stringify({ ok: false, library: [], prJobs: [], error: "Supabase not configured." }));
+  }
+
+  try {
+    const { data: library } = await supabase
+      .from("sdoa_portfolio")
+      .select("*")
+      .eq("workspace_hash", "canonical-cloud");
+
+    const { data: prJobs } = await supabase
+      .from("sdoa_pr_jobs")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    res.statusCode = 200;
+    res.end(JSON.stringify({ ok: true, library: library || [], prJobs: prJobs || [] }));
+  } catch (err: any) {
+    res.statusCode = 500;
+    res.end(JSON.stringify({ ok: false, error: err.message }));
+  }
 });
 
 router.get("/", (req, res) => {

@@ -1,7 +1,7 @@
 {
   "name": "sdoa-mcp-extension",
   "displayName": "1.1 SDOA MCE",
-  "version": "1.2.0",
+  "version": "1.5.0",
   "description": "SDOA Architecture AI Companion",
   "icon": "extension/assets/seal.png",
   "bin": {
@@ -34,6 +34,21 @@
         {
           "id": "sdoaCognizancePanel",
           "name": "SDOA Cognizance",
+          "type": "webview"
+        },
+        {
+          "id": "sdoaExtractionHistory",
+          "name": "SDOA Extraction History",
+          "type": "webview"
+        },
+        {
+          "id": "sdoaExtractionDriftHeatmap",
+          "name": "SDOA Drift Heatmap",
+          "type": "webview"
+        },
+        {
+          "id": "sdoaExtractionAnalytics",
+          "name": "SDOA Analytics",
           "type": "webview"
         },
         {
@@ -177,18 +192,46 @@
       ]
     }
   ],
+  "scripts": {
+    "build:server": "tsc -p server/tsconfig.json || echo 'Add tsconfig'",
+    "build:extension": "node esbuild.extension.js",
+    "package:extension": "npx vsce package",
+    "release": "npm run build:server && npm run build:extension && npm run package:extension",
+    "build:binaries": "npx pkg dist/server/index.js --targets node18-linux-x64,node18-macos-x64,node18-win-x64 --output dist/sdoa-mcp",
+    "build:msi": "electron-builder --win msi"
+  },
+  "build": {
+    "appId": "com.sdoa-vx.mcp",
+    "productName": "SDOA MCP",
+    "win": {
+      "target": [
+        {
+          "target": "msi",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "extension/assets/seal.png",
+      "artifactName": "1.5.0_SDOA_MPC_MSI.msi"
+    },
+    "files": [
+      "release-binaries/1.5.0_SDOA_MPC_WIN.exe",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "release-binaries/1.5.0_SDOA_MPC_WIN.exe",
+        "to": "sdoa-mcp.exe"
+      }
+    ]
+  },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/vscode": "^1.90.0",
     "esbuild": "^0.25.0",
     "sharp": "^0.35.2",
-    "typescript": "^5.9.3"
-  },
-  "scripts": {
-    "build:server": "tsc -p server/tsconfig.json || echo 'Add tsconfig'",
-    "build:extension": "node esbuild.extension.js",
-    "package:extension": "npx vsce package",
-    "release": "npm run build:server && npm run build:extension && npm run package:extension"
+    "typescript": "^5.9.3",
+    "pkg": "^5.8.0",
+    "electron-builder": "^24.13.0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

@@ -1,0 +1,28 @@
+{
+  "authorityId": "authorities:config",
+  "sovereignId": "config",
+  "services": {
+    "supabase": {
+      "logicalName": "supabase",
+      "url": "https://cveszvgwlbehzfgbuknw.supabase.co"
+    },
+    "cloudMcp": {
+      "logicalName": "cloudMcp",
+      "endpoint": "https://mcp.tracksdoa.us"
+    },
+    "localMcp": {
+      "logicalName": "localMcp",
+      "endpoint": "http://localhost:8080"
+    },
+    "localModel": {
+      "logicalName": "localModel",
+      "endpoint": "http://127.0.0.1:11434",
+      "binaries": ["ollama"],
+      "models": ["llama3", "codellama"]
+    },
+    "remoteModel": {
+      "logicalName": "remoteModel",
+      "providers": ["anthropic", "openai"]
+    }
+  }
+}

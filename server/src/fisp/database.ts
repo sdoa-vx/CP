@@ -60,7 +60,7 @@ try {
   db.prepare(`ALTER TABLE pr_metadata ADD COLUMN ci_status TEXT`).run();
   db.prepare(`ALTER TABLE pr_metadata ADD COLUMN ci_log_url TEXT`).run();
 } catch (e) {
-  console.warn("Columns ci_status or ci_log_url might already exist in pr_metadata.", e);
+  // Suppress the error stack trace to avoid cluttering boot logs; this is expected if columns already exist.
 }
 
 // Ensure Github Installations table exists
@@ -99,6 +99,79 @@ db.prepare(`
     ast_cache_size INTEGER,
     queue_depth INTEGER,
     detector_hits TEXT
+  )
+`).run();
+
+// ── Shared with authorities/mcp/server.js — same pipeline.db ──────────────────
+// These tables are also created by the MCP authority server. Ensuring them here
+// means dashboard endpoints can query them even if the authority hasn't run yet.
+
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS runs (
+    runId TEXT PRIMARY KEY,
+    input TEXT,
+    inputType TEXT,
+    status TEXT,
+    currentPhase TEXT,
+    createdAt TEXT,
+    updatedAt TEXT
+  )
+`).run();
+
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS phases (
+    runId TEXT,
+    phase TEXT,
+    status TEXT,
+    outputJson TEXT,
+    completedAt TEXT,
+    PRIMARY KEY (runId, phase)
+  )
+`).run();
+
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS violations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    runId TEXT,
+    phase TEXT,
+    moduleId TEXT,
+    rule TEXT,
+    severity TEXT,
+    message TEXT,
+    resolved INTEGER DEFAULT 0
+  )
+`).run();
+
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS modules (
+    id TEXT PRIMARY KEY,
+    type TEXT,
+    layer INTEGER,
+    sovereignty TEXT,
+    manifestJson TEXT,
+    embedding BLOB,
+    sdoaVersion TEXT,
+    updatedAt TEXT
+  )
+`).run();
+
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS edges (
+    fromId TEXT,
+    toId TEXT,
+    edgeType TEXT,
+    PRIMARY KEY (fromId, toId, edgeType)
+  )
+`).run();
+
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS run_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    runId TEXT,
+    phase TEXT,
+    level TEXT,
+    message TEXT,
+    timestamp TEXT
   )
 `).run();
 

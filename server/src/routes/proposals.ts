@@ -55,7 +55,8 @@ export async function handleProposals(req: IncomingMessage, res: ServerResponse)
     const probationResult = runProbationOfficer(innovation);
     if (!probationResult.ok) {
       res.statusCode = 400;
-      return res.end(JSON.stringify({ error: probationResult.reason }));
+      const reason = (probationResult as any).reason || "Failed governance probation sandbox";
+      return res.end(JSON.stringify({ ok: false, error: reason }));
     }
   }
 

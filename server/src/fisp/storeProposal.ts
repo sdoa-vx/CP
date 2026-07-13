@@ -1,6 +1,7 @@
 import { db } from './database';
 import { broadcastDashboardUpdate } from '../ws';
 import { recordPipelineStep } from '../utils/telemetry';
+import { Chronicle } from '../services/Chronicle.service';
 
 export const MANIFEST = {
   id: "storeProposal.ts",
@@ -77,6 +78,9 @@ function onProposalMerged(proposalId: string) {
   data.archived = true;
   db.prepare('UPDATE proposals SET data = ? WHERE id = ?').run(JSON.stringify(data), proposalId);
   
+  // Record to the Chronicle ledger directly
+  Chronicle.recordEvent("proposal_merged", { proposalId, data }, "storeProposal");
+
   // Emit telemetry event so external workers can pick this up
   recordPipelineStep(proposalId, "Proposal Lifecycle", "passed", { 
     event: "proposal_merged",

@@ -1,0 +1,24 @@
+name = "sdoa-mcp-server"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Route to your custom domain
+routes = [
+  { pattern = "mcp.tracksdoa.us/*", custom_domain = true }
+]
+
+# Secrets are NOT stored here — they are pushed via `npx wrangler secret put <NAME>`
+# Required secrets:
+#   SUPABASE_URL
+#   SUPABASE_SERVICE_ROLE_KEY
+#   GITHUB_WEBHOOK_SECRET
+#   GITHUB_APP_ID
+#   GITHUB_PRIVATE_KEY_BASE64
+
+[vars]
+ENVIRONMENT = "production"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "sdoa-canonical-library"
