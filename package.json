@@ -1,7 +1,7 @@
 {
   "name": "sdoa-mcp-extension",
-  "displayName": "1.1 SDOA MCE",
-  "version": "1.5.0",
+  "displayName": "SDOA MCP Extension",
+  "version": "1.5.1",
   "description": "SDOA Architecture AI Companion",
   "icon": "extension/assets/seal.png",
   "bin": {
@@ -207,7 +207,9 @@
       "target": [
         {
           "target": "msi",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "extension/assets/seal.png",
@@ -251,5 +253,28 @@
     "assets": [
       "server/public/**/*"
     ]
-  }
+  },
+  "categories": [
+    "AI",
+    "Other",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "sdoa",
+    "mcp",
+    "ai",
+    "architecture",
+    "agent",
+    "compliance",
+    "lineage"
+  ],
+  "galleryBanner": {
+    "color": "#0D1117",
+    "theme": "dark"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sdoa-vx/CP/issues"
+  },
+  "homepage": "https://github.com/sdoa-vx/CP#readme"
 }
