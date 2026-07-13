@@ -27,34 +27,58 @@ jobs:
         run: npm run release
 
       - name: Publish to VS Marketplace
-        run: npx vsce publish -p "$VSCE_PAT"
+        run: |
+          OUTPUT=$(npx vsce publish -p "$VSCE_PAT" 2>&1) && STATUS=$? || STATUS=$?
+          echo "$OUTPUT"
+          if echo "$OUTPUT" | grep -qiE "already published|already exists"; then
+            echo "✅ VS Marketplace: version already published — skipping."
+            exit 0
+          fi
+          exit $STATUS
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        continue-on-error: true
 
       - name: Create Open VSX Namespace
-        run: npx ovsx create-namespace sdoa-vx -p "$OVSX_PAT" || true
+        run: |
+          OUTPUT=$(npx ovsx create-namespace sdoa-vx -p "$OVSX_PAT" 2>&1) && STATUS=$? || STATUS=$?
+          echo "$OUTPUT"
+          if echo "$OUTPUT" | grep -qiE "already exists|namespace.*exist"; then
+            echo "✅ Open VSX namespace already exists — skipping."
+            exit 0
+          fi
+          exit $STATUS
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
-        continue-on-error: true
 
       - name: Publish to Open VSX Registry
         run: |
           VSIX_FILE=$(find . -maxdepth 1 -name "*.vsix" | head -n 1)
           if [ -z "$VSIX_FILE" ]; then
-            echo "No .vsix file found — skipping Open VSX publish"
+            echo "✅ No .vsix file found — skipping Open VSX publish."
             exit 0
           fi
-          npx ovsx publish "$VSIX_FILE" -p "$OVSX_PAT"
+          OUTPUT=$(npx ovsx publish "$VSIX_FILE" -p "$OVSX_PAT" 2>&1) && STATUS=$? || STATUS=$?
+          echo "$OUTPUT"
+          if echo "$OUTPUT" | grep -qiE "already published|already exists"; then
+            echo "✅ Open VSX: version already published — skipping."
+            exit 0
+          fi
+          exit $STATUS
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
-        continue-on-error: true
 
       - name: Upload VSIX to GitHub Release
         if: github.event_name == 'release'
         run: |
+          UPLOADED=0
           for vsix in *.vsix; do
-            [ -f "$vsix" ] && gh release upload "${{ github.ref_name }}" "$vsix" --clobber || echo "No vsix to upload"
+            if [ -f "$vsix" ]; then
+              gh release upload "${{ github.ref_name }}" "$vsix" --clobber
+              UPLOADED=$((UPLOADED + 1))
+            fi
           done
+          if [ "$UPLOADED" -eq 0 ]; then
+            echo "✅ No .vsix assets to upload — skipping."
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
