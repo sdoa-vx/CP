@@ -40,7 +40,7 @@ jobs:
 
       - name: Create Open VSX Namespace
         run: |
-          OUTPUT=$(npx ovsx create-namespace sdoa-vx -p "$OVSX_PAT" 2>&1) && STATUS=$? || STATUS=$?
+          OUTPUT=$(npx ovsx create-namespace SDOAvX -p "$OVSX_PAT" 2>&1) && STATUS=$? || STATUS=$?
           echo "$OUTPUT"
           if echo "$OUTPUT" | grep -qiE "already exists|namespace.*exist"; then
             echo "✅ Open VSX namespace already exists — skipping."
