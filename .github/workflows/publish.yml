@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install Dependencies
@@ -32,10 +32,20 @@ jobs:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         continue-on-error: true
 
+      - name: Create Open VSX Namespace
+        run: npx ovsx create-namespace sdoa-vx -p "$OVSX_PAT" || true
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        continue-on-error: true
+
       - name: Publish to Open VSX Registry
         run: |
-          npx ovsx create-namespace sdoa-vx -p "$OVSX_PAT" || true
-          npx ovsx publish *.vsix -p "$OVSX_PAT"
+          VSIX_FILE=$(find . -maxdepth 1 -name "*.vsix" | head -n 1)
+          if [ -z "$VSIX_FILE" ]; then
+            echo "No .vsix file found — skipping Open VSX publish"
+            exit 0
+          fi
+          npx ovsx publish "$VSIX_FILE" -p "$OVSX_PAT"
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
         continue-on-error: true
@@ -44,7 +54,7 @@ jobs:
         if: github.event_name == 'release'
         run: |
           for vsix in *.vsix; do
-            gh release upload "${{ github.ref_name }}" "$vsix" --clobber
+            [ -f "$vsix" ] && gh release upload "${{ github.ref_name }}" "$vsix" --clobber || echo "No vsix to upload"
           done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
