@@ -8,6 +8,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -24,7 +26,25 @@ jobs:
       - name: Build & Package Extension
         run: npm run release
 
+      - name: Publish to VS Marketplace
+        run: npx vsce publish -p "$VSCE_PAT"
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        continue-on-error: true
+
       - name: Publish to Open VSX Registry
-        run: npx ovsx publish *.vsix -p $OVSX_PAT
+        run: |
+          npx ovsx create-namespace sdoa-vx -p "$OVSX_PAT" || true
+          npx ovsx publish *.vsix -p "$OVSX_PAT"
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        continue-on-error: true
+
+      - name: Upload VSIX to GitHub Release
+        if: github.event_name == 'release'
+        run: |
+          for vsix in *.vsix; do
+            gh release upload "${{ github.ref_name }}" "$vsix" --clobber
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
