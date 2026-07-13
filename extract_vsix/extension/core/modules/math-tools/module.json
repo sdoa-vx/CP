@@ -1,8 +1,0 @@
-{
-  "id": "math-tools",
-  "version": "1.0.0",
-  "language": "cpp",
-  "entry": "lib/libmath_tools.so",
-  "capabilities": ["factorial", "gcd", "fibonacci"],
-  "sandbox": { "filesystem": [], "network": [], "env": [] }
-}

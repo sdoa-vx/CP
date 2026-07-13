@@ -1,8 +1,0 @@
-{
-  "name": "sdoa-core",
-  "version-string": "1.0.0",
-  "dependencies": [
-    "nlohmann-json",
-    "gtest"
-  ]
-}
