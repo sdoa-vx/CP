@@ -1,7 +1,7 @@
 {
   "name": "sdoa-mcp-extension",
   "displayName": "SDOA MCP Extension",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "SDOA Architecture AI Companion",
   "icon": "extension/assets/seal.png",
   "bin": {
@@ -15,7 +15,7 @@
     "type": "git",
     "url": "https://github.com/sdoa-vx/CP"
   },
-  "publisher": "sdoa-vx",
+  "publisher": "SDOAvX",
   "activationEvents": [
     "onStartupFinished"
   ],
