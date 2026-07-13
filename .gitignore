@@ -1,11 +1,9 @@
-# ---------------------------------------------------------
 # Node / TypeScript
 # ---------------------------------------------------------
 node_modules/
 npm-debug.log
 yarn-error.log
 pnpm-debug.log
-package-lock.json
 *.tsbuildinfo
 
 # Build output
