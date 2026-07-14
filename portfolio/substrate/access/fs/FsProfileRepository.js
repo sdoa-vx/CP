@@ -12,16 +12,18 @@ const paths = require("../env/paths");
 class FsProfileRepository extends BaseRepository {
 
     static MANIFEST = {
-        id:           "FsProfileRepository",
-        type:         "service",
+        id:           "FsProfileRepository.repository",
+        type:         "repository",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
-        dependencies: [],
+        version:      "1.0.1",
+        capabilities: ["profiles:list-merged", "profiles:load-archetypes", "profiles:load-user-profiles", "profiles:resolve"],
+        dependencies: ["BaseRepository.repository", "PathResolver.service"],
         docs: {
-            description: "Manages FsProfileRepository operations.",
+            description: "Loads and merges legacy flat profiles, archetype templates, and user-created profiles into a single resolvable pool for the UI profile dropdown.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

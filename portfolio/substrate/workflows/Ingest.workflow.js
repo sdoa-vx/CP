@@ -14,16 +14,18 @@ const QmdAdapter = require("../adapters/QmdAdapter");
 class IngestWorkflow {
 
     static MANIFEST = {
-        id:           "IngestWorkflow",
-        type:         "service",
+        id:           "Ingest.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
-        dependencies: [],
+        version:      "1.0.1",
+        capabilities: ["ingest:index-project", "ingest:verify-search"],
+        dependencies: ["QmdAdapter.adapter"],
         docs: {
-            description: "Manages IngestWorkflow operations.",
+            description: "Indexes a project's files into qmd's vector store via QmdAdapter, with an optional verification search pass after indexing.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

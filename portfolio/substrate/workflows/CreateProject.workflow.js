@@ -33,16 +33,18 @@ class CreateProjectWorkflow extends WorkflowBase {
      */
 
     static MANIFEST = {
-        id:           "CreateProjectWorkflow",
-        type:         "service",
+        id:           "CreateProjectWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["project:create"],
         dependencies: [],
         docs: {
-            description: "Manages CreateProjectWorkflow operations.",
+            description: "Creates a new project directory under data/projects/, writing a minimal manifest.json plus vfs/ and chat_sessions/ subfolders.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

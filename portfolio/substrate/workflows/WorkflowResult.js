@@ -11,16 +11,18 @@ exports.getVersion = () => exports.VERSION;
 class WorkflowResult {
 
     static MANIFEST = {
-        id:           "WorkflowResult",
-        type:         "workflow",
+        id:           "WorkflowResult.utility",
+        type:         "utility",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["workflow:result-wrapper"],
         dependencies: [],
         docs: {
-            description: "Manages WorkflowResult operations.",
+            description: "Standard { status, data, error } result envelope used by workflow run() methods, with ok()/error() static constructors.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

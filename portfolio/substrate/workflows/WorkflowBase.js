@@ -11,16 +11,18 @@ exports.getVersion = () => exports.VERSION;
 class WorkflowBase {
 
     static MANIFEST = {
-        id:           "WorkflowBase",
+        id:           "WorkflowBase.workflow",
         type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["workflow:base-contract"],
         dependencies: [],
         docs: {
-            description: "Manages WorkflowBase operations.",
+            description: "Abstract base class for backend workflows, providing version/name accessors and the run() contract that subclasses must implement.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

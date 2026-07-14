@@ -9,11 +9,18 @@ const { Task } = require('../base/sdoa-base.js');
 
 class QuickAction extends Task {
     static MANIFEST = {
-        id: "QuickAction",
+        id: "QuickAction.workflow",
         type: "workflow",
+        layer: 3,
         runtime: "NodeJS",    // Added for cross-runtime routing
-        version: "1.0.3",    // Added for Registry tracking
-        dependencies: ["QmdAdapter", "LlmBridge", "RefactorService"]
+        version: "1.0.4",    // Added for Registry tracking
+        capabilities: ["refactor:quick-action"],
+        dependencies: ["QmdAdapter", "LlmBridge", "RefactorService"],
+        docs: {
+            description: "Cross-runtime quick-fix pipeline: fetches code context via QmdAdapter, then delegates refactor proposal generation to the Python RefactorService for a given file and user intent.",
+            author: "ProtoAI team",
+        },
+        last_modified: "2026-07-13T00:00:00Z",
     };
 
     async run({ filePath, userIntent }) {

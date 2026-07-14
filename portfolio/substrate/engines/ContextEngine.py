@@ -14,7 +14,7 @@
 # ============================================================
 
 # MANIFEST = {
-#   id: "ContextEngine",
+#   id: "ContextEngine.engine",
 #   type: "engine",
 #   layer: 3,
 #   runtime: "Python",
@@ -33,7 +33,7 @@
 
 MANIFEST_JSON = """
 "MANIFEST" : {
-  "id": "ContextEngine",
+  "id": "ContextEngine.engine",
   "type": "engine",
   "layer": 3,
   "runtime": "Python",
@@ -54,11 +54,12 @@ MANIFEST_JSON = """
 from base import Service
 
 MANIFEST = {
-    "id": "ContextEngine",
+    "id": "ContextEngine.engine",
     "type": "engine",
     "layer": 3,
     "runtime": "Python",
-    "version": "1.2.3",
+    "version": "1.2.4",
+    "last_modified": "2026-07-13T00:00:00Z",
     "operationalRole": "savant",
     "requires": ["QmdAdapter"],
     "capabilities": ["get_refactor_context"],

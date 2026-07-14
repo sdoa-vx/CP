@@ -23,10 +23,12 @@ class LlmPolicyEngine extends Service {
     // SDOA v3.1 MANIFEST (embedded, authoritative)
     // ------------------------------------------------------------
     static MANIFEST = {
-        id: "LlmPolicyEngine",
+        id: "LlmPolicyEngine.engine",
         type: "engine",
+        layer: 3,
         runtime: "NodeJS",
-        version: "3.1.0",
+        version: "3.1.1",
+        last_modified: "2026-07-13T00:00:00Z",
 
         // v1.2 compatibility fields
         capabilities: [

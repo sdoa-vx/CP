@@ -18,9 +18,18 @@ const paths          = require("../access/env/paths");
 
 class CheckSystemStatusWorkflow extends WorkflowBase {
     static MANIFEST = {
-        id: "CheckSystemStatusWorkflow",
+        id: "CheckSystemStatusWorkflow.workflow",
         type: "workflow",
-        version: "1.0.0"
+        layer: 3,
+        runtime: "NodeJS",
+        version: "1.0.1",
+        capabilities: ["system:check-status", "system:probe-local-ai"],
+        dependencies: [],
+        docs: {
+            description: "Probes the local environment for a provisioned Python venv and cached Qwen2.5-Coder model, reporting readiness plus OS/architecture info.",
+            author: "ProtoAI team",
+        },
+        last_modified: "2026-07-13T00:00:00Z",
     };
 
     async run() {

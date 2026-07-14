@@ -11,16 +11,18 @@ const fs   = require("fs");
 class PathResolver {
 
     static MANIFEST = {
-        id:           "PathResolver",
+        id:           "PathResolver.service",
         type:         "service",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["paths:resolve-root", "paths:data-directories", "paths:vfs-paths", "paths:memory-paths"],
         dependencies: [],
         docs: {
-            description: "Manages PathResolver operations.",
+            description: "Resolves canonical filesystem paths for data, projects, memory, and VFS storage relative to an auto-detected ProtoAI root directory.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

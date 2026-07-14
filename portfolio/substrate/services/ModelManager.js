@@ -25,6 +25,21 @@
  * like "Coding Super Hero" by mapping specific model IDs to behavioral roles.
  */
 
+const MANIFEST = {
+    id:            "ModelInventory.component",
+    type:          "component",
+    layer:         3,
+    runtime:       "Browser",
+    version:       "5.0.0",
+    capabilities:  ["inventory.render", "inventory.reorder", "inventory.mapBehavior"],
+    dependencies:  ["BackendConnector.service", "FileManager.service"],
+    docs: {
+        description: "Renders the draggable model inventory table, lets users toggle/reorder models, and maps model IDs to behavioral roles (coding, research, image, vocal) for archetype-driven routing.",
+        author: "Jackson Danner Church III",
+    },
+    last_modified: "2026-07-13T00:00:00Z",
+};
+
 class ModelInventory {
   constructor() {
     this.models = [

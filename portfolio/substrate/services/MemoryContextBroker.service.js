@@ -16,11 +16,12 @@ class MemoryContextBrokerService {
     type: "service",
     layer: 3,
     runtime: "NodeJS",
-    version: "5.2.0",
+    version: "5.2.1",
+    last_modified: "2026-07-13T00:00:00Z",
     operationalRole: "savant",
     requires: ["Memory.repository"],
     capabilities: ["memory_mutation_journaling", "context_compilation"],
-    dependencies: [],
+    dependencies: ["Memory.repository"],
     lifecycle: ["init"],
     actions: {
       commands: {

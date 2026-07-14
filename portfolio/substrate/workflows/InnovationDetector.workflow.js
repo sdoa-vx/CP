@@ -15,9 +15,12 @@ class InnovationDetectorWorkflow {
     type:            "workflow",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "5.4.0",
+    version:         "5.4.1",
+    last_modified:   "2026-07-13T00:00:00Z",
     operationalRole: "savant",
     requires:  ["Oracle.service", "Cartographer.workflow", "ResponseFormatter.service"],
+    dependencies: ["Oracle.service", "Cartographer.workflow", "ResponseFormatter.service"],
+    capabilities: ["innovation:detect-patterns", "innovation:suggest"],
     dataFiles: [],
     lifecycle: ["init", "run", "dispose"],
     actions: {

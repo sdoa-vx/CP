@@ -26,20 +26,23 @@ const uuid = () => {
 
 class MemoryManager {
     static MANIFEST = {
-        id: "MemoryManager",
+        id: "MemoryManager.service",
         type: "service",
+        layer: 3,
         runtime: "NodeJS",
-        version: "2.1.0",
+        version: "2.1.1",
         capabilities: [
             "memory.load",
             "memory.record",
             "memory.distill",
             "memory.audit"
         ],
+        dependencies: [],
         docs: {
             description: "Deterministic memory distillation and cognitive hierarchy management (Identity, Knowledge, Wisdom).",
             author: "ProtoAI team",
-        }
+        },
+        last_modified: "2026-07-13T00:00:00Z",
     };
 
     constructor() {

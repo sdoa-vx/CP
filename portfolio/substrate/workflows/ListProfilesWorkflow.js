@@ -14,16 +14,18 @@ exports.getVersion = () => exports.VERSION;
 class ListProfilesWorkflow extends WorkflowBase {
 
     static MANIFEST = {
-        id:           "ListProfilesWorkflow",
-        type:         "service",
+        id:           "ListProfilesWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
-        dependencies: [],
+        version:      "2.0.1",
+        capabilities: ["profiles:list-merged"],
+        dependencies: ["FsProfileRepository.repository"],
         docs: {
-            description: "Manages ListProfilesWorkflow operations.",
+            description: "Merges archetype templates, user profiles, and legacy profiles.json entries into a single labeled list for the profile picker UI.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

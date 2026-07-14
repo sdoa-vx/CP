@@ -16,11 +16,12 @@ const path = require('path');
 
 class CopySdoaModules extends Task {
     static MANIFEST = {
-        id: "CopySdoaModules",
+        id: "CopySdoaModules.task",
         type: "task",
+        layer: 3,
         runtime: "NodeJS",
-        version: "1.0.0",
-        lastModified: "2026-06-03 03:45 UTC",
+        version: "1.0.1",
+        last_modified: "2026-07-13T00:00:00Z",
         capabilities: [
             "repository.reorganize",
             "files.copy"

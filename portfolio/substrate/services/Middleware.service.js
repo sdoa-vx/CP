@@ -16,9 +16,11 @@ class Middleware {
         type:            "service",
         layer:           3,
         runtime:         "NodeJS",
-        version:         "1.1.0",
+        version:         "1.1.1",
+        last_modified:   "2026-07-13T00:00:00Z",
         operationalRole: "savant",
         requires:        [],
+        dependencies:    [],
         capabilities:    ["logging", "log-rotation"],
         lifecycle:       ["init"],
         actions: {

@@ -48,6 +48,24 @@ MANIFEST_JSON = """
 
 from base import Service
 
+MANIFEST = {
+    "id": "ExplainModuleWorkflow.workflow",
+    "type": "workflow",
+    "layer": 3,
+    "runtime": "Python",
+    "version": "5.0.1",
+    "last_modified": "2026-07-13T00:00:00Z",
+    "operationalRole": "savant",
+    "requires": ["QmdAdapter", "LlmBridge"],
+    "capabilities": ["explain_module_context"],
+    "dependencies": ["QmdAdapter", "LlmBridge"],
+    "docs": {
+        "description": "Python-based workflow to retrieve context and explain SDOA modules via LLM bridge.",
+        "author": "ProtoAI team",
+        "sdoa": "5.0.0"
+    }
+}
+
 class ExplainModuleWorkflow(Service):
     def explain(self, module_id: str):
         qmd = self.registry.get("QmdAdapter")

@@ -18,9 +18,12 @@ export class AiBrokerAdapter {
     type: "adapter",
     layer: 3,
     runtime: "NodeJS",
-    version: "5.2.0",
+    version: "5.2.1",
+    last_modified: "2026-07-13T00:00:00Z",
     operationalRole: "coach",
     requires: ["Registry.service", "AiSleeve.module"],
+    dependencies: ["Registry.service", "AiSleeve.module"],
+    capabilities: ["heal:delegate"],
     lifecycle: ["init"],
     actions: {
       commands: {

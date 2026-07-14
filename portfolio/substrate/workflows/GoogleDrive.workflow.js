@@ -24,13 +24,16 @@ const paths         = require("../access/env/paths");
 
 class GoogleDriveWorkflow extends WorkflowBase {
     static MANIFEST = {
-        id: "GoogleDriveWorkflow",
+        id: "GoogleDriveWorkflow.workflow",
         type: "workflow",
         layer: 3,
         runtime: "NodeJS",
-        version: "5.0.0",
+        version: "5.0.1",
+        last_modified: "2026-07-13T00:00:00Z",
         operationalRole: "savant",
         requires: [],
+        dependencies: [],
+        capabilities: ["googledrive:oauth", "googledrive:list-files", "googledrive:download"],
         optimization: {
             priority: "readability",
             assertionSuite: ""

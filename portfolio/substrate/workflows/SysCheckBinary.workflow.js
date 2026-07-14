@@ -13,16 +13,18 @@ const paths = require("../access/env/paths");
 class SysCheckBinaryWorkflow {
 
     static MANIFEST = {
-        id:           "SysCheckBinaryWorkflow",
-        type:         "service",
+        id:           "SysCheckBinaryWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["system:check-binary"],
         dependencies: [],
         docs: {
-            description: "Manages SysCheckBinaryWorkflow operations.",
+            description: "Checks whether a named binary is available in the app's local bin directory or on the system PATH.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

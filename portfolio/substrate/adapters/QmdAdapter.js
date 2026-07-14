@@ -13,16 +13,18 @@ const path = require("path");
 class QmdAdapter {
 
     static MANIFEST = {
-        id:           "QmdAdapter",
+        id:           "QmdAdapter.adapter",
         type:         "adapter",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["qmd:search", "qmd:query", "qmd:index"],
         dependencies: [],
         docs: {
-            description: "Manages QmdAdapter operations.",
+            description: "Wraps the @tobilu/qmd ESM-only CLI as a spawned child process, providing semantic vector search, SQL-like metadata queries, and embedding indexing over project files.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

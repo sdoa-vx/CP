@@ -14,16 +14,18 @@ const paths          = require("../access/env/paths");
 
 class ArchiveProjectWorkflow extends WorkflowBase {
     static MANIFEST = {
-        id:           "ArchiveProjectWorkflow",
-        type:         "service",
+        id:           "ArchiveProjectWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["project:archive"],
         dependencies: ["paths"],
         docs: {
-            description: "Moves a project to the _archive directory.",
+            description: "Moves a project directory into data/_archive/, timestamping the destination folder name.",
             author: "ProtoAI team",
-        }
+        },
+        last_modified: "2026-07-13T00:00:00Z",
     };
 
     async run(payload) {

@@ -16,6 +16,21 @@ const url = require("url");
 const Middleware = require("./Middleware.service");
 
 class AuthListener {
+    static MANIFEST = {
+        id:            "AuthListener.service",
+        type:          "service",
+        layer:         3,
+        runtime:       "NodeJS",
+        version:       "5.0.0",
+        capabilities:  ["oauth:callback-listener", "oauth:code-capture"],
+        dependencies:  [],
+        docs: {
+            description: "Lightweight local HTTP server that listens for the OAuth redirect callback (e.g. Google Drive), captures the authorization code, and renders a success page for the user to copy it from.",
+            author: "ProtoAI team",
+        },
+        last_modified: "2026-07-13T00:00:00Z",
+    };
+
     constructor() {
         this.server = http.createServer((req, res) => this._handleRequest(req, res));
         this.server.setMaxListeners(30);

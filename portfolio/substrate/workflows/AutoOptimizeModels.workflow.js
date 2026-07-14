@@ -16,14 +16,16 @@ const path           = require("path");
 class AutoOptimizeModelsWorkflow extends WorkflowBase {
 
     static MANIFEST = {
-        id:           "AutoOptimizeModelsWorkflow",
-        type:         "service",
+        id:           "AutoOptimizeModelsWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.1.0",
-        capabilities: [],
+        version:      "1.1.1",
+        capabilities: ["models:auto-optimize", "models:openrouter-poll"],
         dependencies: [],
         docs: { description: "Polls OpenRouter, selects best free models by role, updates settings and profiles.", author: "ProtoAI team" },
         actions: { commands: {}, triggers: {}, emits: {}, workflows: {} },
+        last_modified: "2026-07-13T00:00:00Z",
     };
 
     constructor() { super(); }

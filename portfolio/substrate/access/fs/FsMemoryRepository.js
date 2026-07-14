@@ -11,16 +11,18 @@ const paths = require("../env/paths");
 class FsMemoryRepository extends BaseRepository {
 
     static MANIFEST = {
-        id:           "FsMemoryRepository",
-        type:         "service",
+        id:           "FsMemoryRepository.repository",
+        type:         "repository",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
-        dependencies: [],
+        version:      "1.0.1",
+        capabilities: ["memory:load-global", "memory:load-project", "memory:save-global", "memory:save-project"],
+        dependencies: ["BaseRepository.repository", "PathResolver.service"],
         docs: {
-            description: "Manages FsMemoryRepository operations.",
+            description: "Persists and loads global and per-project memory fact stores as JSON files under the data directory.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

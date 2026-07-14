@@ -273,9 +273,12 @@ LlmConnectorAdapter.MANIFEST = {
     type: "adapter",
     layer: 3,
     runtime: "NodeJS",
-    version: "5.0.0",
+    version: "5.0.1",
+    last_modified: "2026-07-13T00:00:00Z",
     operationalRole: "savant",
     requires: [],
+    dependencies: [],
+    capabilities: ["llm:https-post", "llm:anthropic-call", "llm:openai-compat-call", "llm:sse-streaming"],
     optimization: {
         priority: "readability",
         assertionSuite: ""

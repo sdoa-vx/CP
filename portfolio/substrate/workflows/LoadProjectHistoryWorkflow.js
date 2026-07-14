@@ -16,16 +16,18 @@ exports.getVersion = () => exports.VERSION;
 class LoadProjectHistoryWorkflow extends WorkflowBase {
 
     static MANIFEST = {
-        id:           "LoadProjectHistoryWorkflow",
-        type:         "service",
+        id:           "LoadProjectHistoryWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.2",
+        capabilities: ["project:load-history"],
         dependencies: [],
         docs: {
-            description: "Manages LoadProjectHistoryWorkflow operations.",
+            description: "Loads a project's history.json (chat/action log) from disk, returning an empty history when no project or file is given.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

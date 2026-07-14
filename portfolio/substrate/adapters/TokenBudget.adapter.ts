@@ -38,8 +38,11 @@ export class TokenBudgetAdapter {
     type: "adapter",
     layer: 3,
     runtime: "NodeJS",
-    version: "5.0.0",
+    version: "5.0.1",
+    last_modified: "2026-07-13T00:00:00Z",
     operationalRole: "savant",
+    dependencies: [],
+    capabilities: ["tokens:estimate", "tokens:lookup-context-limit", "tokens:trim-to-fit"],
     optimization: {
       priority: "readability",
       assertionSuite: ""

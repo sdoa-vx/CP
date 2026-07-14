@@ -21,16 +21,18 @@ exports.getVersion = () => exports.VERSION;
 class VfsUpdatePermissionsWorkflow extends WorkflowBase {
 
     static MANIFEST = {
-        id:           "VfsUpdatePermissionsWorkflow",
+        id:           "VfsUpdatePermissionsWorkflow.workflow",
         type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
-        dependencies: [],
+        version:      "1.0.1",
+        capabilities: ["vfs:update-permissions"],
+        dependencies: ["FsVfsRepository.repository"],
         docs: {
-            description: "Manages VfsUpdatePermissionsWorkflow operations.",
+            description: "Updates the read/write/execute permissions stored on a single VFS entry.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

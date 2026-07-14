@@ -10,16 +10,18 @@ const WorkflowResult = require("./WorkflowResult");
 class SpawnShellWorkflow {
 
     static MANIFEST = {
-        id:           "SpawnShellWorkflow",
-        type:         "service",
+        id:           "SpawnShellWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["shell:spawn-interactive"],
         dependencies: [],
         docs: {
-            description: "Manages SpawnShellWorkflow operations.",
+            description: "Spawns an interactive OS shell (PowerShell or cmd on Windows) as a child process for terminal-style workflows.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

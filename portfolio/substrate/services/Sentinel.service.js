@@ -35,8 +35,10 @@ class SentinelService {
     type:            "service",
     layer:           3,
     runtime:         "Universal",
-    version:         "5.0.0",
+    version:         "5.0.1",
+    last_modified:   "2026-07-13T00:00:00Z",
     operationalRole: "sentinel",
+    capabilities: ["sentinel:run", "sentinel:pause", "sentinel:resume", "sentinel:report", "sentinel:clear-issue", "sentinel:dead-module-sweep", "sentinel:set-thresholds"],
 
     // ── Dependencies ──────────────────────────
     requires:  [
@@ -44,6 +46,7 @@ class SentinelService {
       "Oracle.service",
       "ResponseFormatter.service"
     ],
+    dependencies: ["Chronicle.service", "Oracle.service", "ResponseFormatter.service"],
     dataFiles: [],
 
     // ── Lifecycle ─────────────────────────────

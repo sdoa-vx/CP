@@ -13,8 +13,11 @@ class ResponseFormatter {
         type: "service",
         layer: 3,
         runtime: "NodeJS",
-        version: "5.0.0",
+        version: "5.0.1",
+        last_modified: "2026-07-13T00:00:00Z",
         requires: [],
+        dependencies: [],
+        capabilities: ["response:ok", "response:fail", "response:safe-json-parse", "response:write-response", "response:write-error", "response:write-success", "response:write-event"],
         lifecycle: [],
         docs: {
             description: "Standardized response formatter for SDOA v5.",

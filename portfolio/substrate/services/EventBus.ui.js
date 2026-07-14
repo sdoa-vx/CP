@@ -41,41 +41,9 @@
     const MANIFEST = {
         id:      "EventBus.ui",
         type:    "service",
-        runtime: "Browser",
-        version: "1.0.0",
-
-        capabilities: [
-            "event.publish",
-            "event.subscribe",
-            "event.unsubscribe",
-            "command.dispatch",
-            "module.bridge"
-        ],
-        dependencies: ["tauri-utils.js"],
+        "non-sdoa-compliant": true,
         docs: {
-            description: "Central pub/sub event bus. Activates the SDOA v3 action surface across all UI modules. Modules emit events here; app.js and other modules subscribe. Eliminates direct module-to-module coupling.",
-            author: "ProtoAI team",
-            sdoa_compatibility: `
-                SDOA v3 contract — all versions forward/backward compatible.
-                Lower versions ignore unknown fields.
-                Higher versions preserve old semantics.
-            `
-        },
-        actions: {
-            commands: {
-                emit:    { description: "Publish an event to all subscribers.",          input: { event: "string", data: "any" },    output: "void" },
-                on:      { description: "Subscribe to an event.",                        input: { event: "string", handler: "fn" }, output: "void" },
-                once:    { description: "Subscribe to an event — fires once then unsubs.", input: { event: "string", handler: "fn" }, output: "void" },
-                off:     { description: "Unsubscribe from an event.",                    input: { event: "string", handler: "fn" }, output: "void" },
-                command: { description: "Dispatch a named command to a module.",         input: { module: "string", cmd: "string", payload: "any" }, output: "Promise<any>" },
-            },
-            triggers: {
-                "*": { description: "Any event published on the bus." }
-            },
-            emits: {
-                "bus:error": { description: "Emits when a listener throws.", payload: { event: "string", error: "string" } }
-            },
-            workflows: {}
+            description: "Undeclared duplicate of the EventBus service — copies of this module exist across substrate/services and elsewhere in the repo, alongside the canonical EventBus.service.js. Flagged for consolidation in a later remediation phase; not fixed here."
         }
     };
     // ── end of SDOA v3 MANIFEST ──────────────────────────────

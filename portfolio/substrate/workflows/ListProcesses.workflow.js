@@ -10,16 +10,18 @@ const WorkflowResult = require("./WorkflowResult");
 class ListProcessesWorkflow {
 
     static MANIFEST = {
-        id:           "ListProcessesWorkflow",
-        type:         "service",
+        id:           "ListProcessesWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["system:list-processes"],
         dependencies: [],
         docs: {
-            description: "Manages ListProcessesWorkflow operations.",
+            description: "Lists running OS processes (optionally filtered), shelling out to platform-specific process listing commands.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

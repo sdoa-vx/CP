@@ -10,9 +10,12 @@ const https = require("https"), http = require("http"), fs = require("fs"), path
 
 class AiProviderAdapter {
   static MANIFEST = {
-    id: "AiProvider.adapter", type: "adapter", layer: 3, runtime: "NodeJS", version: "5.0.0",
+    id: "AiProvider.adapter", type: "adapter", layer: 3, runtime: "NodeJS", version: "5.0.1",
+    last_modified: "2026-07-13T00:00:00Z",
     operationalRole: "savant",
     requires: ["Chronicle.service"],
+    dependencies: ["Chronicle.service"],
+    capabilities: ["llm:complete", "llm:stream", "llm:list-models", "llm:set-model", "llm:count-tokens"],
     dataFiles: [], lifecycle: ["init", "run", "dispose"],
     actions: {
       commands: {

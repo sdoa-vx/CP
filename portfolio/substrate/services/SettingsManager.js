@@ -52,10 +52,12 @@ class SettingsManager {
 
     // ── SDOA v3.0 MANIFEST ───────────────────────────────────
     static MANIFEST = {
-        id:           "SettingsManager",
+        id:           "SettingsManager.service",
         type:         "service",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
+        version:      "1.0.1",
+        last_modified: "2026-07-13T00:00:00Z",
         capabilities: [
             "settings.load",
             "settings.save",

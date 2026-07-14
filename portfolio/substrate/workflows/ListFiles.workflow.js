@@ -25,16 +25,18 @@ exports.getVersion = () => exports.VERSION;
 class ListFilesWorkflow {
 
     static MANIFEST = {
-        id:           "ListFilesWorkflow",
-        type:         "service",
+        id:           "ListFilesWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.1.1",
+        capabilities: ["files:list-directory", "files:list-vfs-picker"],
         dependencies: [],
         docs: {
-            description: "Manages ListFilesWorkflow operations.",
+            description: "Lists directory contents for the file picker, supporting any real path on disk (not just paths inside the current project) for VFS attachment.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

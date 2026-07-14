@@ -15,13 +15,18 @@ const MAX_READ_BYTES = 1024 * 256;
 
 class VfsManifestExtractorFallback {
     static MANIFEST = {
-        id:           "VfsManifestExtractorFallback",
+        id:           "VfsManifestExtractorFallback.service",
         type:         "service",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "5.0.0",
-        capabilities: [],
+        version:      "5.0.1",
+        capabilities: ["vfs:extract-manifest-fallback"],
         dependencies: [],
-        docs: { description: "JS Fallback extractor" }
+        docs: {
+            description: "Pure-JS VFS manifest extractor. Reads file metadata and generates type-aware purpose previews (code, document, data, image, audio, video) when the native C++ extractor is unavailable.",
+            author: "ProtoAI team",
+        },
+        last_modified: "2026-07-13T00:00:00Z",
     };
 
     extract(realPath, type) {

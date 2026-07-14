@@ -66,9 +66,11 @@ MANIFEST = {
     "type": "adapter",
     "layer": 3,
     "runtime": "Python",
-    "version": "1.0.0",
+    "version": "1.0.1",
+    "last_modified": "2026-07-13T00:00:00Z",
     "operationalRole": "savant",
     "requires": ["QmdAdapter", "ResponseFormatter.service", "PathResolver.service"],
+    "dependencies": ["QmdAdapter", "ResponseFormatter.service", "PathResolver.service"],
     "capabilities": ["context.refactor", "context.semantic-search", "context.sql-query"],
     "external": {
         "system": "qmd-adapter",

@@ -14,16 +14,18 @@ const paths = require("../access/env/paths");
 class SysProvisionBunWorkflow {
 
     static MANIFEST = {
-        id:           "SysProvisionBunWorkflow",
-        type:         "service",
+        id:           "SysProvisionBunWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["provisioning:install-bun"],
         dependencies: [],
         docs: {
-            description: "Manages SysProvisionBunWorkflow operations.",
+            description: "Downloads and installs the Bun runtime for Windows into the app's local bin directory if not already present.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

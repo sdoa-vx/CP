@@ -9,16 +9,18 @@
 class WorkflowRegistry {
 
     static MANIFEST = {
-        id:           "WorkflowRegistry",
+        id:           "WorkflowRegistry.workflow",
         type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["workflow:register", "workflow:lookup", "workflow:list"],
         dependencies: [],
         docs: {
-            description: "Manages WorkflowRegistry operations.",
+            description: "In-memory registry mapping workflow names to instances (register/has/get/list). Not exported as a singleton — see WorkflowRegistryInstance.workflow for the shared instance used at runtime.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

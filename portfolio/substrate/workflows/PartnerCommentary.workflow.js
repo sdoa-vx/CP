@@ -23,12 +23,14 @@ const orchestrator = require("./MultiModelOrchestrator");
 
 class PartnerCommentaryWorkflow extends WorkflowBase {
     static MANIFEST = {
-        id: "PartnerCommentaryWorkflow",
-        type: "service",
+        id: "PartnerCommentaryWorkflow.workflow",
+        type: "workflow",
+        layer: 3,
         runtime: "NodeJS",
-        version: "1.1.0",
+        version: "1.1.1",
+        last_modified: "2026-07-13T00:00:00Z",
         capabilities: ["partner.commentary"],
-        dependencies: ["MultiModelOrchestrator"],
+        dependencies: ["MultiModelOrchestrator.service"],
         docs: {
             description: "Generates side-channel commentary from the Silent Partner.",
             input:  { message: "string", response: "string", persona: "string?" },

@@ -11,7 +11,7 @@
 # ============================================================
 
 # MANIFEST = {
-#   id: "LlmSettings",
+#   id: "LlmSettings.service",
 #   type: "service",
 #   layer: 3,
 #   runtime: "Python",
@@ -29,7 +29,7 @@
 
 MANIFEST_JSON = """
 "MANIFEST" : {
-  "id": "LlmSettings",
+  "id": "LlmSettings.service",
   "type": "service",
   "layer": 3,
   "runtime": "Python",
@@ -50,11 +50,12 @@ from base import Dashboard
 import streamlit as st
 
 MANIFEST = {
-    "id": "LlmSettings",
+    "id": "LlmSettings.service",
     "type": "service",
     "layer": 3,
     "runtime": "Python",
-    "version": "1.2.0",
+    "version": "1.2.1",
+    "last_modified": "2026-07-13T00:00:00Z",
     "operationalRole": "savant",
     "requires": ["LlmPolicyEngine"],
     "capabilities": ["render_llm_settings", "update_failover_policy"],

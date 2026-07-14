@@ -68,10 +68,12 @@ class MultiModelOrchestrator {
 
     // ── SDOA v3.0 MANIFEST ───────────────────────────────────
     static MANIFEST = {
-        id:           "MultiModelOrchestrator",
+        id:           "MultiModelOrchestrator.service",
         type:         "service",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.1.0",
+        version:      "1.1.1",
+        last_modified: "2026-07-13T00:00:00Z",
         capabilities: [
             "orchestrator.route",
             "orchestrator.engineer",

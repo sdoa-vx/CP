@@ -18,10 +18,12 @@ class BunInstaller extends Adapter {
     // SDOA v3.0 MANIFEST (embedded, authoritative)
     // ------------------------------------------------------------
     static MANIFEST = {
-        id: "BunInstaller",
+        id: "BunInstaller.adapter",
         type: "adapter",
+        layer: 3,
         runtime: "NodeJS",
-        version: "3.0.0",
+        version: "3.0.1",
+        last_modified: "2026-07-13T00:00:00Z",
 
         // v1.2 compatibility fields
         capabilities: [

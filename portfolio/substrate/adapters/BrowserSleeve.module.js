@@ -19,9 +19,11 @@
             type:            "adapter",          // "sleeve" pending typedef extension
             layer:           3,
             runtime:         "Browser",
-            version:         "1.0.0",
+            version:         "1.0.1",
+            last_modified:   "2026-07-13T00:00:00Z",
             operationalRole: "savant",
             requires:        ["ResponseFormatter.service", "PathResolver.service"],
+            dependencies:    ["ResponseFormatter.service", "PathResolver.service"],
             capabilities:    [
                 "tauri.invoke",
                 "backend.workflow",

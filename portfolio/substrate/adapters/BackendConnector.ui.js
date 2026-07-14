@@ -18,13 +18,9 @@
     const MANIFEST = {
         id:      "BackendConnector.ui",
         type:    "adapter",
-        layer:   2,
-        runtime: "Browser",
-        version: "4.0.0",
-        requires: ["tauri-utils.js"],
+        "non-sdoa-compliant": true,
         docs: {
-            description: "Primary bridge between the UI and the Rust sidecar. Handles IPC routing, status polling, and auto-reconnection.",
-            author: "ProtoAI Team"
+            description: "Undeclared duplicate of the BackendConnector UI adapter — copies of this module exist across substrate/adapters, substrate/services, and elsewhere in the repo, and it has been functionally superseded by BrowserSleeve.module.js. Flagged for consolidation in a later remediation phase; not fixed here."
         }
     };
 

@@ -15,11 +15,14 @@ const MemoryManager = require("../lib/MemoryManager");
 
 class MemoryDistillationWorkflow extends WorkflowBase {
     static MANIFEST = {
-        id: "MemoryDistillationWorkflow",
-        type: "service",
+        id: "MemoryDistillationWorkflow.workflow",
+        type: "workflow",
+        layer: 3,
         runtime: "NodeJS",
-        version: "1.0.0",
+        version: "1.0.1",
+        last_modified: "2026-07-13T00:00:00Z",
         capabilities: ["memory.distill"],
+        dependencies: [],
         docs: {
             description: "Triggers the 9-stage memory distillation pipeline for a specific memory class.",
             input: {

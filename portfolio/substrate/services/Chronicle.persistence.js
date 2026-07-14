@@ -11,7 +11,10 @@ const path = require("path");
 
 class ChroniclePersistenceService {
   static MANIFEST = {
-    id: "Chronicle.persistence", type: "service", layer: 3, runtime: "NodeJS", version: "5.0.0",
+    id: "Chronicle.persistence", type: "service", layer: 3, runtime: "NodeJS", version: "5.0.1",
+    last_modified: "2026-07-13T00:00:00Z",
+    capabilities: ["chronicle:append", "chronicle:load", "chronicle:rotate", "chronicle:checkpoint", "chronicle:load-checkpoint", "chronicle:stats"],
+    dependencies: [],
     operationalRole: "savant",
     requires: [], dataFiles: [], lifecycle: ["init", "run", "dispose"],
     actions: {

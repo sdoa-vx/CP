@@ -18,16 +18,18 @@ exports.getVersion = () => exports.VERSION;
 class SpellcheckWorkflow extends WorkflowBase {
 
     static MANIFEST = {
-        id:           "SpellcheckWorkflow",
-        type:         "service",
+        id:           "SpellcheckWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["text:spellcheck"],
         dependencies: [],
         docs: {
-            description: "Manages SpellcheckWorkflow operations.",
+            description: "Runs a spellcheck pass over chat text via a spawned external checker, returning corrections for the given engine/profile/project context.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

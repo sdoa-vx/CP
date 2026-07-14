@@ -21,16 +21,18 @@ exports.getVersion = () => exports.VERSION;
 class VfsListWorkflow extends WorkflowBase {
 
     static MANIFEST = {
-        id:           "VfsListWorkflow",
+        id:           "VfsListWorkflow.workflow",
         type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
-        dependencies: [],
+        version:      "1.0.1",
+        capabilities: ["vfs:list-entries"],
+        dependencies: ["FsVfsRepository.repository"],
         docs: {
-            description: "Manages VfsListWorkflow operations.",
+            description: "Lists all VFS entries registered for a project.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

@@ -15,17 +15,19 @@ const orchestrator = require("./MultiModelOrchestrator");
 
 class EngineerWorkflow extends WorkflowBase {
     static MANIFEST = {
-        id: "EngineerWorkflow",
-        type: "service",
+        id: "EngineerWorkflow.workflow",
+        type: "workflow",
+        layer: 3,
         runtime: "NodeJS",
-        version: "1.0.0",
+        version: "1.0.1",
         capabilities: ["orchestrator.engineer"],
-        dependencies: ["MultiModelOrchestrator"],
+        dependencies: ["MultiModelOrchestrator.service"],
         docs: {
             description: "Rewrites a prompt for optimal performance using the local model.",
             input: { message: "string" },
             output: "{ prompt: string, original: string }"
-        }
+        },
+        last_modified: "2026-07-13T00:00:00Z",
     };
 
     async run(context) {

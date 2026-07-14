@@ -34,9 +34,12 @@ class TriageWorkflow {
     type:            "workflow",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "5.4.0",
+    version:         "5.4.1",
+    last_modified:   "2026-07-13T00:00:00Z",
     operationalRole: "triage",
+    capabilities: ["routing:dispatch", "routing:circuit-breaker", "routing:module-health"],
     requires:  ["Oracle.service", "Pulse.workflow", "Chronicle.service"],
+    dependencies: ["Oracle.service", "Pulse.workflow", "Chronicle.service"],
     dataFiles: [],
     lifecycle: ["init", "run", "dispose"],
     actions: {

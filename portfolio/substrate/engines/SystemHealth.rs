@@ -10,10 +10,16 @@ use tauri::Manager;
 
 #[derive(SdoaDashboard)]
 #[sdoa(
-    id = "SystemHealth",
-    runtime = "Rust/Tauri",
-    version = "2.0.0",
-    dependencies = ["ProvisioningService", "LlmPolicyEngine"]
+    id = "SystemHealth.dashboard",
+    type = "dashboard",
+    layer = 3,
+    runtime = "Rust",
+    version = "2.0.1",
+    capabilities = ["dashboard.spawn-window"],
+    dependencies = ["ProvisioningService", "LlmPolicyEngine"],
+    docs_description = "Spawns the native Tauri window hosting the SDOA System Control health dashboard.",
+    docs_author = "ProtoAI Team",
+    last_modified = "2026-07-13T00:00:00Z"
 )]
 pub struct SystemHealth;
 

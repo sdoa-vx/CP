@@ -8,16 +8,18 @@ const fallback = require("./VfsManifestExtractorFallback.js");
 
 class VfsManifestExtractor {
     static MANIFEST = {
-        id:           "VfsManifestExtractor",
+        id:           "VfsManifestExtractor.service",
         type:         "service",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "5.0.0",
-        capabilities: [],
-        dependencies: [],
+        version:      "5.0.1",
+        capabilities: ["vfs:extract-manifest"],
+        dependencies: ["VfsManifestExtractorFallback.service"],
         docs: {
-            description: "High-performance C++ manifest extractor with JS fallback.",
+            description: "High-performance native C++ VFS manifest extractor (vfs-extractor.exe) that falls back to the pure-JS extractor when the binary is missing or errors.",
             author: "ProtoAI team",
-        }
+        },
+        last_modified: "2026-07-13T00:00:00Z",
     };
 
     extract(realPath, type) {

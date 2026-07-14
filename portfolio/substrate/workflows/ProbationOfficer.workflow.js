@@ -19,7 +19,8 @@ class ProbationOfficerWorkflow {
     // ── v1.2 Required Structural Contract ──────────────────
     id: "ProbationOfficer.workflow",
     type: "workflow",
-    version: "5.1.0",
+    version: "5.1.1",
+    last_modified: "2026-07-13T00:00:00Z",
     runtime: "NodeJS",
     capabilities: ["security.sandbox", "ast.validation"],
     dependencies: ["ResponseFormatter.service"],

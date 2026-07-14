@@ -44,106 +44,11 @@
 
 class OracleService {
   static MANIFEST = {
-    // ── Identity ──────────────────────────────
-    id:              "Oracle.service",
-    type:            "service",
-    layer:           3,
-    runtime:         "Universal",
-    version:         "5.4.0",
-    operationalRole: "oracle",
-
-    // ── Dependencies ──────────────────────────
-    requires:  [],  // Pulse.workflow resolved lazily (not a hard dep)
-    dataFiles: [],
-
-    // ── Lifecycle ─────────────────────────────
-    lifecycle: ["init", "run", "dispose"],
-
-    // ── Action Surface ────────────────────────
-    actions: {
-      commands: {
-        query: {
-          description: "Find modules matching any combination of: capability token, emitted event, accepted event, command name, operational role, runtime, or layer. Returns scored candidates, highest match first.",
-          input: {
-            capability:      "string?",  // dot-notation token e.g. "data.fetch"
-            emitsEvent:      "string?",  // event name e.g. "chronicle:entryRecorded"
-            acceptsEvent:    "string?",  // event name e.g. "app:workspaceChanged"
-            hasCommand:      "string?",  // command id e.g. "record"
-            operationalRole: "string?",  // sovereign role e.g. "coach"
-            runtime:         "string?",  // "NodeJS" | "Browser" | "Rust" | etc.
-            layer:           "number?",  // 1 | 2 | 3
-            fuzzy:           "boolean?"  // default true — partial substring matching
-          },
-          output: "object[]"  // CandidateResult[]
-        },
-        describeModule: {
-          description: "Return a full human-readable capability summary for a single module by id.",
-          input:  { moduleId: "string" },
-          output: "object"    // ModuleProfile
-        },
-        dumpSurface: {
-          description: "Return the full flattened capability surface of every registered module. Used by Blueprint and Interpreter to build their context payloads.",
-          input:  { layerFilter: "number?", runtimeFilter: "string?" },
-          output: "object[]"  // SurfaceEntry[]
-        },
-        whoEmits: {
-          description: "Shorthand: list all modules that emit the given event name.",
-          input:  { event: "string" },
-          output: "object[]"
-        },
-        whoAccepts: {
-          description: "Shorthand: list all modules that accept the given event name.",
-          input:  { event: "string" },
-          output: "object[]"
-        },
-        whoHandles: {
-          description: "Shorthand: list all modules that expose the given command name.",
-          input:  { command: "string" },
-          output: "object[]"
-        },
-        // v5.4: Sleeve boundary query
-        whoHasBoundary: {
-          description: "List all sleeve modules that wrap the given external system.",
-          input:  { system: "string" },
-          output: "object[]"
-        },
-        // Amendment 3.4: live-scored sleeve ranking for multi-sleeve routing
-        rankSleeves: {
-          description: "Return all registered sleeve modules that expose the given capability token, re-scored from current Pulse telemetry at call time. Sorted descending by score. Used by Triage for real-time provider ranking before each dispatch.",
-          input:  { capability: "string?", limit: "number?" },
-          output: "object[]"
-        },
-        // Amendment 4.2: drift penalty and mesh view
-        getDriftPenalty: {
-          description: "Return the cached drift penalty for a module from the last Cartographer drift event. Returns null if no drift signal has been received.",
-          input:  { moduleId: "string" },
-          output: "{ penalty: number, severity: string, capturedAt: number } | null"
-        },
-        meshStatus: {
-          description: "Return a full view of the routing mesh: all sleeves with live Oracle scores, Pulse telemetry, and active drift penalties. Used by Triage for mesh refresh and by dashboards.",
-          input:  {},
-          output: "object[]"   // MeshEntry[]
-        }
-      },
-      events: {
-        "oracle:queryExecuted":        { payload: { queryId: "string", matchCount: "number", durationMs: "number" } },
-        "oracle:indexRebuilt":         { payload: { moduleCount: "number", commandCount: "number", eventCount: "number" } },
-        "oracle:driftPenaltyUpdated":  { payload: { moduleId: "string", penalty: "number", severity: "string", source: "string" } }
-      },
-      accepts: {
-        "registry:moduleRegistered":   { description: "Triggers an index rebuild when a new module joins the registry." },
-        "registry:moduleDeregistered": { description: "Triggers an index rebuild when a module is removed." },
-        "cartographer:modelDrift":     { description: "Amendment 4.2 — caches drift penalties per sleeve for use in _score()." },
-        "cartographer:boundaryDrift":  { description: "Amendment 4.2 — caches boundary drift penalties per sleeve." }
-      },
-      slots: {}
-    },
-
-    // ── Documentation ─────────────────────────
+    id:      "Oracle.service",
+    type:    "service",
+    "non-sdoa-compliant": true,
     docs: {
-      description: "Capability query sovereign. Maintains a live, searchable index of every module's manifest surface — commands, events, accepts, capabilities, roles, runtimes, and layers. Any module can ask Oracle what the system can do, who can do it, and who is listening. Feeds Interpreter, Blueprint, Triage, and Coach with the context they need to make intelligent decisions without hardcoded routing logic.",
-      author: "ProtoAI Core Architecture Group",
-      sdoa:   "5.0.0"
+      description: "Exceeds the 500-line Layer 3 hard cap (capability query sovereign — live registry manifest index, drift-penalty mesh scoring, sleeve boundary queries). Flagged for the oversized-file split scheduled in a later remediation phase; not fixed here."
     }
   };
 

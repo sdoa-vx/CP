@@ -160,22 +160,12 @@ function _httpGenerate(port, payload, timeoutMs = 300_000) {
 class LocalModelAdapter {
 
     static MANIFEST = {
-        id:           "LocalModelAdapter",
-        type:         "adapter",
-        layer:        3,
-        runtime:      "NodeJS",
-        version:      "2.2.0",
-        operationalRole: "adapter",
-        requires:     [],
-        capabilities: ["local.generate", "local.stream", "local.tokenize", "local.budget"],
-        backends:     ["python-http", "llama-cpp"],
-        dependencies: [],
+        id:      "LocalModelAdapter.adapter",
+        type:    "adapter",
+        "non-sdoa-compliant": true,
         docs: {
-            description: "Runtime adapter for local LLMs. Supports Qwen2.5 text models via Python HTTP server or legacy GGUF models via node-llama-cpp.",
-            author: "ProtoAI team",
-            sdoa: "5.0.0"
-        },
-        "Last modified": "2026-06-03 06:10 UTC"
+            description: "Exceeds the 500-line Layer 3 hard cap (local Qwen2.5/python-http and legacy GGUF/llama-cpp inference adapter). Flagged for the oversized-file split scheduled in a later remediation phase; not fixed here."
+        }
     };
 
     constructor() {

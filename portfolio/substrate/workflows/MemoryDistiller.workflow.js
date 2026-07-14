@@ -18,11 +18,12 @@ class MemoryDistillerWorkflow {
     type: "workflow",
     layer: 3,
     runtime: "NodeJS",
-    version: "5.1.0",
+    version: "5.1.1",
+    last_modified: "2026-07-13T00:00:00Z",
     operationalRole: "savant",
     requires: ["Memory.repository", "EventBus.service"], // Enforced complete alignment with actions dependencies
     capabilities: ["lossless_context_distillation"],
-    dependencies: [],
+    dependencies: ["Memory.repository", "EventBus.service"],
     lifecycle: ["init"],
     actions: {
       commands: {

@@ -17,9 +17,11 @@ export class AiSleeve {
     type: "adapter",   // "sleeve" pending typedef extension in SdoaManifest
     layer: 3,
     runtime: "NodeJS",
-    version: "1.0.0",
+    version: "1.0.1",
+    last_modified: "2026-07-13T00:00:00Z",
     operationalRole: "coach",
     requires: ["Registry.service", "ResponseFormatter.service", "PathResolver.service"],
+    dependencies: ["Registry.service", "ResponseFormatter.service", "PathResolver.service"],
     lifecycle: ["init"],
     external: {
       system: "node-llama-cpp",

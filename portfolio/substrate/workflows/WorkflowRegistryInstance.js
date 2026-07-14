@@ -11,16 +11,18 @@ exports.getVersion = () => exports.VERSION;
 class WorkflowRegistry {
 
     static MANIFEST = {
-        id:           "WorkflowRegistry",
+        id:           "WorkflowRegistryInstance.workflow",
         type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["workflow:register-class", "workflow:instantiate", "workflow:list"],
         dependencies: [],
         docs: {
-            description: "Manages WorkflowRegistry operations.",
+            description: "Shared singleton registry that maps workflow names to their classes and instantiates a fresh instance per get() call. Used by registerWorkflows.js and consumers like VersionInfoWorkflow.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

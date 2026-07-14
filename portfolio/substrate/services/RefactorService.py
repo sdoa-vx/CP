@@ -11,7 +11,7 @@
 # ============================================================
 
 # MANIFEST = {
-#   id: "RefactorService",
+#   id: "RefactorService.service",
 #   type: "service",
 #   layer: 3,
 #   runtime: "Python",
@@ -29,7 +29,7 @@
 
 MANIFEST_JSON = """
 "MANIFEST" : {
-  "id": "RefactorService",
+  "id": "RefactorService.service",
   "type": "service",
   "layer": 3,
   "runtime": "Python",
@@ -49,11 +49,12 @@ MANIFEST_JSON = """
 from base import Service
 
 MANIFEST = {
-    "id": "RefactorService",
+    "id": "RefactorService.service",
     "type": "service",
     "layer": 3,
     "runtime": "Python",
-    "version": "1.1.2",
+    "version": "1.1.3",
+    "last_modified": "2026-07-13T00:00:00Z",
     "operationalRole": "savant",
     "requires": ["ContextEngine", "LlmBridge"],
     "capabilities": ["propose_refactor"],

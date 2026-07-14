@@ -11,11 +11,13 @@ class UpdatePolicyWorkflow {
     static MANIFEST = {
         id: "UpdatePolicy.workflow",
         type: "workflow",
+        layer: 3,
         runtime: "NodeJS",
-        version: "4.0.0",
-        capabilities: [],
+        version: "4.0.1",
+        capabilities: ["policy:update"],
         dependencies: ["paths"],
-        docs: { description: "Updates the LLM policy in policy.defaults.json.", author: "ProtoAI team" }
+        docs: { description: "Updates the LLM policy in policy.defaults.json.", author: "ProtoAI team" },
+        last_modified: "2026-07-13T00:00:00Z",
     };
 
     constructor(deps) {

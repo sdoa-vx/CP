@@ -14,16 +14,18 @@ const WorkflowResult = require("./WorkflowResult");
 class ImageGenWorkflow {
 
     static MANIFEST = {
-        id:           "ImageGenWorkflow",
-        type:         "service",
+        id:           "ImageGenWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["image:generate"],
         dependencies: [],
         docs: {
-            description: "Manages ImageGenWorkflow operations.",
+            description: "Generates an image URL from free-text via the Pollinations.ai API, using the user's description directly as the prompt without a secondary LLM rewrite.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

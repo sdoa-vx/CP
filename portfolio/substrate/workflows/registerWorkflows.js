@@ -31,16 +31,18 @@ const MemoryDistillerWorkflow    = require("./MemoryDistiller.workflow");
 
 // SDOA v5.0 MANIFEST
 const MANIFEST = {
-    id:           "registerWorkflows",
+    id:           "RegisterWorkflows.utility",
     type:         "utility",
+    layer:        3,
     runtime:      "NodeJS",
-    version:      "1.1.0",
-    capabilities: [],
+    version:      "1.1.1",
+    capabilities: ["workflow:bulk-register"],
     dependencies: [],
     docs: {
-        description: "registerWorkflows utilities and exports.",
+        description: "Bootstrap script that requires each backend workflow class and registers it into the shared WorkflowRegistryInstance singleton.",
         author: "ProtoAI team",
     },
+    last_modified: "2026-07-13T00:00:00Z",
     actions: {
         commands:  {},
         triggers:  {},

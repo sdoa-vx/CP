@@ -10,12 +10,14 @@ const path = require("path");
 class GetPolicyWorkflow {
     static MANIFEST = {
         id: "GetPolicy.workflow",
-        type: "service",
+        type: "workflow",
+        layer: 3,
         runtime: "NodeJS",
-        version: "4.0.0",
-        capabilities: [],
+        version: "4.0.1",
+        capabilities: ["policy:get"],
         dependencies: ["paths"],
-        docs: { description: "Fetches the current LLM policy from policy.defaults.json.", author: "ProtoAI team" }
+        docs: { description: "Fetches the current LLM policy from policy.defaults.json.", author: "ProtoAI team" },
+        last_modified: "2026-07-13T00:00:00Z",
     };
 
     constructor(deps) {

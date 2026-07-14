@@ -66,16 +66,18 @@ function generateId() {
 class FsVfsRepository extends BaseRepository {
 
     static MANIFEST = {
-        id:           "FsVfsRepository",
-        type:         "service",
+        id:           "FsVfsRepository.repository",
+        type:         "repository",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
-        dependencies: [],
+        version:      "1.0.1",
+        capabilities: ["vfs:index-crud", "vfs:type-detection", "vfs:manifest-store", "vfs:permissions-update"],
+        dependencies: ["BaseRepository.repository", "PathResolver.service"],
         docs: {
-            description: "Manages FsVfsRepository operations.",
+            description: "Persists the Virtual File System registry for a project — pointer-based entries with detected type/mime, permissions, and per-entry extracted manifests, never copying the underlying files.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

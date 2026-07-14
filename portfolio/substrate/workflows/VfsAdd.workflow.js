@@ -47,16 +47,18 @@ const SKIP_DIRS = new Set([
 class VfsAddWorkflow extends WorkflowBase {
 
     static MANIFEST = {
-        id:           "VfsAddWorkflow",
+        id:           "VfsAddWorkflow.workflow",
         type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
-        dependencies: [],
+        version:      "1.1.1",
+        capabilities: ["vfs:add-entry"],
+        dependencies: ["FsVfsRepository.repository", "VfsManifestExtractor.service"],
         docs: {
-            description: "Manages VfsAddWorkflow operations.",
+            description: "Registers a file or folder pointer in the project's VFS index, skipping system directories, without ever copying the underlying files.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

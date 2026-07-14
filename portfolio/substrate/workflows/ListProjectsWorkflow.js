@@ -13,16 +13,18 @@ const WorkflowResult = require("./WorkflowResult");
 class ListProjectsWorkflow extends WorkflowBase {
 
     static MANIFEST = {
-        id:           "ListProjectsWorkflow",
-        type:         "service",
+        id:           "ListProjectsWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["projects:list"],
         dependencies: [],
         docs: {
-            description: "Manages ListProjectsWorkflow operations.",
+            description: "Lists all project directories under the data/projects root for the project switcher UI.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

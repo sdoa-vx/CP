@@ -14,16 +14,18 @@ const paths          = require("../access/env/paths");
 
 class ImportProjectWorkflow extends WorkflowBase {
     static MANIFEST = {
-        id:           "ImportProjectWorkflow",
-        type:         "service",
+        id:           "ImportProjectWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["project:import"],
         dependencies: ["paths"],
         docs: {
             description: "Imports an external project folder by copying it into the projects directory.",
             author: "ProtoAI team",
-        }
+        },
+        last_modified: "2026-07-13T00:00:00Z",
     };
 
     async run(payload) {

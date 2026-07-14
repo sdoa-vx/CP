@@ -38,8 +38,10 @@ class ScaffoldWorkflow {
     type:            "workflow",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "5.1.0",
+    version:         "5.1.1",
+    last_modified:   "2026-07-13T00:00:00Z",
     operationalRole: "savant",
+    capabilities: ["scaffold:generate", "scaffold:preview", "scaffold:list-templates"],
 
     // ── Dependencies ──────────────────────────
     requires:  [
@@ -49,6 +51,7 @@ class ScaffoldWorkflow {
       // ProbationOfficer.workflow.rs — resolved lazily (Rust/Wasm, may not be present in dev)
       // AiProvider.adapter           — resolved lazily
     ],
+    dependencies: ["Oracle.service", "Chronicle.service", "ResponseFormatter.service"],
     dataFiles: ["server/data/scaffold.templates.json"],
 
     // ── Lifecycle ─────────────────────────────

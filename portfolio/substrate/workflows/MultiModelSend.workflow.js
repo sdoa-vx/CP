@@ -38,12 +38,14 @@ class MultiModelSendWorkflow extends WorkflowBase {
 
     // ── SDOA v1.2 / v5.0 MANIFEST ────────────────────────────
     static MANIFEST = {
-        id:           "MultiModelSendWorkflow",
+        id:           "MultiModelSendWorkflow.workflow",
         type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
+        version:      "1.0.1",
+        last_modified: "2026-07-13T00:00:00Z",
         capabilities: ["chat.send", "chat.stream", "orchestrator.pipeline"],
-        dependencies: ["SendMessageWorkflow", "MultiModelOrchestrator"],
+        dependencies: ["SendMessageWorkflow", "MultiModelOrchestrator.service"],
         docs: {
             description: "Orchestrated chat workflow. Routes request through local models and delegates to the prime model via SendMessageWorkflow.",
             input: {

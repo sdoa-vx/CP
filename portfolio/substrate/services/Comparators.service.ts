@@ -19,9 +19,12 @@ export class ComparatorsService {
     type: "service",
     layer: 3,
     runtime: "NodeJS",
-    version: "5.0.0",
+    version: "5.0.1",
+    last_modified: "2026-07-13T00:00:00Z",
     operationalRole: "savant",
     requires: ["Types"],
+    dependencies: ["Types"],
+    capabilities: ["compare:number", "compare:string", "compare:boolean", "compare:array", "compare:rgb", "compare:hsv", "compare:hsl", "compare:signal", "compare:rational"],
     lifecycle: ["init"],
     actions: {
       commands: {

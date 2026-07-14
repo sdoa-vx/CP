@@ -16,10 +16,12 @@ class BackendConnector extends Service {
     // SDOA v3.1 MANIFEST (embedded, authoritative)
     // ------------------------------------------------------------
     static MANIFEST = {
-        id: "BackendConnector",
+        id: "BackendConnector.service",
         type: "service",
-        runtime: "JavaScript",
-        version: "3.1.0",
+        layer: 3,
+        runtime: "Browser",
+        version: "3.1.1",
+        last_modified: "2026-07-13T00:00:00Z",
 
         // v1.2 compatibility fields
         capabilities: [

@@ -15,16 +15,18 @@ exports.getVersion = () => exports.VERSION;
 class VersionInfoWorkflow extends WorkflowBase {
 
     static MANIFEST = {
-        id:           "VersionInfoWorkflow",
+        id:           "VersionInfoWorkflow.workflow",
         type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["system:version-info"],
         dependencies: [],
         docs: {
-            description: "Manages VersionInfoWorkflow operations.",
+            description: "Reports the SDOA version plus each registered workflow's declared VERSION, for diagnostics and about screens.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

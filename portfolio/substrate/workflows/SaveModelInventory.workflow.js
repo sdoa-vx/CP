@@ -10,12 +10,14 @@ const path = require("path");
 class SaveModelInventoryWorkflow {
     static MANIFEST = {
         id: "SaveModelInventory.workflow",
-        type: "service",
+        type: "workflow",
+        layer: 3,
         runtime: "NodeJS",
-        version: "4.0.0",
-        capabilities: [],
+        version: "4.0.1",
+        capabilities: ["models:save-inventory"],
         dependencies: ["paths"],
-        docs: { description: "Saves updates to the model inventory in models.catalog.json.", author: "ProtoAI team" }
+        docs: { description: "Saves updates to the model inventory in models.catalog.json.", author: "ProtoAI team" },
+        last_modified: "2026-07-13T00:00:00Z",
     };
 
     constructor(deps) {

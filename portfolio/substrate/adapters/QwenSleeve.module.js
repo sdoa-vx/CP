@@ -26,9 +26,11 @@ class QwenSleeve {
         type:            "adapter",          // "sleeve" pending typedef extension
         layer:           3,
         runtime:         "NodeJS",
-        version:         "1.0.0",
+        version:         "1.0.1",
+        last_modified:   "2026-07-13T00:00:00Z",
         operationalRole: "savant",
         requires:        ["ResponseFormatter.service", "PathResolver.service"],
+        dependencies:    ["ResponseFormatter.service", "PathResolver.service"],
         capabilities:    ["local.generate", "local.stream", "local.tokenize", "local.budget"],
         lifecycle:       ["init", "run", "dispose"],
 

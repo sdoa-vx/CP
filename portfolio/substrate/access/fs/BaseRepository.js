@@ -10,16 +10,18 @@ const fs = require("fs-extra");
 class BaseRepository {
 
     static MANIFEST = {
-        id:           "BaseRepository",
-        type:         "service",
+        id:           "BaseRepository.repository",
+        type:         "repository",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["fs:read-json", "fs:write-json-queued", "fs:list-files"],
         dependencies: [],
         docs: {
-            description: "Manages BaseRepository operations.",
+            description: "Abstract base class providing queued JSON read/write, existence checks, and directory listing for all filesystem-backed repositories.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

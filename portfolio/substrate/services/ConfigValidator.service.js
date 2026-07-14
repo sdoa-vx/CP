@@ -15,9 +15,12 @@ class ConfigValidatorService {
     type:            "service",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "5.0.0",
+    version:         "5.0.1",
+    last_modified:   "2026-07-13T00:00:00Z",
     operationalRole: "savant",
     requires:        ["Chronicle.service"],
+    dependencies:    ["Chronicle.service"],
+    capabilities:    ["config:validate", "config:validate-all", "config:get-defaults", "config:auto-repair"],
     dataFiles:       [],
     lifecycle:       ["init", "run", "dispose"],
     actions: {

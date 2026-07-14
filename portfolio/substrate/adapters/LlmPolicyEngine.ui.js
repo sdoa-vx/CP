@@ -31,86 +31,9 @@
         static MANIFEST = {
             id:      "LlmPolicyEngine.ui",
             type:    "adapter",
-            runtime: "Browser",
-            version: "3.0.0",
-
-            // v1.2 fields — always present, never removed
-            capabilities: [
-                "policy.read",
-                "policy.write",
-                "policy.resolve",
-                "workflow.invoke"
-            ],
-            dependencies: [
-                "tauri-utils.js",
-                "BackendConnector.ui.js"
-            ],
+            "non-sdoa-compliant": true,
             docs: {
-                description: "Browser-safe governance adapter. Reads and writes LLM routing policy via BackendConnector.ui. Exposes resolveRoute, getPolicy, and updatePolicy to UI surfaces.",
-                input: {
-                    resolveRoute:  { requestedTier: "string" },
-                    updatePolicy:  { newSettings: "object" }
-                },
-                output: {
-                    resolveRoute:  "PolicyRoute",
-                    getPolicy:     "PolicyObject",
-                    updatePolicy:  "void"
-                },
-                author: "ProtoAI team",
-                sdoa_compatibility: `
-                    SDOA Compatibility Contract:
-                    - v1.2 Manifest is minimum requirement (Name/Type/Version/Description/Capabilities/Dependencies/Docs).
-                    - v2.0 may also read sidecars, hot-reload, version-CLI.
-                    - v3.0+ may add actions.commands, actions.triggers, actions.emits, actions.workflows.
-                    - Lower versions MUST ignore unknown/unexpressed fields.
-                    - Higher versions MUST NOT change meaning of older fields.
-                    - All versions are backward and forward compatible.
-                `
-            },
-
-            // v3.0 action surface — additive only
-            actions: {
-                commands: {
-                    resolveRoute: {
-                        description: "Resolve the best model route based on tier and current policy state.",
-                        input:  { requestedTier: "string" },
-                        output: "PolicyRoute"
-                    },
-                    getPolicy: {
-                        description: "Load the current LLM policy from backend config.",
-                        input:  {},
-                        output: "PolicyObject"
-                    },
-                    updatePolicy: {
-                        description: "Merge and persist new policy settings to backend.",
-                        input:  { newSettings: "object" },
-                        output: "void"
-                    }
-                },
-                triggers: {
-                    policyUpdated: {
-                        description: "Fires when the policy is successfully updated.",
-                        payload: { updated: "object" }
-                    }
-                },
-                emits: {
-                    routeResolved: {
-                        description: "Emits the resolved route after resolution.",
-                        payload: { requestedTier: "string", resolved: "object" }
-                    }
-                },
-                workflows: {
-                    resolveRoute: {
-                        description: "Primary policy resolution workflow.",
-                        input:  { requestedTier: "string" },
-                        output: "PolicyRoute"
-                    },
-                    updatePolicy: {
-                        description: "Primary policy update workflow.",
-                        input:  { newSettings: "object" },
-                        output: "void"
-                    }
-                }
+                description: "Undeclared duplicate of the LlmPolicyEngine UI adapter — copies of this module exist across substrate/adapters, substrate/engines, and elsewhere in the repo. Flagged for consolidation in a later remediation phase; not fixed here."
             }
         };
         // ── end of SDOA v3.0 MANIFEST ────────────────────────

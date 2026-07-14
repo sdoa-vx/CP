@@ -11,7 +11,7 @@
 # ============================================================
 
 # MANIFEST = {
-#   id: "ProvisioningService",
+#   id: "ProvisioningService.service",
 #   type: "service",
 #   layer: 3,
 #   runtime: "Python",
@@ -29,7 +29,7 @@
 
 MANIFEST_JSON = """
 "MANIFEST" : {
-  "id": "ProvisioningService",
+  "id": "ProvisioningService.service",
   "type": "service",
   "layer": 3,
   "runtime": "Python",
@@ -49,11 +49,12 @@ MANIFEST_JSON = """
 from base import Service
 
 MANIFEST = {
-    "id": "ProvisioningService",
+    "id": "ProvisioningService.service",
     "type": "service",
     "layer": 3,
     "runtime": "Python",
-    "version": "1.0.3",
+    "version": "1.0.4",
+    "last_modified": "2026-07-13T00:00:00Z",
     "operationalRole": "savant",
     "requires": ["BunInstaller"],
     "capabilities": ["verify_environment", "request_provisioning"],

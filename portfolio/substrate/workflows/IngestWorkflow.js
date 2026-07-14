@@ -9,11 +9,18 @@ const { Task } = require('../base/sdoa-base.js');
 
 class IngestWorkflow extends Task {
     static MANIFEST = {
-        id: "IngestWorkflow",
+        id: "IngestWorkflow.workflow",
         type: "workflow",
+        layer: 3,
         runtime: "NodeJS",
-        version: "1.1.3",
-        dependencies: ["QmdAdapter", "BackendConnector"]
+        version: "1.1.4",
+        capabilities: ["ingest:reindex", "ingest:deep-scan-reembed"],
+        dependencies: ["QmdAdapter", "BackendConnector"],
+        docs: {
+            description: "Background sync task that reindexes the active project's vector collection via QmdAdapter and BackendConnector, optionally triggering deep semantic re-embedding.",
+            author: "ProtoAI team",
+        },
+        last_modified: "2026-07-13T00:00:00Z",
     };
 
     async run(payload = { deep_scan: false }) {

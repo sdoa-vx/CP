@@ -108,6 +108,24 @@ import json
 import difflib
 from base import Service
 
+MANIFEST = {
+    "id": "Coach.workflow",
+    "type": "workflow",
+    "layer": 3,
+    "runtime": "Python",
+    "version": "5.3.1",
+    "last_modified": "2026-07-13T00:00:00Z",
+    "operationalRole": "savant",
+    "requires": ["AiProvider.adapter", "ProbationOfficer.workflow"],
+    "capabilities": ["coach:repair-module", "coach:model-upgrade-gate", "coach:command-discovery-gate"],
+    "dependencies": ["AiProvider.adapter", "ProbationOfficer.workflow"],
+    "docs": {
+        "description": "AI code repair coach. Diagnoses test failures and patch/upgrade proposals from sleeves, then gates them through ProbationOfficer before Registrar re-fields the module. Sole approval authority — sleeves cannot self-approve.",
+        "author": "ProtoAI Core Architecture Group",
+        "sdoa": "5.0.0"
+    }
+}
+
 class CoachWorkflow(Service):
     def run(self, payload=None):
         if not payload:

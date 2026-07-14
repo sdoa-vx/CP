@@ -22,16 +22,18 @@ const fs = require("fs-extra");
 
 // SDOA v3.0 MANIFEST
 const MANIFEST = {
-    id:           "permissions",
+    id:           "Permissions.utility",
     type:         "utility",
+    layer:        3,
     runtime:      "NodeJS",
-    version:      "1.0.0",
-    capabilities: [],
+    version:      "1.0.1",
+    capabilities: ["permissions:grant", "permissions:revoke", "permissions:check", "permissions:list", "permissions:set-tier"],
     dependencies: [],
     docs: {
-        description: "permissions utilities and exports.",
+        description: "CLI tool for granting, revoking, listing, and checking AI file-editing permissions (file/directory/pattern grants with context tiers) per project.",
         author: "ProtoAI team",
     },
+    last_modified: "2026-07-13T00:00:00Z",
     actions: {
         commands:  {},
         triggers:  {},

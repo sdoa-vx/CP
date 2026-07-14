@@ -51,8 +51,10 @@ class TestCoreWorkflow {
     type:            "workflow",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "5.0.0",
+    version:         "5.0.1",
+    last_modified:   "2026-07-13T00:00:00Z",
     operationalRole: "savant",
+    capabilities: ["testcore:run", "testcore:run-suite", "testcore:list-suites", "testcore:get-last-report"],
 
     // ── Dependencies ──────────────────────────
     requires:  [
@@ -61,6 +63,7 @@ class TestCoreWorkflow {
       "ResponseFormatter.service"
       // Coach.workflow.py — resolved lazily
     ],
+    dependencies: ["Oracle.service", "Chronicle.service", "ResponseFormatter.service"],
     dataFiles: [],
 
     // ── Lifecycle ─────────────────────────────

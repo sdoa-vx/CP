@@ -13,16 +13,18 @@ const paths = require("../env/paths");
 class FsProjectRepository extends BaseRepository {
 
     static MANIFEST = {
-        id:           "FsProjectRepository",
-        type:         "service",
+        id:           "FsProjectRepository.repository",
+        type:         "repository",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
-        dependencies: [],
+        version:      "1.0.1",
+        capabilities: ["projects:list", "projects:history", "projects:chat-sessions", "projects:settings", "projects:structure-walk"],
+        dependencies: ["BaseRepository.repository", "PathResolver.service"],
         docs: {
-            description: "Manages FsProjectRepository operations.",
+            description: "Manages per-project persistence: project listing, history logs, chat sessions, directory structure walking, and project settings.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

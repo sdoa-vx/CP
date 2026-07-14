@@ -144,16 +144,18 @@ function renderResults(sources) {
 class DeepSearchWorkflow {
 
     static MANIFEST = {
-        id:           "DeepSearchWorkflow",
-        type:         "service",
+        id:           "DeepSearchWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["search:wikipedia", "search:duckduckgo", "search:arxiv", "search:synthesize"],
         dependencies: [],
         docs: {
-            description: "Manages DeepSearchWorkflow operations.",
+            description: "Performs a free-API deep search (Wikipedia summary, DuckDuckGo instant answer, arXiv preprints) and synthesizes the results into a single markdown report.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

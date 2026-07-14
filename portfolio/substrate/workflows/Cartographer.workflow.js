@@ -53,106 +53,11 @@ const ResponseFormatter = require("../services/ResponseFormatter.service");
 
 class CartographerWorkflow {
   static MANIFEST = {
-    // ── Identity ──────────────────────────────
-    id:              "Cartographer.workflow",
-    type:            "workflow",
-    layer:           3,
-    runtime:         "NodeJS",
-    version:         "5.4.0",
-    operationalRole: "savant",
-
-    // ── Dependencies ──────────────────────────
-    requires:  ["Oracle.service", "Chronicle.service", "ResponseFormatter.service"],
-    dataFiles: [],
-
-    // ── Lifecycle ─────────────────────────────
-    lifecycle: ["init", "run", "dispose"],
-
-    // ── Action Surface ────────────────────────
-    actions: {
-      commands: {
-        run: {
-          description: "Build the full system topology graph and render it. Returns graph JSON and/or SVG.",
-          input: {
-            format:       "string?",   // "graph" | "svg" | "both" (default: "both")
-            outputPath:   "string?",   // Write SVG to disk at this path
-            layerFilter:  "number?",   // Only include modules from this layer
-            groupBy:      "string?",   // "layer" | "runtime" | "type" (default: "layer")
-            showOrphans:  "boolean?",  // Include modules with no edges (default: true)
-            title:        "string?"    // Graph title in SVG header
-          },
-          output: "object"   // { graph, svg, writtenTo }
-        },
-        buildGraph: {
-          description: "Build only the structured graph JSON — no rendering.",
-          input: { layerFilter: "number?", showOrphans: "boolean?" },
-          output: "object"   // GraphData
-        },
-        renderSvg: {
-          description: "Render a previously built graph to SVG.",
-          input: { graph: "object", title: "string?", groupBy: "string?" },
-          output: "string"   // SVG markup
-        },
-        diff: {
-          description: "Compare two graph snapshots and return added/removed nodes and edges.",
-          input: { before: "object", after: "object" },
-          output: "object"   // { addedNodes, removedNodes, addedEdges, removedEdges }
-        },
-        // Phase 5 Track B
-        boundaryDrift: {
-          description: "Compare each sleeve's declared external.commands against observed Chronicle telemetry. Returns a severity-rated boundaryDriftReport.",
-          input: { since: "string?" },
-          output: "object"
-        },
-        // Amendment 3.3
-        modelDrift: {
-          description: "Analyse AI model sleeves across five drift dimensions: latency drift, error/hallucination drift, capability drift (per-command failure rate), scoring drift, and version drift. Returns a severity-rated modelDriftReport.",
-          input: {
-            since:         "string?",
-            baselineSince: "string?"
-          },
-          output: "object"
-        },
-        // Amendment 4.3
-        predictiveDrift: {
-          description: "Trend analysis across all boundary sleeves. Splits Chronicle telemetry into windowCount time windows, fits a linear regression to p95 latency and error rate per sleeve, projects the time-to-threshold for each metric, and emits cartographer:driftWarning for any sleeve predicted to cross a danger threshold within the horizon. Also emits cartographer:rotationRecommended when the predicted-failing sleeve has viable alternatives in Oracle.",
-          input: {
-            since:       "string?",   // ISO timestamp — analysis window start (default: 24h ago)
-            windowCount: "number?",   // number of sub-windows to fit (default: 5)
-            horizon:     "number?"    // warning horizon in ms (default: 4h = 14_400_000)
-          },
-          output: "object"   // { warnings[], rotations[], summary }
-        }
-      },
-      events: {
-        "cartographer:graphBuilt": {
-          payload: { nodeCount: "number", edgeCount: "number", snapshotId: "string" }
-        },
-        "cartographer:svgRendered": {
-          payload: { nodeCount: "number", writtenTo: "string?" }
-        },
-        "cartographer:boundaryDrift": {
-          payload: { driftCount: "number", severity: "string", systems: "string[]" }
-        },
-        "cartographer:modelDrift": {
-          payload: { driftCount: "number", severity: "string", dimensions: "string[]", systems: "string[]" }
-        },
-        // Amendment 4.3
-        "cartographer:driftWarning": {
-          payload: { moduleId: "string", metric: "string", currentValue: "number", slope: "number", predictedCrossMs: "number", severity: "string", windowCount: "number", windowMs: "number" }
-        },
-        "cartographer:rotationRecommended": {
-          payload: { moduleId: "string", reason: "string", capabilities: "string[]", alternatives: "string[]" }
-        }
-      },
-      accepts: {},
-      slots:   {}
-    },
-
+    id:      "Cartographer.workflow",
+    type:    "workflow",
+    "non-sdoa-compliant": true,
     docs: {
-      description: "System topology mapper. Reads all registered module manifests from Oracle and builds a full dependency + event-connection graph. Outputs structured JSON (for programmatic use) and/or a self-contained SVG (for humans). Blueprint is for wiring new connections; Cartographer is for understanding what already exists.",
-      author: "ProtoAI Core Architecture Group",
-      sdoa:   "5.0.0"
+      description: "Exceeds the 500-line Layer 3 hard cap (system topology mapper — dependency/event graph building, SVG rendering, boundary/model/predictive drift analysis). Flagged for the oversized-file split scheduled in a later remediation phase; not fixed here."
     }
   };
 

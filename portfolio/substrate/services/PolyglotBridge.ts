@@ -10,11 +10,19 @@ import * as path from "path";
 
 export class PolyglotBridge {
   static MANIFEST = {
-    id: "PolyglotBridge",
-    type: "bridge",
+    id: "PolyglotBridge.adapter",
+    type: "adapter",
     layer: 3,
-    version: "5.0.0",
-    runtime: "NodeJS"
+    version: "5.0.1",
+    last_modified: "2026-07-13T00:00:00Z",
+    runtime: "NodeJS",
+    capabilities: ["polyglot:spawn-subprocess", "polyglot:call", "polyglot:event-bridge"],
+    dependencies: [],
+    docs: {
+      description: "Spawns a Python subprocess wrapping a target SdoaModule file and bridges call/response/event JSON-line messages between the NodeJS registry and the Python module over stdio.",
+      author: "ProtoAI team",
+      sdoa: "5.0.0"
+    }
   };
 
   private child: ChildProcess | null = null;

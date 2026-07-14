@@ -10,10 +10,16 @@ use tauri::{GlobalShortcutManager, Manager};
 
 #[derive(SdoaEngine)]
 #[sdoa(
-    id = "CommandPalette",
-    runtime = "Rust/Tauri",
-    version = "1.0.0",
-    dependencies = ["QmdAdapter", "LlmBridge"]
+    id = "CommandPalette.engine",
+    type = "engine",
+    layer = 3,
+    runtime = "Rust",
+    version = "1.0.1",
+    capabilities = ["hotkey.register", "palette.toggle"],
+    dependencies = ["QmdAdapter", "LlmBridge"],
+    docs_description = "Registers the global Cmd+Shift+Space hotkey and toggles visibility of the native Tauri command palette window.",
+    docs_author = "ProtoAI Team",
+    last_modified = "2026-07-13T00:00:00Z"
 )]
 pub struct CommandPalette;
 

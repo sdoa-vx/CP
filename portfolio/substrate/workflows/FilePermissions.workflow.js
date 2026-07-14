@@ -55,16 +55,18 @@ function savePermissions(project, permissions) {
 class FilePermissionsWorkflow {
 
     static MANIFEST = {
-        id:           "FilePermissionsWorkflow",
-        type:         "service",
+        id:           "FilePermissionsWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["permissions:grant", "permissions:revoke", "permissions:list", "permissions:check", "permissions:clear"],
         dependencies: [],
         docs: {
-            description: "Manages FilePermissionsWorkflow operations.",
+            description: "Manages AI file-editing permissions per project (grant, revoke, list, check, clear), persisted to a per-project .protoai-permissions.json file.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

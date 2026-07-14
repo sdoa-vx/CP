@@ -22,9 +22,12 @@ class PolicySleeve extends Adapter {
         type:            "adapter",          // "sleeve" pending typedef extension
         layer:           3,
         runtime:         "NodeJS",
-        version:         "1.0.0",
+        version:         "1.0.1",
+        last_modified:   "2026-07-13T00:00:00Z",
         operationalRole: "savant",
         requires:        ["LlmPolicyEngine", "AiProvider.adapter",
+                          "ResponseFormatter.service", "PathResolver.service"],
+        dependencies:    ["LlmPolicyEngine", "AiProvider.adapter",
                           "ResponseFormatter.service", "PathResolver.service"],
         capabilities:    ["llm.generate", "llm.failover", "llm.route", "llm.economic-mode"],
         lifecycle:       ["init", "run", "dispose"],

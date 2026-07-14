@@ -40,16 +40,19 @@ const Middleware     = require("../services/Middleware.service");
 
 class SysProvisionModelWorkflow extends WorkflowBase {
     static MANIFEST = {
-        id:      "SysProvisionModelWorkflow",
+        id:      "SysProvisionModelWorkflow.workflow",
         type:    "workflow",
+        layer:   3,
         runtime: "NodeJS",
-        version: "2.0.0",
+        version: "2.0.1",
         capabilities: ["sys.provision.model"],
+        dependencies: [],
         docs: {
             description: "First-run setup: installs Python venv, deps, and downloads Qwen2.5-Omni-7B.",
             input:  { model: "string?", cuda: "boolean?" },
             output: { venv: "string", model: "string" },
-        }
+        },
+        last_modified: "2026-07-13T00:00:00Z",
     };
 
     _findBootstrap() {

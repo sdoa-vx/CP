@@ -28,16 +28,18 @@ exports.getVersion = () => exports.VERSION;
 class SearchHistoryWorkflow extends WorkflowBase {
 
     static MANIFEST = {
-        id:           "SearchHistoryWorkflow",
-        type:         "service",
+        id:           "SearchHistory.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["history:search"],
         dependencies: [],
         docs: {
-            description: "Manages SearchHistoryWorkflow operations.",
+            description: "Case-insensitive substring search across a project's (or all projects') history.json chat logs, returning matches with surrounding context snippets sorted most-recent-first.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

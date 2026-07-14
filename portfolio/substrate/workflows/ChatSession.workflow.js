@@ -11,16 +11,18 @@ const FsProjectRepository = require("../access/fs/FsProjectRepository");
 class ChatSessionWorkflow {
 
     static MANIFEST = {
-        id:           "ChatSessionWorkflow",
-        type:         "service",
+        id:           "ChatSessionWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
-        dependencies: [],
+        version:      "1.0.1",
+        capabilities: ["chat-session:list", "chat-session:create", "chat-session:rename", "chat-session:delete", "chat-session:load", "chat-session:append"],
+        dependencies: ["FsProjectRepository.repository"],
         docs: {
-            description: "Manages ChatSessionWorkflow operations.",
+            description: "Manages per-project chat session CRUD (list, create, rename, delete, load, append) via FsProjectRepository, auto-migrating legacy history.json into a default session when needed.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

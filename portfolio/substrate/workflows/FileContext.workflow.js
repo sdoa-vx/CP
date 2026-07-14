@@ -230,16 +230,18 @@ function resolveHigherTier(current, candidate) {
 class FileContextWorkflow {
 
     static MANIFEST = {
-        id:           "FileContextWorkflow",
-        type:         "service",
+        id:           "FileContextWorkflow.workflow",
+        type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["context:resolve-files", "context:tier-escalation"],
         dependencies: [],
         docs: {
-            description: "Manages FileContextWorkflow operations.",
+            description: "Resolves which project files to include as chat context based on eager/cached/lazy permission tiers, auto-escalating imported dependencies of eager files for the current session.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},

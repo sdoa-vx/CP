@@ -13,7 +13,8 @@
 export const MANIFEST = {
   id: "Types",
   type: "primitive",
-  version: "5.0.0",
+  layer: 2,
+  version: "5.0.1",
   runtime: "Universal",
   capabilities: ["type_definitions"],
   dependencies: [],
@@ -21,7 +22,8 @@ export const MANIFEST = {
     description: "Common type definitions for SDOA components.",
     author: "ProtoAI team",
     sdoa: "5.0.0"
-  }
+  },
+  last_modified: "2026-07-13T00:00:00Z"
 };
 
 export type TASR = number; // Real number

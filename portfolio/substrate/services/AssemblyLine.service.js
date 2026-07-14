@@ -10,7 +10,10 @@ const { spawn } = require("child_process");
 
 class AssemblyLineService {
   static MANIFEST = {
-    id: "AssemblyLine.service", type: "service", layer: 3, runtime: "NodeJS", version: "5.0.0",
+    id: "AssemblyLine.service", type: "service", layer: 3, runtime: "NodeJS", version: "5.0.1",
+    last_modified: "2026-07-13T00:00:00Z",
+    capabilities: ["subprocess:spawn", "subprocess:kill", "subprocess:send-input", "subprocess:list", "memory:shared-buffer-init"],
+    dependencies: [],
     operationalRole: "assemblyline", requires: [], dataFiles: [], lifecycle: ["init", "run", "dispose"],
     actions: {
       commands: {

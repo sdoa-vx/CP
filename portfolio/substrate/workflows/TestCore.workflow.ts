@@ -27,10 +27,13 @@ export class AlgosimTestWorkflow {
     type: "workflow",
     layer: 3,
     runtime: "NodeJS",
-    version: "5.1.0",
+    version: "5.1.1",
+    last_modified: "2026-07-13T00:00:00Z",
     operationalRole: "savant",
+    capabilities: ["algosim:run-test", "algosim:self-heal"],
     // AiBroker.adapter replaced by AiSleeve.module (Step 13)
     requires: ["Evaluator.service", "Comparators.service", "Logger.service", "AiSleeve.module"],
+    dependencies: ["Evaluator.service", "Comparators.service", "Logger.service", "AiSleeve.module"],
     lifecycle: ["init", "run", "dispose"],
     actions: {
       commands: {

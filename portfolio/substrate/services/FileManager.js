@@ -21,10 +21,12 @@ class FileManager extends Component {
     // SDOA v3.0 MANIFEST (embedded, authoritative)
     // ------------------------------------------------------------
     static MANIFEST = {
-        id: "FileManager",
+        id: "FileManager.service",
         type: "service",
-        runtime: "JavaScript",
-        version: "3.0.0",
+        layer: 3,
+        runtime: "Browser",
+        version: "3.0.1",
+        last_modified: "2026-07-13T00:00:00Z",
 
         // v1.2 compatibility fields
         capabilities: [

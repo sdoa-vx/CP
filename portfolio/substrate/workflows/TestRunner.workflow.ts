@@ -29,9 +29,12 @@ export class TestRunnerWorkflow {
     type: "workflow",
     layer: 3,
     runtime: "NodeJS",
-    version: "5.0.0",
+    version: "5.0.1",
+    last_modified: "2026-07-13T00:00:00Z",
     operationalRole: "savant",
+    capabilities: ["testrunner:run-batch", "testrunner:chapter"],
     requires: ["TestCore.workflow", "Logger.service"],
+    dependencies: ["TestCore.workflow", "Logger.service"],
     lifecycle: ["init", "run", "dispose"],
     actions: {
       commands: {

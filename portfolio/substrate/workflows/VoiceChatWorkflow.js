@@ -18,16 +18,18 @@ exports.getVersion = () => exports.VERSION;
 class VoiceChatWorkflow extends WorkflowBase {
 
     static MANIFEST = {
-        id:           "VoiceChatWorkflow",
+        id:           "VoiceChatWorkflow.workflow",
         type:         "workflow",
+        layer:        3,
         runtime:      "NodeJS",
-        version:      "1.0.0",
-        capabilities: [],
+        version:      "1.0.1",
+        capabilities: ["voice:transcript-chat"],
         dependencies: [],
         docs: {
-            description: "Manages VoiceChatWorkflow operations.",
+            description: "Runs a voice-originated chat turn: takes a transcript (and optional recorded audio path) and routes it through the standard chat pipeline for a project/profile/engine.",
             author: "ProtoAI team",
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands:  {},
             triggers:  {},
