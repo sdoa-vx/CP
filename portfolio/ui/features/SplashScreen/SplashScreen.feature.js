@@ -1,7 +1,14 @@
 // ============================================================
-// SplashScreen.feature.js — SDOA v4 Startup gate & config feature
-// version: 1.0.0
-// Last modified: 2026-06-01
+// SplashScreen.feature.js — SDOA v5 Startup gate & config feature
+// version: 5.0.0
+// Last modified: 2026-07-14
+//
+// Phase 5 oversized-file split: the two static config tables
+// (DEFAULT_SETTINGS/PRESETS) moved to SplashScreenData.utility.js and
+// the eight settings-tab renderers moved to SplashScreenTabs.component.js
+// (both take an explicit ctx object — see _buildCtx() below). This core
+// keeps lifecycle, the DOM shell, engine-status polling, event wiring,
+// the tab dispatcher, mockup sync, validation, and save/launch/exit.
 // ============================================================
 
 (function () {
@@ -12,190 +19,16 @@
         type: "feature",
         layer: 1,
         runtime: "Browser",
-        version: "1.0.1",
-        "non-sdoa-compliant": true,
-        requires: ["StateStore"],
+        version: "5.0.0",
+        capabilities: ["startup-gate", "settings-configuration", "workspace-presets"],
+        requires: ["StateStore", "SplashScreenData.utility", "SplashScreenTabs.component"],
+        dependencies: ["StateStore", "SplashScreenData.utility", "SplashScreenTabs.component"],
         lifecycle: ["init"],
         docs: {
-            description: "Exceeds 500-line hard cap, pending refactor in Phase 5. Premium settings splash screen overlay. Blocks launch until core settings are validated and confirmed.",
+            description: "Premium settings splash screen overlay. Blocks launch until core settings are validated and confirmed. Static config tables and tab renderers extracted to siblings as part of the Phase 5 oversized-file split.",
             author: "ProtoAI Team"
-        }
-    };
-
-    const DEFAULT_SETTINGS = {
-        ui: {
-            components: {
-                chat: true,
-                fileManager: true,
-                editor: true,
-                partnerTicker: true,
-                sidebarRight: true,
-                mainHeader: true
-            }
         },
-        ai: {
-            source: "local",
-            model: "qwen2.5-coder",
-            version: "latest",
-            maxTokens: 4096,
-            temperature: 0.2
-        },
-        assistant: {
-            enabled: true,
-            archetype: "default",
-            model: "qwen2.5-coder"
-        },
-        routing: {
-            routingMode: "multi"
-        },
-        users: {
-            activeUser: "developer",
-            profiles: ["developer", "researcher"]
-        },
-        files: {
-            workspaceRoot: "c:/protoai",
-            ignorePatterns: "node_modules, .git, dist, build"
-        },
-        backend: {
-            serverPort: 3001,
-            autoRestart: true,
-            logLevel: "info"
-        },
-        frontend: {
-            animations: true,
-            compactMode: false,
-            themeBgDeep: "#1C1D1F",
-            themeBgSurface: "#242628",
-            themeAccent: "#E0FAFF",
-            themeText: "#E0FAFF"
-        }
-    };
-
-    const PRESETS = {
-        offlineMode: {
-            name: "Offline Mode",
-            desc: "Optimized for offline coding using local Qwen model. Minimal resource usage.",
-            settings: {
-                ui: {
-                    components: {
-                        chat: true,
-                        fileManager: true,
-                        editor: true,
-                        partnerTicker: false,
-                        sidebarRight: false,
-                        mainHeader: true
-                    }
-                },
-                ai: {
-                    source: "local",
-                    model: "qwen2.5-coder",
-                    version: "latest",
-                    maxTokens: 2048,
-                    temperature: 0.2
-                },
-                assistant: {
-                    enabled: false,
-                    archetype: "default",
-                    model: "qwen2.5-coder"
-                },
-                routing: {
-                    routingMode: "single"
-                }
-            }
-        },
-        developerMode: {
-            name: "Developer Mode",
-            desc: "Full developer cockpit. Multi-model pipeline powered by local Qwen and sidecar.",
-            settings: {
-                ui: {
-                    components: {
-                        chat: true,
-                        fileManager: true,
-                        editor: true,
-                        partnerTicker: true,
-                        sidebarRight: true,
-                        mainHeader: true
-                    }
-                },
-                ai: {
-                    source: "local",
-                    model: "qwen2.5-coder",
-                    version: "latest",
-                    maxTokens: 4096,
-                    temperature: 0.2
-                },
-                assistant: {
-                    enabled: true,
-                    archetype: "default",
-                    model: "qwen2.5-coder"
-                },
-                routing: {
-                    routingMode: "multi"
-                }
-            }
-        },
-        researchMode: {
-            name: "Research Mode",
-            desc: "Cloud-heavy setup utilizing OpenRouter/Anthropic APIs. High intelligence mode.",
-            settings: {
-                ui: {
-                    components: {
-                        chat: true,
-                        fileManager: true,
-                        editor: true,
-                        partnerTicker: true,
-                        sidebarRight: true,
-                        mainHeader: true
-                    }
-                },
-                ai: {
-                    source: "cloud",
-                    model: "claude-3-5-sonnet",
-                    version: "latest",
-                    maxTokens: 8192,
-                    temperature: 0.3
-                },
-                assistant: {
-                    enabled: true,
-                    archetype: "critic",
-                    model: "claude-3-5-sonnet"
-                },
-                routing: {
-                    routingMode: "multi"
-                }
-            }
-        },
-        fullCockpit: {
-            name: "Full Cockpit",
-            desc: "Maximum capability mode. All sidebars, tickers, and model routing layers active.",
-            settings: {
-                ui: {
-                    components: {
-                        chat: true,
-                        fileManager: true,
-                        editor: true,
-                        partnerTicker: true,
-                        sidebarRight: true,
-                        mainHeader: true
-                    }
-                },
-                ai: {
-                    source: "cloud",
-                    model: "claude-3-5-sonnet",
-                    version: "latest",
-                    maxTokens: 8192,
-                    temperature: 0.4
-                },
-                assistant: {
-                    enabled: true,
-                    archetype: "default",
-                    model: "claude-3-5-sonnet"
-                },
-                routing: {
-                    routingMode: "multi"
-                }
-            }
-        }
+        last_modified: "2026-07-14"
     };
 
     let _settings = null;
@@ -203,6 +36,16 @@
     let _activeTab = "presets";
     let _resolvePromise = null;
     let _overlayEl = null;
+
+    function _buildCtx() {
+        return {
+            getSettings: () => _settings,
+            setSettings: (s) => { _settings = s; },
+            deepMerge:   _deepMerge,
+            updateMockup: () => _updateMockup(),
+            showTab:      (id) => _showTab(id)
+        };
+    }
 
     async function init() {
         console.log("[SplashScreen] Initialized.");
@@ -213,6 +56,7 @@
             _resolvePromise = resolve;
 
             // Merge default configurations to ensure no blank fields
+            const DEFAULT_SETTINGS = window.SplashScreenData.DEFAULT_SETTINGS;
             _settings = _deepMerge(JSON.parse(JSON.stringify(DEFAULT_SETTINGS)), initialSettings);
             _originalSettingsStr = JSON.stringify(_settings);
 
@@ -458,435 +302,36 @@
         const contentWrap = document.createElement("div");
         contentWrap.className = `tab-panel tab-panel-${tabId}`;
 
+        const ctx = _buildCtx();
+        const Tabs = window.SplashScreenTabs;
         switch (tabId) {
             case "presets":
-                _renderPresets(contentWrap);
+                Tabs.renderPresets(contentWrap, ctx);
                 break;
             case "ui":
-                _renderUiLoader(contentWrap);
+                Tabs.renderUiLoader(contentWrap, ctx);
                 break;
             case "primaryAi":
-                _renderPrimaryAi(contentWrap);
+                Tabs.renderPrimaryAi(contentWrap, ctx);
                 break;
             case "assistantAi":
-                _renderAssistantAi(contentWrap);
+                Tabs.renderAssistantAi(contentWrap, ctx);
                 break;
             case "profiles":
-                _renderProfiles(contentWrap);
+                Tabs.renderProfiles(contentWrap, ctx);
                 break;
             case "files":
-                _renderFiles(contentWrap);
+                Tabs.renderFiles(contentWrap, ctx);
                 break;
             case "backend":
-                _renderBackend(contentWrap);
+                Tabs.renderBackend(contentWrap, ctx);
                 break;
             case "frontend":
-                _renderFrontend(contentWrap);
+                Tabs.renderFrontend(contentWrap, ctx);
                 break;
         }
 
         container.appendChild(contentWrap);
-    }
-
-    // ── Tab Renderers ─────────────────────────────────────────
-
-    function _renderPresets(container) {
-        container.innerHTML = `
-            <h3>Workspace Presets</h3>
-            <p class="tab-desc">Instantly configure ProtoAI layout density, AI partners, and direct model routing for your current task.</p>
-            <div class="presets-grid">
-                ${Object.entries(PRESETS).map(([key, p]) => `
-                    <div class="preset-card" data-preset-key="${key}">
-                        <div class="preset-header">
-                            <h4>${p.name}</h4>
-                            <span class="preset-badge">${key === "developerMode" ? "RECOMMENDED" : ""}</span>
-                        </div>
-                        <p>${p.desc}</p>
-                    </div>
-                `).join("")}
-            </div>
-        `;
-
-        container.querySelectorAll(".preset-card").forEach(card => {
-            card.addEventListener("click", () => {
-                const key = card.getAttribute("data-preset-key");
-                _applyPreset(key);
-                window.ToastPrim?.show(`Preset "${PRESETS[key].name}" applied!`, "success");
-            });
-        });
-    }
-
-    function _applyPreset(presetKey) {
-        const preset = PRESETS[presetKey];
-        if (!preset) return;
-
-        // Merge preset settings into _settings
-        _settings = _deepMerge(_settings, preset.settings);
-
-        // Apply specific adjustments depending on preset properties
-        if (presetKey === "offlineMode") {
-            _settings.ui.components.partnerTicker = false;
-            _settings.ui.components.sidebarRight = false;
-            _settings.assistant.enabled = false;
-        } else if (presetKey === "developerMode") {
-            _settings.ui.components.partnerTicker = true;
-            _settings.ui.components.sidebarRight = true;
-            _settings.assistant.enabled = true;
-        } else {
-            _settings.ui.components.partnerTicker = true;
-            _settings.ui.components.sidebarRight = true;
-            _settings.assistant.enabled = true;
-        }
-
-        _updateMockup();
-    }
-
-    function _renderUiLoader(container) {
-        const comp = _settings.ui.components;
-        container.innerHTML = `
-            <h3>UI Component Loader</h3>
-            <p class="tab-desc">Enable or disable structural panels. Disabled elements will skip loading to save CPU/memory.</p>
-            <div class="settings-form">
-                <label class="form-checkbox-row">
-                    <input type="checkbox" id="ui-chat" ${comp.chat ? "checked" : ""}>
-                    <div class="checkbox-label-wrap">
-                        <strong>Chat Shell Panel (Center-Left)</strong>
-                        <span>Mounts the primary chat dialogue panel.</span>
-                    </div>
-                </label>
-                <label class="form-checkbox-row">
-                    <input type="checkbox" id="ui-fileManager" ${comp.fileManager ? "checked" : ""}>
-                    <div class="checkbox-label-wrap">
-                        <strong>File Explorer & Workspace Editor (Center-Right)</strong>
-                        <span>Mounts the monaco editor tab and project file explorer.</span>
-                    </div>
-                </label>
-                <label class="form-checkbox-row">
-                    <input type="checkbox" id="ui-sidebarLeft" ${comp.sidebarLeft !== false ? "checked" : ""}>
-                    <div class="checkbox-label-wrap">
-                        <strong>AI Assistant Sidebar (Far-Left)</strong>
-                        <span>Mounts the partner commentary ticker and private whisper panel.</span>
-                    </div>
-                </label>
-                <label class="form-checkbox-row">
-                    <input type="checkbox" id="ui-partnerTicker" ${comp.partnerTicker ? "checked" : ""} ${comp.sidebarLeft === false ? "disabled" : ""}>
-                    <div class="checkbox-label-wrap">
-                        <strong>Partner Ticker Feed</strong>
-                        <span>Displays real-time commentary logs inside the assistant sidebar.</span>
-                    </div>
-                </label>
-                <label class="form-checkbox-row">
-                    <input type="checkbox" id="ui-sidebarRight" ${comp.sidebarRight ? "checked" : ""}>
-                    <div class="checkbox-label-wrap">
-                        <strong>System Control Panel (Far-Right)</strong>
-                        <span>Mounts the project list, status polling, and optimize buttons.</span>
-                    </div>
-                </label>
-                <label class="form-checkbox-row">
-                    <input type="checkbox" id="ui-mainHeader" ${comp.mainHeader ? "checked" : ""}>
-                    <div class="checkbox-label-wrap">
-                        <strong>Top Header Control Row</strong>
-                        <span>Displays active project badge and global layout switches.</span>
-                    </div>
-                </label>
-            </div>
-        `;
-
-        // Bind form checks
-        const ids = ["chat", "fileManager", "sidebarLeft", "partnerTicker", "sidebarRight", "mainHeader"];
-        ids.forEach(id => {
-            const check = container.querySelector(`#ui-${id}`);
-            if (check) {
-                check.addEventListener("change", (e) => {
-                    const checked = e.target.checked;
-                    if (id === "sidebarLeft") {
-                        _settings.ui.components.sidebarLeft = checked;
-                        _settings.assistant.enabled = checked;
-                        // Toggle sub-panel ticker status too
-                        const ticker = container.querySelector("#ui-partnerTicker");
-                        if (ticker) {
-                            ticker.disabled = !checked;
-                            if (!checked) {
-                                ticker.checked = false;
-                                _settings.ui.components.partnerTicker = false;
-                            }
-                        }
-                    } else if (id === "partnerTicker") {
-                        _settings.ui.components.partnerTicker = checked;
-                    } else {
-                        _settings.ui.components[id] = checked;
-                    }
-
-                    _updateMockup();
-                });
-            }
-        });
-    }
-
-    function _renderPrimaryAi(container) {
-        container.innerHTML = `
-            <h3>Primary AI Engine</h3>
-            <p class="tab-desc">Configure your core inference routing mode and language model parameters.</p>
-            <div class="settings-form">
-                <div class="form-group">
-                    <label>Connectivity & Inference Source</label>
-                    <select id="ai-source" class="sdoa-select">
-                        <option value="local" ${_settings.ai.source === "local" ? "selected" : ""}>Local Offline (Llama.cpp / GGUF)</option>
-                        <option value="cloud" ${_settings.ai.source === "cloud" ? "selected" : ""}>Cloud API (OpenRouter / Anthropic)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Routing Logic</label>
-                    <select id="routing-mode" class="sdoa-select">
-                        <option value="single" ${_settings.routing.routingMode === "single" ? "selected" : ""}>Single — Direct chat to model</option>
-                        <option value="multi" ${_settings.routing.routingMode === "multi" ? "selected" : ""}>Multi — Orchestrated Pipeline</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Primary Model Identifier</label>
-                    <input type="text" id="ai-model" class="sdoa-input" value="${_settings.ai.model || ""}">
-                </div>
-                <div class="form-group-row">
-                    <div class="form-group">
-                        <label>Max Tokens</label>
-                        <input type="number" id="ai-maxTokens" class="sdoa-input" value="${_settings.ai.maxTokens || 4096}">
-                    </div>
-                    <div class="form-group">
-                        <label>Temperature</label>
-                        <input type="number" id="ai-temp" class="sdoa-input" step="0.1" value="${_settings.ai.temperature || 0.2}">
-                    </div>
-                </div>
-            </div>
-        `;
-
-        container.querySelector("#ai-source").addEventListener("change", (e) => {
-            _settings.ai.source = e.target.value;
-            // Auto update recommended models depending on source choice
-            const modelInput = container.querySelector("#ai-model");
-            if (modelInput) {
-                if (e.target.value === "cloud") {
-                    modelInput.value = "claude-3-5-sonnet";
-                    _settings.ai.model = "claude-3-5-sonnet";
-                } else {
-                    modelInput.value = "qwen2.5-coder";
-                    _settings.ai.model = "qwen2.5-coder";
-                }
-            }
-        });
-        container.querySelector("#routing-mode").addEventListener("change", (e) => {
-            _settings.routing.routingMode = e.target.value;
-        });
-        container.querySelector("#ai-model").addEventListener("input", (e) => {
-            _settings.ai.model = e.target.value;
-        });
-        container.querySelector("#ai-maxTokens").addEventListener("input", (e) => {
-            _settings.ai.maxTokens = parseInt(e.target.value, 10);
-        });
-        container.querySelector("#ai-temp").addEventListener("input", (e) => {
-            _settings.ai.temperature = parseFloat(e.target.value);
-        });
-    }
-
-    function _renderAssistantAi(container) {
-        container.innerHTML = `
-            <h3>Assistant AI (Silent Partner)</h3>
-            <p class="tab-desc">Configure the autonomous background observer that reviews your terminal edits and generates commentary.</p>
-            <div class="settings-form">
-                <label class="form-checkbox-row">
-                    <input type="checkbox" id="as-enabled" ${_settings.assistant.enabled ? "checked" : ""}>
-                    <div class="checkbox-label-wrap">
-                        <strong>Enable Silent Partner</strong>
-                        <span>If disabled, the commentary worker will be suspended.</span>
-                    </div>
-                </label>
-                <div class="form-group">
-                    <label>Partner Personality Archetype</label>
-                    <select id="as-archetype" class="sdoa-select" ${_settings.assistant.enabled ? "" : "disabled"}>
-                        <option value="default" ${_settings.assistant.archetype === "default" ? "selected" : ""}>Default Observer</option>
-                        <option value="critic" ${_settings.assistant.archetype === "critic" ? "selected" : ""}>Code Critic</option>
-                        <option value="support" ${_settings.assistant.archetype === "support" ? "selected" : ""}>Quiet Supporter</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Assistant Model Identifier</label>
-                    <input type="text" id="as-model" class="sdoa-input" value="${_settings.assistant.model || ""}" ${_settings.assistant.enabled ? "" : "disabled"}>
-                </div>
-            </div>
-        `;
-
-        const check = container.querySelector("#as-enabled");
-        const arch = container.querySelector("#as-archetype");
-        const model = container.querySelector("#as-model");
-
-        check.addEventListener("change", (e) => {
-            const enabled = e.target.checked;
-            _settings.assistant.enabled = enabled;
-            _settings.ui.components.sidebarLeft = enabled;
-            if (!enabled) {
-                _settings.ui.components.partnerTicker = false;
-            }
-
-            arch.disabled = !enabled;
-            model.disabled = !enabled;
-            _updateMockup();
-        });
-
-        arch.addEventListener("change", (e) => {
-            _settings.assistant.archetype = e.target.value;
-        });
-
-        model.addEventListener("input", (e) => {
-            _settings.assistant.model = e.target.value;
-        });
-    }
-
-    function _renderProfiles(container) {
-        container.innerHTML = `
-            <h3>User Profile Governance</h3>
-            <p class="tab-desc">Switch between active human profiles. Isolation levels protect different workspaces.</p>
-            <div class="settings-form">
-                <div class="form-group">
-                    <label>Active Operator Profile</label>
-                    <select id="prof-active" class="sdoa-select">
-                        ${_settings.users.profiles.map(p => `
-                            <option value="${p}" ${_settings.users.activeUser === p ? "selected" : ""}>${p.toUpperCase()}</option>
-                        `).join("")}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Create New Profile</label>
-                    <div style="display:flex; gap:8px;">
-                        <input type="text" id="prof-new" class="sdoa-input" placeholder="e.g. auditor" style="flex:1;">
-                        <button id="prof-add-btn" class="sdoa-button sdoa-button--secondary sdoa-button--md">Add</button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        container.querySelector("#prof-active").addEventListener("change", (e) => {
-            _settings.users.activeUser = e.target.value;
-        });
-
-        const newBtn = container.querySelector("#prof-add-btn");
-        const newInp = container.querySelector("#prof-new");
-        newBtn.addEventListener("click", () => {
-            const name = newInp.value.trim().toLowerCase();
-            if (name && !_settings.users.profiles.includes(name)) {
-                _settings.users.profiles.push(name);
-                _settings.users.activeUser = name;
-                _showTab("profiles");
-                window.ToastPrim?.show(`Added profile "${name}"`, "success");
-            }
-        });
-    }
-
-    function _renderFiles(container) {
-        container.innerHTML = `
-            <h3>Virtual File System (VFS)</h3>
-            <p class="tab-desc">Define the absolute path of the local workspace root folder and files ignored by watchers.</p>
-            <div class="settings-form">
-                <div class="form-group">
-                    <label>Workspace Root Directory</label>
-                    <input type="text" id="file-root" class="sdoa-input" value="${_settings.files.workspaceRoot || ""}">
-                </div>
-                <div class="form-group">
-                    <label>Watch Ignored Patterns (Comma-separated)</label>
-                    <textarea id="file-ignores" class="sdoa-input" rows="4">${_settings.files.ignorePatterns || ""}</textarea>
-                </div>
-            </div>
-        `;
-
-        container.querySelector("#file-root").addEventListener("input", (e) => {
-            _settings.files.workspaceRoot = e.target.value;
-        });
-        container.querySelector("#file-ignores").addEventListener("input", (e) => {
-            _settings.files.ignorePatterns = e.target.value;
-        });
-    }
-
-    function _renderBackend(container) {
-        container.innerHTML = `
-            <h3>Sidecar Conductor Configuration</h3>
-            <p class="tab-desc">Configure the Node.js backend runner. Restricting parameters protects local processes.</p>
-            <div class="settings-form">
-                <div class="form-group">
-                    <label>Internal Server API Port</label>
-                    <input type="number" id="back-port" class="sdoa-input" value="${_settings.backend.serverPort || 3001}">
-                </div>
-                <div class="form-group">
-                    <label>Runner Log Output Level</label>
-                    <select id="back-log" class="sdoa-select">
-                        <option value="error" ${_settings.backend.logLevel === "error" ? "selected" : ""}>Error (Minimal)</option>
-                        <option value="warn" ${_settings.backend.logLevel === "warn" ? "selected" : ""}>Warn</option>
-                        <option value="info" ${_settings.backend.logLevel === "info" ? "selected" : ""}>Info</option>
-                        <option value="debug" ${_settings.backend.logLevel === "debug" ? "selected" : ""}>Debug (Verbose)</option>
-                    </select>
-                </div>
-                <label class="form-checkbox-row">
-                    <input type="checkbox" id="back-restart" ${_settings.backend.autoRestart ? "checked" : ""}>
-                    <div class="checkbox-label-wrap">
-                        <strong>Auto-restart sidecar process on crash</strong>
-                        <span>Rust supervisor monitors Node and respawns it automatically.</span>
-                    </div>
-                </label>
-            </div>
-        `;
-
-        container.querySelector("#back-port").addEventListener("input", (e) => {
-            _settings.backend.serverPort = parseInt(e.target.value, 10);
-        });
-        container.querySelector("#back-log").addEventListener("change", (e) => {
-            _settings.backend.logLevel = e.target.value;
-        });
-        container.querySelector("#back-restart").addEventListener("change", (e) => {
-            _settings.backend.autoRestart = e.target.checked;
-        });
-    }
-
-    function _renderFrontend(container) {
-        container.innerHTML = `
-            <h3>Frontend Engine Tokens</h3>
-            <p class="tab-desc">Configure UI rendering presets, density metrics, and layout animations.</p>
-            <div class="settings-form">
-                <label class="form-checkbox-row">
-                    <input type="checkbox" id="front-anim" ${_settings.frontend.animations ? "checked" : ""}>
-                    <div class="checkbox-label-wrap">
-                        <strong>Enable UI Animations</strong>
-                        <span>Toggles rendering transitions for split panels. Disable to save CPU.</span>
-                    </div>
-                </label>
-                <label class="form-checkbox-row">
-                    <input type="checkbox" id="front-compact" ${_settings.frontend.compactMode ? "checked" : ""}>
-                    <div class="checkbox-label-wrap">
-                        <strong>Compact Density Mode</strong>
-                        <span>Hides tags and shrinks font lines for data-heavy coding.</span>
-                    </div>
-                </label>
-                <div class="form-group-row">
-                    <div class="form-group">
-                        <label>Accent Tone Color</label>
-                        <input type="color" id="front-accent" class="sdoa-input" style="height:38px; padding:2px;" value="${_settings.frontend.themeAccent || "#E0FAFF"}">
-                    </div>
-                    <div class="form-group">
-                        <label>App Base Background</label>
-                        <input type="color" id="front-bg" class="sdoa-input" style="height:38px; padding:2px;" value="${_settings.frontend.themeBgDeep || "#1C1D1F"}">
-                    </div>
-                </div>
-            </div>
-        `;
-
-        container.querySelector("#front-anim").addEventListener("change", (e) => {
-            _settings.frontend.animations = e.target.checked;
-        });
-        container.querySelector("#front-compact").addEventListener("change", (e) => {
-            _settings.frontend.compactMode = e.target.checked;
-        });
-        container.querySelector("#front-accent").addEventListener("change", (e) => {
-            _settings.frontend.themeAccent = e.target.value;
-        });
-        container.querySelector("#front-bg").addEventListener("change", (e) => {
-            _settings.frontend.themeBgDeep = e.target.value;
-        });
     }
 
     // ── Validation and Mockup Updates ────────────────────────
