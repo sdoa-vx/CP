@@ -20,8 +20,8 @@
 (function () {
     "use strict";
     const MANIFEST = {
-        id: "Markdown.prim", type: "primitive", layer: 2, runtime: "Browser", version: "4.0.0",
-        requires: [], dataFiles: [], lifecycle: [], backendDeps: [],
+        id: "Markdown.prim", type: "primitive", layer: 2, runtime: "Browser", version: "4.0.1",
+        requires: [], dependencies: [], capabilities: ["markdown:create", "markdown:render"], dataFiles: [], lifecycle: [], backendDeps: [],
         actions: {
             commands: {
                 create: { description: "Create a markdown container element.", input: "MarkdownConfig", output: "HTMLElement" },
@@ -29,7 +29,8 @@
             },
             events: {}, accepts: {}, slots: {},
         },
-        docs: { description: "Markdown renderer. Converts markdown to safe HTML using marked.js if available, with a regex fallback.", author: "ProtoAI team", sdoa: "4.0.0" }
+        docs: { description: "Markdown renderer. Converts markdown to safe HTML using marked.js if available, with a regex fallback.", author: "ProtoAI team", sdoa: "4.0.0" },
+        last_modified: "2026-07-13T00:00:00Z"
     };
     function _escapeHtml(str) {
         const d = document.createElement("div");

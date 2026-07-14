@@ -19,8 +19,8 @@
 
     const MANIFEST = {
         id: "Input.prim", type: "primitive", layer: 2,
-        runtime: "Browser", version: "4.0.0",
-        requires: [], dataFiles: [], lifecycle: [],
+        runtime: "Browser", version: "4.0.1",
+        requires: [], dependencies: [], capabilities: ["input:create"], dataFiles: [], lifecycle: [],
         actions: {
             commands: {
                 create: { description: "Create an input group from config.", input: "InputConfig", output: "HTMLElement" },
@@ -28,7 +28,8 @@
             events: {}, accepts: {}, slots: {},
         },
         backendDeps: [],
-        docs: { description: "Generic input primitive. Supports text, password, number, textarea, search types with labels, validation, hints, and error states.", author: "ProtoAI team", sdoa: "4.0.0" }
+        docs: { description: "Generic input primitive. Supports text, password, number, textarea, search types with labels, validation, hints, and error states.", author: "ProtoAI team", sdoa: "4.0.0" },
+        last_modified: "2026-07-13T00:00:00Z"
     };
 
     /**

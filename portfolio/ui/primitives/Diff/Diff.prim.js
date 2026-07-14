@@ -95,11 +95,18 @@
       type:            "primitive",
       layer:           2,
       runtime:         "Browser",
-      version:         "5.0.0",
+      version:         "5.0.1",
       operationalRole: "savant",
 
       // ── Dependencies ──────────────────────────
       requires:  [],
+      dependencies: [],
+      capabilities: [
+        "diff:setDiff",
+        "diff:accept",
+        "diff:reject",
+        "diff:expandAll"
+      ],
       dataFiles: [],
 
       // ── Lifecycle ─────────────────────────────
@@ -157,7 +164,8 @@
         description: "Side-by-side source diff viewer with a pure-JS LCS line diff engine. Unchanged regions collapse to context hunks. Accept emits diff:accepted for ProbationOfficer; Reject emits diff:rejected back to Coach. Makes every autonomous mutation a reviewable, human-readable change before it lands in the portfolio.",
         author: "ProtoAI Core Architecture Group",
         sdoa:   "5.0.0"
-      }
+      },
+      last_modified: "2026-07-13T00:00:00Z"
     };
 
     // ── Private State ─────────────────────────

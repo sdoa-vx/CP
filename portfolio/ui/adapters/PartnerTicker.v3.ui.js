@@ -36,10 +36,11 @@
 
     const MANIFEST = {
         id:      "PartnerTicker.ui", type: "component", runtime: "Browser",
-        version: "1.0.0",
+        version: "1.0.1",
+        "non-sdoa-compliant": true,
         capabilities: ["ticker.display", "orchestrator.events", "feature.toggles"],
         dependencies: ["tauri-utils.js", "EventBus.ui.js"],
-        docs: { description: "Local model activity ticker. Minimized strip → hover preview → locked panel. Replays orchestrator events from each completed request." },
+        docs: { description: "Undeclared duplicate of the canonical PartnerTicker.v3.ui module (also present in components/ and features/PartnerTicker/); pending consolidation in Phase 4. Local model activity ticker. Minimized strip → hover preview → locked panel. Replays orchestrator events from each completed request." },
             author: "ProtoAI team",
         actions: {
             commands: {

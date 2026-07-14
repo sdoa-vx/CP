@@ -26,9 +26,12 @@
         type:     "primitive",
         layer:    2,
         runtime:  "Browser",
-        version:  "4.0.0",
+        version:  "4.0.1",
+        last_modified: "2026-07-13T00:00:00Z",
 
         requires: [],
+        dependencies: [],
+        capabilities: ["button:create"],
         dataFiles: [],
 
         lifecycle: [],

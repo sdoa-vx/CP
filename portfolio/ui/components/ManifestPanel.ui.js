@@ -26,10 +26,11 @@
         id:      "ManifestPanel.ui",
         type:    "component",
         runtime: "Browser",
-        version: "1.0.0",
+        version: "1.0.1",
+        "non-sdoa-compliant": true,
         capabilities: ["manifest.display", "vfs.status", "vfs.add"],
         dependencies: ["tauri-utils.js", "EventBus.ui.js"],
-        docs: { description: "Displays VFS purpose manifest for a selected file. Shows metadata, purpose fields, VFS status and permissions.",
+        docs: { description: "Undeclared duplicate of the canonical ManifestPanel.ui module (also present in primitives/ManifestPanel/); pending consolidation in Phase 4. Displays VFS purpose manifest for a selected file. Shows metadata, purpose fields, VFS status and permissions.",
             author: "ProtoAI team" },
         actions: {
             commands: {

@@ -21,10 +21,11 @@
         type:    "feature",
         layer:   2,
         runtime: "Browser",
-        version: "4.4.0",
+        version: "4.4.1",
+        "non-sdoa-compliant": true,
         requires: ["BackendConnector.ui", "EventBus.ui"],
         docs: {
-            description: "Primary user interaction surface. Handles messaging, streaming, and command processing.",
+            description: "Exceeds 500-line hard cap, pending refactor in Phase 5. Primary user interaction surface. Handles messaging, streaming, and command processing.",
             author: "ProtoAI Team"
         }
     };

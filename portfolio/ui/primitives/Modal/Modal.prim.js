@@ -20,8 +20,8 @@
 
     const MANIFEST = {
         id: "Modal.prim", type: "primitive", layer: 2,
-        runtime: "Browser", version: "4.0.0",
-        requires: [], dataFiles: [], lifecycle: [],
+        runtime: "Browser", version: "4.0.1",
+        requires: [], dependencies: [], capabilities: ["modal:create", "modal:open", "modal:close"], dataFiles: [], lifecycle: [],
         actions: {
             commands: {
                 create: { description: "Create a modal overlay.", input: "ModalConfig", output: "HTMLElement" },
@@ -32,7 +32,8 @@
             accepts: {}, slots: { header: "Custom header content", body: "Main content", footer: "Footer buttons" },
         },
         backendDeps: [],
-        docs: { description: "Generic modal overlay with sizes, close button, Escape key, backdrop click, and animated transitions.", author: "ProtoAI team", sdoa: "4.0.0" }
+        docs: { description: "Generic modal overlay with sizes, close button, Escape key, backdrop click, and animated transitions.", author: "ProtoAI team", sdoa: "4.0.0" },
+        last_modified: "2026-07-13T00:00:00Z"
     };
 
     /**

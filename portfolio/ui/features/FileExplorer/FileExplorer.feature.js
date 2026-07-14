@@ -9,8 +9,10 @@
 
     const MANIFEST = {
         id: "FileExplorer.feature", type: "feature", layer: 1,
-        runtime: "Browser", version: "4.0.0",
+        runtime: "Browser", version: "4.0.1",
         requires: ["Toast.prim"],
+        dependencies: ["Toast.prim"],
+        capabilities: ["fileexplorer:setRootPath", "fileexplorer:refresh", "fileexplorer:showVfsList"],
         dataFiles: [],
         lifecycle: ["init", "mount"],
         actions: {
@@ -24,7 +26,8 @@
             slots: ["rightPaneContent"]
         },
         backendDeps: ["vfs_list", "vfs_add", "get_project_dir"],
-        docs: { description: "File explorer feature. Orchestrates FileTree, FileList, ManifestPanel.", author: "ProtoAI team", sdoa: "4.0.0" }
+        docs: { description: "File explorer feature. Orchestrates FileTree, FileList, ManifestPanel.", author: "ProtoAI team", sdoa: "4.0.0" },
+        last_modified: "2026-07-13T00:00:00Z"
     };
 
     let _container       = null;

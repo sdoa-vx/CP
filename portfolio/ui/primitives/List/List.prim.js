@@ -20,15 +20,16 @@
 
     const MANIFEST = {
         id: "List.prim", type: "primitive", layer: 2,
-        runtime: "Browser", version: "4.0.0",
-        requires: [], dataFiles: [], lifecycle: [],
+        runtime: "Browser", version: "4.0.1",
+        requires: [], dependencies: [], capabilities: ["list:create"], dataFiles: [], lifecycle: [],
         actions: {
             commands: { create: { description: "Create a list element.", input: "ListConfig", output: "HTMLElement" } },
             events: { "list:selected": { payload: "item" }, "list:contextmenu": { payload: "{ item, event }" } },
             accepts: {}, slots: {},
         },
         backendDeps: [],
-        docs: { description: "Generic scrollable list with selection, search, context menu, empty state, and custom item rendering.", author: "ProtoAI team", sdoa: "4.0.0" }
+        docs: { description: "Generic scrollable list with selection, search, context menu, empty state, and custom item rendering.", author: "ProtoAI team", sdoa: "4.0.0" },
+        last_modified: "2026-07-13T00:00:00Z"
     };
 
     /**

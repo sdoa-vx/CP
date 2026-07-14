@@ -44,7 +44,8 @@
       type:            "feature",
       layer:           1,
       runtime:         "Browser",
-      version:         "5.0.0",
+      version:         "5.0.1",
+      "non-sdoa-compliant": true,
       operationalRole: "savant",
 
       // -- Dependencies --------------------------------------
@@ -105,7 +106,7 @@
       ],
 
       docs: {
-        description: "Phase 2 visual orchestrator. Renders all registry modules as draggable SVG nodes. Event ports (right side, purple) connect to Accept ports (left side, green). Completing a wire writes the association into the connection map. Save dispatches to blueprint_save workflow, which commits the wiring as a SDOA accepts/events schema JSON.",
+        description: "Exceeds 500-line hard cap, pending refactor in Phase 5. Phase 2 visual orchestrator. Renders all registry modules as draggable SVG nodes. Event ports (right side, purple) connect to Accept ports (left side, green). Completing a wire writes the association into the connection map. Save dispatches to blueprint_save workflow, which commits the wiring as a SDOA accepts/events schema JSON.",
         author: "ProtoAI Core Architecture Group",
         sdoa:   "5.0.0"
       }

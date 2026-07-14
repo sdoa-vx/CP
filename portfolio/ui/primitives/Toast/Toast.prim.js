@@ -20,8 +20,10 @@
         type:     "primitive",
         layer:    2,
         runtime:  "Browser",
-        version:  "4.0.0",
+        version:  "4.0.1",
         requires: [],
+        dependencies: [],
+        capabilities: ["toast:show", "toast:dismiss", "toast:clear"],
         dataFiles: [],
         lifecycle: ["mount"],
         actions: {
@@ -39,7 +41,8 @@
             description: "Notification toast system. Supports info/success/warning/error types, auto-dismiss, and optional action buttons.",
             author: "ProtoAI team",
             sdoa: "4.0.0"
-        }
+        },
+        last_modified: "2026-07-13T00:00:00Z"
     };
 
     // ── State ────────────────────────────────────────────────

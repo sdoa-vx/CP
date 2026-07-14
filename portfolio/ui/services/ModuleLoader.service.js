@@ -12,13 +12,21 @@
         type:     "service",
         layer:    3,
         runtime:  "Browser",
-        version:  "4.1.0",
+        version:  "4.1.1",
         requires: [],
+        dependencies: [],
+        capabilities: [
+            "conductor:register",
+            "conductor:initAll",
+            "conductor:mountAll",
+            "conductor:diagnose"
+        ],
         lifecycle: ["init"],
         docs: {
             description: "Orchestrates the discovery, validation, and lifecycle of all SDOA modules. Acts as the system conductor for health and diagnostics.",
             author: "ProtoAI Team"
-        }
+        },
+        last_modified: "2026-07-13T00:00:00Z"
     };
 
     // ── Internal Registry ────────────────────────────────────

@@ -31,7 +31,8 @@
             id:      "LlmBridge.ui",
             type:    "adapter",
             runtime: "Browser",
-            version: "3.0.1",
+            version: "3.0.2",
+            "non-sdoa-compliant": true,
 
             // v1.2 fields — always present, never removed
             capabilities: [
@@ -46,7 +47,7 @@
                 "LlmPolicyEngine.ui.js"
             ],
             docs: {
-                description: "Browser-safe LLM generation bridge. Passes generation requests and tier hints to the backend via BackendConnector.ui. Emits UI-level events for route selection and failure. Failover logic is owned by the backend LlmBridge.js.",
+                description: "Undeclared duplicate of the canonical LlmBridge.ui module (also present in adapters/); pending consolidation in Phase 4. Browser-safe LLM generation bridge. Passes generation requests and tier hints to the backend via BackendConnector.ui. Emits UI-level events for route selection and failure. Failover logic is owned by the backend LlmBridge.js.",
                 author: "ProtoAI team",
                 input: {
                     generate: {

@@ -15,12 +15,15 @@
         type: "feature",
         layer: 1,
         runtime: "Browser",
-        version: "4.2.0",
+        version: "4.2.1",
         requires: ["Toast.prim"],
+        dependencies: ["Toast.prim"],
+        capabilities: ["partnerticker:display", "partnerticker:commentary", "partnerticker:featureToggles"],
         docs: {
             description: "Silent Partner activity ticker. Displays system events and spontaneous commentary.",
             author: "ProtoAI Team"
-        }
+        },
+        last_modified: "2026-07-13T00:00:00Z"
     };
 
     const EVENT_META = {

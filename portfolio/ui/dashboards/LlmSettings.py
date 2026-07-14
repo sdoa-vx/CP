@@ -48,7 +48,7 @@ MANIFEST = {
     "type": "service",
     "layer": 3,
     "runtime": "Python",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "operationalRole": "savant",
     "requires": ["LlmPolicyEngine"],
     "capabilities": ["render_llm_settings", "update_failover_policy"],
@@ -57,7 +57,8 @@ MANIFEST = {
         "description": "Streamlit-based LLM governance and fail-over policy settings dashboard.",
         "author": "ProtoAI Team",
         "sdoa": "5.0.0"
-    }
+    },
+    "last_modified": "2026-07-13T00:00:00Z"
 }
 
 class LlmSettings(Dashboard):

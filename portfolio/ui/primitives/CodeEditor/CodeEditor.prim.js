@@ -22,6 +22,30 @@
 (function () {
     "use strict";
 
+    const MANIFEST = {
+        id:      "CodeEditor.prim",
+        type:    "primitive",
+        layer:   2,
+        runtime: "Browser",
+        version: "4.0.0",
+        requires: [],
+        dependencies: [],
+        capabilities: [
+            "editor:create",
+            "editor:getValue",
+            "editor:setValue",
+            "editor:setLanguage",
+            "editor:layout",
+            "editor:dispose",
+            "editor:focus"
+        ],
+        docs: {
+            description: "Monaco Editor primitive. Lazily loads the bundled AMD Monaco loader and mounts a syntax-highlighted code editor into any container, with graceful textarea degradation if Monaco fails to load.",
+            author: "ProtoAI Team"
+        },
+        last_modified: "2026-07-13T00:00:00Z"
+    };
+
     let _monacoLoaded  = false;
     let _monacoLoading = false;
     let _loadCallbacks = [];
@@ -178,6 +202,6 @@
 
     // ── Export ────────────────────────────────────────────────
 
-    window.CodeEditorPrim = { create, getValue, setValue, setLanguage, layout, dispose, focus };
+    window.CodeEditorPrim = { MANIFEST, create, getValue, setValue, setLanguage, layout, dispose, focus };
 
 })();

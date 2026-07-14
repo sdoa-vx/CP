@@ -62,7 +62,8 @@
       type:            "feature",
       layer:           1,
       runtime:         "Browser",
-      version:         "5.0.0",
+      version:         "5.0.1",
+      "non-sdoa-compliant": true,
       operationalRole: "savant",
 
       // -- Dependencies --------------------------------------
@@ -120,7 +121,7 @@
       ],
 
       docs: {
-        description: "Live command executor -- Swagger UI for SDOA. Loads the full registry surface from Oracle and presents a two-panel interface: left for module/command selection with an auto-generated typed form, right for formatted result output and execution history. Zero additional tooling needed to explore or test any registered module.",
+        description: "Exceeds 500-line hard cap, pending refactor in Phase 5. Live command executor -- Swagger UI for SDOA. Loads the full registry surface from Oracle and presents a two-panel interface: left for module/command selection with an auto-generated typed form, right for formatted result output and execution history. Zero additional tooling needed to explore or test any registered module.",
         author: "ProtoAI Core Architecture Group",
         sdoa:   "5.0.0"
       }

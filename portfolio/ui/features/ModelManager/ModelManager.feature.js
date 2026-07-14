@@ -9,13 +9,16 @@
 
     const MANIFEST = {
         id: "ModelManager.feature", type: "feature", layer: 1,
-        runtime: "Browser", version: "4.0.0",
+        runtime: "Browser", version: "4.0.1",
         requires: ["Modal.prim", "TabGroup.prim", "Form.prim", "Button.prim", "Toast.prim"],
+        dependencies: ["Modal.prim", "TabGroup.prim", "Form.prim", "Button.prim", "Toast.prim"],
+        capabilities: ["modelmanager:open", "modelmanager:activateArchetype", "modelmanager:getActiveModels"],
         dataFiles: [],
         lifecycle: ["init"],
         actions: { commands: { open: {}, activateArchetype: {}, getActiveModels: {} }, events: { archetypeActivated: {}, inventoryReordered: {}, policyUpdated: {} }, accepts: {}, slots: {} },
         backendDeps: ["get_model_inventory", "save_model_inventory"],
-        docs: { description: "Model inventory manager and archetype profile system.", author: "ProtoAI team", sdoa: "4.0.0" }
+        docs: { description: "Model inventory manager and archetype profile system.", author: "ProtoAI team", sdoa: "4.0.0" },
+        last_modified: "2026-07-13T00:00:00Z"
     };
 
     // ── CATEGORIES & DEFAULTS ────────────────────────────────

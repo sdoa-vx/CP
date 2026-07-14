@@ -8,13 +8,14 @@
 
     const MANIFEST = {
         id: "ProjectManager.feature", type: "feature", layer: 1,
-        runtime: "Browser", version: "4.2.0",
+        runtime: "Browser", version: "4.2.1",
+        "non-sdoa-compliant": true,
         requires: ["Modal.prim", "TabGroup.prim", "Form.prim", "List.prim", "Button.prim", "Toast.prim"],
         dataFiles: ["schemas/project_manager.schema.json"],
         lifecycle: ["init"],
         actions: { commands: { open: {} }, events: {}, accepts: {}, slots: {} },
         backendDeps: ["projects", "get_project_settings", "save_project_settings"],
-        docs: { description: "Project Manager UI for editing project configurations.", author: "ProtoAI team", sdoa: "4.0.0" }
+        docs: { description: "Exceeds 500-line hard cap, pending refactor in Phase 5. Project Manager UI for editing project configurations.", author: "ProtoAI team", sdoa: "4.0.0" }
     };
 
     let _schema = null;

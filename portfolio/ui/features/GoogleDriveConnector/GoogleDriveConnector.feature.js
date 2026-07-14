@@ -12,15 +12,18 @@
         type:     "feature",
         layer:    1,
         runtime:  "Browser",
-        version:  "5.0.0",
+        version:  "5.0.1",
         requires: ["GoogleDriveAdapter", "Modal.prim", "Form.prim", "List.prim", "Toast.prim", "Button.prim"],
+        dependencies: ["GoogleDriveAdapter", "Modal.prim", "Form.prim", "List.prim", "Toast.prim", "Button.prim"],
+        capabilities: ["googledrive:connectorOpen", "googledrive:credentialsForm", "googledrive:fileBrowser"],
         dataFiles: [],
         lifecycle: ["init"],
         docs: {
             description: "Declarative Google Drive UI connector using standard primitives and adapters.",
             author: "ProtoAI team",
             sdoa: "5.0.0"
-        }
+        },
+        last_modified: "2026-07-13T00:00:00Z"
     };
 
     let _modal = null;

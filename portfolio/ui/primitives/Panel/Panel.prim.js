@@ -20,15 +20,16 @@
 
     const MANIFEST = {
         id: "Panel.prim", type: "primitive", layer: 2,
-        runtime: "Browser", version: "4.0.0",
-        requires: [], dataFiles: [], lifecycle: [],
+        runtime: "Browser", version: "4.0.1",
+        requires: [], dependencies: [], capabilities: ["panel:create"], dataFiles: [], lifecycle: [],
         actions: {
             commands: { create: { description: "Create a panel element.", input: "PanelConfig", output: "HTMLElement" } },
             events: { "panel:toggled": { payload: "{ collapsed: boolean }" } },
             accepts: {}, slots: { header: "Content for the header area", body: "Main content area" },
         },
         backendDeps: [],
-        docs: { description: "Generic panel primitive with optional title, collapse toggle, and action buttons.", author: "ProtoAI team", sdoa: "4.0.0" }
+        docs: { description: "Generic panel primitive with optional title, collapse toggle, and action buttons.", author: "ProtoAI team", sdoa: "4.0.0" },
+        last_modified: "2026-07-13T00:00:00Z"
     };
 
     /**

@@ -26,10 +26,11 @@
         id:      "FileTree.ui",
         type:    "component",
         runtime: "Browser",
-        version: "1.0.0",
+        version: "1.0.1",
+        "non-sdoa-compliant": true,
         capabilities: ["tree.render", "tree.navigate", "tree.expand"],
         dependencies: ["tauri-utils.js", "EventBus.ui.js"],
-        docs: { description: "Visual collapsible file tree. Emits selection events to EventBus." },
+        docs: { description: "Undeclared duplicate of the canonical FileTree.ui module (also present in primitives/FileTree/); pending consolidation in Phase 4. Visual collapsible file tree. Emits selection events to EventBus." },
             author: "ProtoAI team",
         actions: {
             commands: {

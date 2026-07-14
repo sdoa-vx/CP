@@ -26,7 +26,8 @@
             id:      "LlmPolicyEngine.ui",
             type:    "adapter",
             runtime: "Browser",
-            version: "3.0.0",
+            version: "3.0.1",
+            "non-sdoa-compliant": true,
 
             // v1.2 fields — always present, never removed
             capabilities: [
@@ -40,7 +41,7 @@
                 "BackendConnector.ui.js"
             ],
             docs: {
-                description: "Browser-safe governance adapter. Reads and writes LLM routing policy via BackendConnector.ui. Exposes resolveRoute, getPolicy, and updatePolicy to UI surfaces.",
+                description: "Undeclared duplicate of the canonical LlmPolicyEngine.ui module (also present in adapters/); pending consolidation in Phase 4. Browser-safe governance adapter. Reads and writes LLM routing policy via BackendConnector.ui. Exposes resolveRoute, getPolicy, and updatePolicy to UI surfaces.",
                 input: {
                     resolveRoute:  { requestedTier: "string" },
                     updatePolicy:  { newSettings: "object" }

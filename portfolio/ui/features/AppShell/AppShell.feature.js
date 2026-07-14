@@ -22,10 +22,11 @@
         type:    "feature",
         layer:   1,
         runtime: "Browser",
-        version: "4.3.0",
+        version: "4.3.1",
+        "non-sdoa-compliant": true,
         requires: [],
         docs: {
-            description: "Core UI orchestrator for resizing, global shortcuts, project switching, and system status.",
+            description: "Exceeds 500-line hard cap, pending refactor in Phase 5. Core UI orchestrator for resizing, global shortcuts, project switching, and system status.",
             author: "ProtoAI Team"
         }
     };

@@ -28,8 +28,8 @@
     "use strict";
 
     const MANIFEST = {
-        id: "ErrorBoundary.prim", type: "primitive", layer: 2, runtime: "Browser", version: "4.0.0",
-        requires: [], dataFiles: [], lifecycle: [],
+        id: "ErrorBoundary.prim", type: "primitive", layer: 2, runtime: "Browser", version: "4.0.1",
+        requires: [], dependencies: [], capabilities: ["errorboundary:create", "errorboundary:wrap"], dataFiles: [], lifecycle: [],
         actions: {
             commands: {
                 create: { description: "Create an error boundary container.", input: "ErrorBoundaryConfig", output: "HTMLElement" },
@@ -39,7 +39,8 @@
             accepts: {}, slots: { default: "Content rendered inside the boundary." }
         },
         backendDeps: [],
-        docs: { description: "UI error boundary primitive. Wraps content slots and catches JS errors. Shows Rebellion Mode fallback UI with Retry/Report/Dismiss. Logs to Chronicle via EventBus.", author: "ProtoAI Core Architecture Group", sdoa: "4.0.0" }
+        docs: { description: "UI error boundary primitive. Wraps content slots and catches JS errors. Shows Rebellion Mode fallback UI with Retry/Report/Dismiss. Logs to Chronicle via EventBus.", author: "ProtoAI Core Architecture Group", sdoa: "4.0.0" },
+        last_modified: "2026-07-13T00:00:00Z"
     };
 
     function _makeBtn(label, cls, onClick) {

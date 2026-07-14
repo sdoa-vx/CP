@@ -6,7 +6,7 @@
 // ============================================================
 (function () {
     "use strict";
-    const MANIFEST = { id: "Toolbar.prim", type: "primitive", layer: 2, runtime: "Browser", version: "4.0.0", requires: ["Button.prim"], dataFiles: [], lifecycle: [], actions: { commands: { create: {} }, events: {}, accepts: {}, slots: {} }, backendDeps: [], docs: { description: "Horizontal action toolbar composed of Button primitives.", author: "ProtoAI team", sdoa: "4.0.0" } };
+    const MANIFEST = { id: "Toolbar.prim", type: "primitive", layer: 2, runtime: "Browser", version: "4.0.1", requires: ["Button.prim"], dependencies: ["Button.prim"], capabilities: ["toolbar:create"], dataFiles: [], lifecycle: [], actions: { commands: { create: {} }, events: {}, accepts: {}, slots: {} }, backendDeps: [], docs: { description: "Horizontal action toolbar composed of Button primitives.", author: "ProtoAI team", sdoa: "4.0.0" }, last_modified: "2026-07-13T00:00:00Z" };
 
     /**
      * @param {Object}  config

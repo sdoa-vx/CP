@@ -1,8 +1,29 @@
 // ============================================================
-// Last modified: 2026-05-04T12:00:00Z
+// Last modified: 2026-07-13T00:00:00Z
 // app.js — SDOA Surface Layer (Bootloader)
-// version: 2.0.1 (SDOA v4)
+// version: 2.0.2 (SDOA v4)
 // ============================================================
+
+const MANIFEST = {
+    id:      "App.workflow",
+    type:    "workflow",
+    layer:   3,
+    runtime: "Browser",
+    version: "2.0.2",
+    requires: ["BackendConnector.ui", "ModuleLoader.service", "StateStore.adapter", "SplashScreen.feature"],
+    dependencies: ["BackendConnector.ui", "ModuleLoader.service", "StateStore.adapter", "SplashScreen.feature"],
+    capabilities: [
+        "app:boot",
+        "app:bridgeWait",
+        "app:settingsHydration",
+        "app:mountFeatures"
+    ],
+    docs: {
+        description: "Top-level SDOA surface bootloader: waits for the Tauri engine bridge, hydrates settings, gates on the splash screen, applies layout classes/theme, then initializes and mounts all registered feature modules via ModuleLoader.",
+        author: "ProtoAI Team"
+    },
+    last_modified: "2026-07-13T00:00:00Z"
+};
 
 let backend = null;
 

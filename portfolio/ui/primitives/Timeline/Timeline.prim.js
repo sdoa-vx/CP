@@ -39,11 +39,19 @@
       type:            "primitive",
       layer:           2,
       runtime:         "Browser",
-      version:         "5.0.0",
+      version:         "5.0.1",
       operationalRole: "savant",
 
       // ── Dependencies ──────────────────────────
       requires:  [],
+      dependencies: [],
+      capabilities: [
+        "timeline:loadEntries",
+        "timeline:appendEntry",
+        "timeline:clearEntries",
+        "timeline:setFilter",
+        "timeline:scrollToLatest"
+      ],
       dataFiles: [],
 
       // ── Lifecycle ─────────────────────────────
@@ -98,7 +106,8 @@
         description: "Swimlane event-stream visualizer for Chronicle.service.js. Groups entries by source module into horizontal lanes. Each entry is a color-coded dot on a time axis — click to inspect the full payload. Filterable by source and type prefix. Subscribes to chronicle:entryRecorded for live updates.",
         author: "ProtoAI Core Architecture Group",
         sdoa: "5.0.0"
-      }
+      },
+      last_modified: "2026-07-13T00:00:00Z"
     };
 
     // ── Private State ─────────────────────────

@@ -32,13 +32,14 @@
         id:      "FileList.ui",
         type:    "component",
         runtime: "Browser",
-        version: "1.0.0",
+        version: "1.0.1",
+        "non-sdoa-compliant": true,
         capabilities: [
             "list.render", "list.select", "list.multiselect",
             "list.dragdrop", "list.contextmenu", "list.keyboard"
         ],
         dependencies: ["tauri-utils.js", "EventBus.ui.js"],
-        docs: { description: "Windows Explorer-style file list. Full selection model, drag/drop, right-click context menu with ProtoAI extras.",
+        docs: { description: "Undeclared duplicate of the canonical FileList.ui module (also present in primitives/FileList/); pending consolidation in Phase 4. Windows Explorer-style file list. Full selection model, drag/drop, right-click context menu with ProtoAI extras.",
             author: "ProtoAI team" },
         actions: {
             commands: {

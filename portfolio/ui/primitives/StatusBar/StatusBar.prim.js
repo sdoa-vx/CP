@@ -31,11 +31,22 @@
       type:            "primitive",
       layer:           2,
       runtime:         "Browser",
-      version:         "5.0.0",
+      version:         "5.0.1",
       operationalRole: "savant",
 
       // ── Dependencies ──────────────────────────
       requires:  [],
+      dependencies: [],
+      capabilities: [
+        "statusbar:setModuleCount",
+        "statusbar:setBackendStatus",
+        "statusbar:setSovereignStatus",
+        "statusbar:pushAlert",
+        "statusbar:clearAlerts",
+        "statusbar:setTriageMode",
+        "statusbar:setCoachActivity",
+        "statusbar:setPulseMetric"
+      ],
       dataFiles: [],
 
       // ── Lifecycle ─────────────────────────────
@@ -110,7 +121,8 @@
         description: "Persistent footer strip. Displays live SDOA system health at a glance: module count, event bus activity rate, backend connection status, Pulse p95 latency, per-sovereign status indicators, Coach activity, Triage routing mode, and transient alerts. Makes the invisible SDOA event mesh a physical, always-visible artifact.",
         author: "ProtoAI Core Architecture Group",
         sdoa:   "5.0.0"
-      }
+      },
+      last_modified: "2026-07-13T00:00:00Z"
     };
 
     // ── Private State ─────────────────────────

@@ -11,11 +11,13 @@
 
     const MANIFEST = {
         id: "Badge.prim", type: "primitive", layer: 2,
-        runtime: "Browser", version: "4.0.0",
-        requires: [], dataFiles: [], lifecycle: [],
+        runtime: "Browser", version: "4.0.1",
+        requires: [], dependencies: [], dataFiles: [], lifecycle: [],
+        capabilities: ["badge:create"],
         actions: { commands: { create: { description: "Create a badge.", input: "BadgeConfig", output: "HTMLElement" } }, events: {}, accepts: {}, slots: {} },
         backendDeps: [],
-        docs: { description: "Status badges, tags, and labels with variants.", author: "ProtoAI team", sdoa: "4.0.0" }
+        docs: { description: "Status badges, tags, and labels with variants.", author: "ProtoAI team", sdoa: "4.0.0" },
+        last_modified: "2026-07-13T00:00:00Z"
     };
 
     /**

@@ -17,11 +17,17 @@
       type:            "primitive",
       layer:           2,
       runtime:         "Browser",
-      version:         "5.0.0",
+      version:         "5.0.1",
       operationalRole: "savant",
 
       // ── Dependencies ──────────────────────────
       requires:        [],
+      dependencies:    [],
+      capabilities: [
+        "palette:open",
+        "palette:close",
+        "palette:refreshIndex"
+      ],
       dataFiles:       [],
 
       // ── Lifecycle ─────────────────────────────
@@ -67,7 +73,8 @@
         description: "Registry-aware command palette. Reads the live SDOA registry command surface at mount time and presents a searchable, keyboard-navigable launcher. Every declared module command is instantly accessible. New modules auto-appear via registry:moduleRegistered.",
         author: "ProtoAI Core Architecture Group",
         sdoa: "5.0.0"
-      }
+      },
+      last_modified: "2026-07-13T00:00:00Z"
     };
 
     // ── Private State ──────────────────────────

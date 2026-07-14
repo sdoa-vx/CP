@@ -6,7 +6,7 @@
 // ============================================================
 (function () {
     "use strict";
-    const MANIFEST = { id: "ContextMenu.prim", type: "primitive", layer: 2, runtime: "Browser", version: "4.0.0", requires: [], dataFiles: [], lifecycle: ["mount"], actions: { commands: { show: {}, hide: {} }, events: {}, accepts: {}, slots: {} }, backendDeps: [], docs: { description: "Context menu with nested items, separators, and keyboard navigation.", author: "ProtoAI team", sdoa: "4.0.0" } };
+    const MANIFEST = { id: "ContextMenu.prim", type: "primitive", layer: 2, runtime: "Browser", version: "4.0.1", requires: [], dependencies: [], capabilities: ["contextmenu:show", "contextmenu:hide"], dataFiles: [], lifecycle: ["mount"], actions: { commands: { show: {}, hide: {} }, events: {}, accepts: {}, slots: {} }, backendDeps: [], docs: { description: "Context menu with nested items, separators, and keyboard navigation.", author: "ProtoAI team", sdoa: "4.0.0" }, last_modified: "2026-07-13T00:00:00Z" };
 
     let _activeMenu = null;
 

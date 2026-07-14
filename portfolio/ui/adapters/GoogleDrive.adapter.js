@@ -12,8 +12,16 @@
         type:     "adapter",
         layer:    3,
         runtime:  "Browser",
-        version:  "5.0.0",
+        version:  "5.0.1",
+        last_modified: "2026-07-13T00:00:00Z",
         requires: [],
+        dependencies: [],
+        capabilities: [
+            "adapter:googledrive:getAuthUrl",
+            "adapter:googledrive:exchangeCode",
+            "adapter:googledrive:listFiles",
+            "adapter:googledrive:downloadFile"
+        ],
         dataFiles: [],
         lifecycle: ["init"],
         actions: {

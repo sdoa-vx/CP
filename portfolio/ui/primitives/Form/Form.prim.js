@@ -23,15 +23,16 @@
 
     const MANIFEST = {
         id: "Form.prim", type: "primitive", layer: 2,
-        runtime: "Browser", version: "4.0.0",
-        requires: ["Input.prim"], dataFiles: [], lifecycle: [],
+        runtime: "Browser", version: "4.0.1",
+        requires: ["Input.prim"], dependencies: ["Input.prim"], capabilities: ["form:create"], dataFiles: [], lifecycle: [],
         actions: {
             commands: { create: { description: "Create a form from a field schema.", input: "FormConfig", output: "HTMLElement" } },
             events: { "form:changed": { payload: "{ fieldId, value, allValues }" }, "form:submitted": { payload: "{ values }" } },
             accepts: {}, slots: {},
         },
         backendDeps: [],
-        docs: { description: "Schema-driven form renderer. Creates Input/Toggle/Select primitives from a JSON field list. Handles validation and submission.", author: "ProtoAI team", sdoa: "4.0.0" }
+        docs: { description: "Schema-driven form renderer. Creates Input/Toggle/Select primitives from a JSON field list. Handles validation and submission.", author: "ProtoAI team", sdoa: "4.0.0" },
+        last_modified: "2026-07-13T00:00:00Z"
     };
 
     /**

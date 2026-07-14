@@ -14,10 +14,11 @@
         type:    "adapter",
         layer:   2,
         runtime: "Browser",
-        version: "4.0.0",
+        version: "4.0.1",
+        "non-sdoa-compliant": true,
         requires: ["tauri-utils.js"],
         docs: {
-            description: "Primary bridge between the UI and the Rust sidecar. Handles IPC routing, status polling, and auto-reconnection.",
+            description: "Undeclared duplicate of the canonical BackendConnector.ui module (also present in adapters/); pending consolidation in Phase 4. Primary bridge between the UI and the Rust sidecar — handles IPC routing, status polling, and auto-reconnection.",
             author: "ProtoAI Team"
         }
     };

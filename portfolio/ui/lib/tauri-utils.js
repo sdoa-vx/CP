@@ -1,11 +1,31 @@
 // ============================================================
 // tauri-utils.js — Shared Tauri IPC Utility
-// version: 1.0.0
+// version: 5.0.0
 // load order: FIRST — before any UI module that calls Tauri
 // ============================================================
 
 (function () {
     "use strict";
+
+    const MANIFEST = {
+        id:      "TauriUtils.utility",
+        type:    "utility",
+        layer:   3,
+        runtime: "Browser",
+        version: "5.0.0",
+        requires: [],
+        dependencies: [],
+        capabilities: [
+            "tauri:invoke",
+            "tauri:isTauriCheck",
+            "dom:ready"
+        ],
+        docs: {
+            description: "Foundational, load-first Tauri IPC utility. Provides the single canonical tauriInvoke() wrapper, an isTauri() availability guard, and a domReady() helper used by every other browser-layer SDOA module to safely call the Tauri core bridge.",
+            author: "ProtoAI Team"
+        },
+        last_modified: "2026-07-13T00:00:00Z"
+    };
 
     // ── tauriInvoke ──────────────────────────────────────────
     // Single canonical wrapper for Tauri IPC calls.
@@ -48,7 +68,7 @@
     }
 
     // ── exports ──────────────────────────────────────────────
-    window.TauriUtils = { tauriInvoke, isTauri, domReady };
+    window.TauriUtils = { MANIFEST, tauriInvoke, isTauri, domReady };
     // ── end of exports ───────────────────────────────────────
 
 })();

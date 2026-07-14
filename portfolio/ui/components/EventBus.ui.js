@@ -36,7 +36,8 @@
         id:      "EventBus.ui",
         type:    "service",
         runtime: "Browser",
-        version: "1.0.0",
+        version: "1.0.1",
+        "non-sdoa-compliant": true,
 
         capabilities: [
             "event.publish",
@@ -47,7 +48,7 @@
         ],
         dependencies: ["tauri-utils.js"],
         docs: {
-            description: "Central pub/sub event bus. Activates the SDOA v3 action surface across all UI modules. Modules emit events here; app.js and other modules subscribe. Eliminates direct module-to-module coupling.",
+            description: "Undeclared duplicate of the canonical EventBus.ui module (also present in lib/); pending consolidation in Phase 4. Central pub/sub event bus. Activates the SDOA v3 action surface across all UI modules. Modules emit events here; app.js and other modules subscribe. Eliminates direct module-to-module coupling.",
             author: "ProtoAI team",
             sdoa_compatibility: `
                 SDOA v3 contract — all versions forward/backward compatible.

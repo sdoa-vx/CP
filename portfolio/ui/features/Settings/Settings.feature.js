@@ -17,11 +17,12 @@
 
     const MANIFEST = {
         id: "Settings.feature", type: "feature", layer: 1,
-        runtime: "Browser", version: "4.1.0",
+        runtime: "Browser", version: "4.1.1",
+        "non-sdoa-compliant": true,
         requires: ["Modal.prim", "TabGroup.prim", "Form.prim", "Toast.prim", "Button.prim"],
         dataFiles: ["schemas/settings.schema.json"],
         lifecycle: ["init"],
-        docs: { description: "Global settings modal using declarative JSON schemas.", author: "ProtoAI team" }
+        docs: { description: "Exceeds 500-line hard cap, pending refactor in Phase 5. Global settings modal using declarative JSON schemas.", author: "ProtoAI team" }
     };
 
     let _schema  = null;

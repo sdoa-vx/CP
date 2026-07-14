@@ -25,7 +25,8 @@
             id:      "QmdAdapter.ui",
             type:    "adapter",
             runtime: "Browser",
-            version: "3.0.0",
+            version: "3.0.1",
+            "non-sdoa-compliant": true,
 
             // v1.2 fields — always present, never removed
             capabilities: [
@@ -38,7 +39,7 @@
                 "BackendConnector.ui.js"
             ],
             docs: {
-                description: "Browser-safe QMD adapter. Routes semantic search and indexing requests through BackendConnector.ui to the Tauri backend.",
+                description: "Undeclared duplicate of the canonical QmdAdapter.ui module (also present in adapters/); pending consolidation in Phase 4. Browser-safe QMD adapter. Routes semantic search and indexing requests through BackendConnector.ui to the Tauri backend.",
                 input: {
                     search: { query: "string" },
                     index:  { path: "string" }

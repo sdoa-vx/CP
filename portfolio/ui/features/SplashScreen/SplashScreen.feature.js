@@ -12,11 +12,12 @@
         type: "feature",
         layer: 1,
         runtime: "Browser",
-        version: "1.0.0",
+        version: "1.0.1",
+        "non-sdoa-compliant": true,
         requires: ["StateStore"],
         lifecycle: ["init"],
         docs: {
-            description: "Premium settings splash screen overlay. Blocks launch until core settings are validated and confirmed.",
+            description: "Exceeds 500-line hard cap, pending refactor in Phase 5. Premium settings splash screen overlay. Blocks launch until core settings are validated and confirmed.",
             author: "ProtoAI Team"
         }
     };

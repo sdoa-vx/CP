@@ -6,7 +6,7 @@
 // ============================================================
 (function () {
     "use strict";
-    const MANIFEST = { id: "Spinner.prim", type: "primitive", layer: 2, runtime: "Browser", version: "4.0.0", requires: [], dataFiles: [], lifecycle: [], actions: { commands: { create: {} }, events: {}, accepts: {}, slots: {} }, backendDeps: [], docs: { description: "Loading spinner with optional label.", author: "ProtoAI team", sdoa: "4.0.0" } };
+    const MANIFEST = { id: "Spinner.prim", type: "primitive", layer: 2, runtime: "Browser", version: "4.0.1", requires: [], dependencies: [], capabilities: ["spinner:create"], dataFiles: [], lifecycle: [], actions: { commands: { create: {} }, events: {}, accepts: {}, slots: {} }, backendDeps: [], docs: { description: "Loading spinner with optional label.", author: "ProtoAI team", sdoa: "4.0.0" }, last_modified: "2026-07-13T00:00:00Z" };
 
     function create(config = {}) {
         const size = config.size || "md";

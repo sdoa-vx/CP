@@ -1,6 +1,26 @@
 // SDOA v1.2 compliant — Fast UI Component
+// Last modified: 2026-07-13T00:00:00Z
 import { invoke } from "@tauri-apps/api/tauri";
 import { useState } from "react";
+
+const MANIFEST = {
+    id:      "PaletteInput.prim",
+    type:    "primitive",
+    layer:   2,
+    runtime: "Browser",
+    version: "1.0.1",
+    requires: ["QmdAdapter.ui"],
+    dependencies: ["QmdAdapter.ui"],
+    capabilities: [
+        "palette:input:render",
+        "palette:input:search"
+    ],
+    docs: {
+        description: "Fast React input primitive for the Command Palette; debounced-by-length search box that routes queries through the sdoa_route Tauri command to QmdAdapter for project/file search results.",
+        author: "ProtoAI Team"
+    },
+    last_modified: "2026-07-13T00:00:00Z"
+};
 
 export const PaletteInput = () => {
     const [query, setQuery] = useState("");

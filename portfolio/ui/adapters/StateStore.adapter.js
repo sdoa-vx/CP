@@ -23,9 +23,19 @@
         type:     "service",
         layer:    3,
         runtime:  "Browser",
-        version:  "4.0.0",
+        version:  "4.0.1",
+        last_modified: "2026-07-13T00:00:00Z",
 
         requires: [],
+        dependencies: [],
+        capabilities: [
+            "state:get",
+            "state:set",
+            "state:watch",
+            "state:getAll",
+            "state:reset",
+            "state:hydrate"
+        ],
         dataFiles: [],
 
         lifecycle: ["init", "destroy"],

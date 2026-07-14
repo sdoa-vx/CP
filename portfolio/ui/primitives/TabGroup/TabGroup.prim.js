@@ -24,15 +24,16 @@
 
     const MANIFEST = {
         id: "TabGroup.prim", type: "primitive", layer: 2,
-        runtime: "Browser", version: "4.0.0",
-        requires: [], dataFiles: [], lifecycle: [],
+        runtime: "Browser", version: "4.0.1",
+        requires: [], dependencies: [], capabilities: ["tabgroup:create"], dataFiles: [], lifecycle: [],
         actions: {
             commands: { create: { description: "Create a tab group.", input: "TabGroupConfig", output: "HTMLElement" } },
             events: { "tab:changed": { payload: "{ tabId, prevTabId }" } },
             accepts: {}, slots: {},
         },
         backendDeps: [],
-        docs: { description: "Generic tabbed interface. Renders tab bar and content panels, handles switching.", author: "ProtoAI team", sdoa: "4.0.0" }
+        docs: { description: "Generic tabbed interface. Renders tab bar and content panels, handles switching.", author: "ProtoAI team", sdoa: "4.0.0" },
+        last_modified: "2026-07-13T00:00:00Z"
     };
 
     /**
