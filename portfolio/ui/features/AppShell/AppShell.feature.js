@@ -1,15 +1,22 @@
 /* ============================================================
-   AppShell.feature.js — SDOA v4 Feature Core
-   version: 4.3.0
-   Last modified: 2026-05-11
-   Changes vs 4.2.0:
-     - Split view now mounts FileExplorer in right pane instead
-       of showing a blank panel. Deactivating unmounts cleanly.
-     - Quick Actions: wired New Chat, Summarize, Translate,
-       Code Assistant, Explain Code handlers.
-     - Project list right-click: Rename, Duplicate, Delete.
-     - Router.service.js restored _handleChatIPC / _handleMultiModelSendIPC
-       (were truncated from source); history now saves both turns.
+   AppShell.feature.js — SDOA v5 Feature Core
+   version: 5.0.0
+   Last modified: 2026-07-14
+
+   Phase 5 oversized-file split: quick-action handlers moved to
+   AppShellQuickActions.component.js, the split-view subsystem moved
+   to AppShellSplitView.component.js, the Quick Swap engine selector
+   moved to AppShellQuickSwap.utility.js, and the project list/history
+   panel moved to AppShellProjectPanel.component.js. This core keeps
+   boot sequencing, DOM verification, resizers/shortcuts, appearance
+   settings, the global [data-action] click delegate, send-mode toggle,
+   model status dots, and the run_workflow admin caller.
+
+   The split-view state (_splitActive/_splitMode/_monacoEditor) stays
+   here rather than moving with its subsystem because it's also read
+   from the app:projectSelected EventBus listener (below) and from the
+   Quick Swap file-open listener — both siblings receive it via an
+   explicit ctx object built by _buildSplitCtx().
    ============================================================ */
 
 (function () {
@@ -22,30 +29,46 @@
         type:    "feature",
         layer:   1,
         runtime: "Browser",
-        version: "4.3.1",
-        "non-sdoa-compliant": true,
-        requires: [],
+        version: "5.0.0",
+        capabilities: ["shell-orchestration", "project-switching", "split-view", "quick-swap"],
+        requires: ["AppShellQuickActions.component", "AppShellSplitView.component", "AppShellQuickSwap.utility", "AppShellProjectPanel.component"],
+        dependencies: ["AppShellQuickActions.component", "AppShellSplitView.component", "AppShellQuickSwap.utility", "AppShellProjectPanel.component"],
         docs: {
-            description: "Exceeds 500-line hard cap, pending refactor in Phase 5. Core UI orchestrator for resizing, global shortcuts, project switching, and system status.",
+            description: "Core UI orchestrator for resizing, global shortcuts, project switching, and system status. Quick actions, split view, quick swap, and the project/history panel extracted to siblings as part of the Phase 5 oversized-file split.",
             author: "ProtoAI Team"
-        }
+        },
+        last_modified: "2026-07-14"
     };
 
     let _sidebarCollapsed = false;
+    let _splitActive = false;
+    let _splitMode = "files"; // "files" | "editor"
+    let _monacoEditor = null;
+
+    function _buildSplitCtx() {
+        return {
+            getSplitActive:  () => _splitActive,
+            setSplitActive:  (v) => { _splitActive = v; },
+            getSplitMode:    () => _splitMode,
+            setSplitMode:    (v) => { _splitMode = v; },
+            getMonacoEditor: () => _monacoEditor,
+            setMonacoEditor: (v) => { _monacoEditor = v; }
+        };
+    }
 
     // ── Module Interface ──────────────────────────────────────
 
     async function init() {
-        console.log("[AppShell.feature] Initializing v4.3.0...");
+        console.log("[AppShell.feature] Initializing v5.0.0...");
         try {
             _verifyDOM();
             _wireResizers();
             _wireShortcuts();
             _wireUI();
             _wireSendModeToggle();
-            _wireQuickSwap();
+            window.AppShellQuickSwap.wireQuickSwap(_buildSplitCtx());
             _wireRunWorkflow();
-            _initHistoryPanel();
+            window.AppShellProjectPanel.initHistoryPanel();
             _refreshModelStatus();
 
             await loadProjects();
@@ -61,7 +84,7 @@
             // Listen for project selection from elsewhere
             window.EventBus?.on("app:projectSelected", (payload) => {
                 window.currentProject = payload.project;
-                _updateActiveProjectUI();
+                window.AppShellProjectPanel.updateActiveProjectUI();
                 // Update file explorer root if split view is open
                 if (_splitActive && window.FileExplorerFeature?.setRootPath) {
                     window.FileExplorerFeature.setRootPath(payload.project);
@@ -190,52 +213,14 @@
         if (settings.themeBorderSubtle) root.style.setProperty("--border-subtle", settings.themeBorderSubtle);
     }
 
-    async function updateQuickSwap() {
-        const select = document.getElementById("otfmsEngineSelect");
-        if (!select) return;
-
-        try {
-            const res = await window.backendConnector?.runWorkflow("get_model_inventory");
-            const inventory = res?.models || res?.data?.models || [];
-
-            let html = `<option value="">— Profile Default —</option>`;
-
-            // Group by provider
-            const providers = {};
-            inventory.forEach(m => {
-                const p = m.provider || "Local";
-                if (!providers[p]) providers[p] = [];
-                providers[p].push(m);
-            });
-
-            for (const [p, models] of Object.entries(providers)) {
-                html += `<optgroup label="${p}">`;
-                models.forEach(m => {
-                    html += `<option value="${m.id}">${m.name || m.id}</option>`;
-                });
-                html += `</optgroup>`;
-            }
-
-            select.innerHTML = html;
-
-            // Restore saved
-            const saved = localStorage.getItem("protoai:quickswap:engine") || "";
-            if (select.querySelector(`option[value="${CSS.escape(saved)}"]`)) {
-                select.value = saved;
-            }
-        } catch (err) {
-            console.warn("[AppShell] Failed to load dynamic models for quick swap:", err);
-        }
-    }
-
     function _wireUI() {
         // Essential Buttons
         document.getElementById("refreshProjectsBtn")?.addEventListener("click", () => loadProjects());
         document.getElementById("openSettingsButton")?.addEventListener("click", () => window.openSettingsPanel?.());
-        document.getElementById("newProjectBtn")?.addEventListener("click", () => _openNewProjectModal());
+        document.getElementById("newProjectBtn")?.addEventListener("click", () => window.AppShellProjectPanel.openNewProjectModal());
 
-        document.getElementById("npCloseBtn")?.addEventListener("click", () => _closeNewProjectModal());
-        document.getElementById("npCancelBtn")?.addEventListener("click", () => _closeNewProjectModal());
+        document.getElementById("npCloseBtn")?.addEventListener("click", () => window.AppShellProjectPanel.closeNewProjectModal());
+        document.getElementById("npCancelBtn")?.addEventListener("click", () => window.AppShellProjectPanel.closeNewProjectModal());
 
         document.getElementById("autoOptimizeBtn")?.addEventListener("click", async () => {
             const btn = document.getElementById("autoOptimizeBtn");
@@ -264,7 +249,7 @@
                 if (btn) { btn.disabled = true; btn.textContent = "Creating…"; }
                 await window.backendConnector?.runWorkflow("create_project", { name });
                 window.ToastPrim?.show(`Project "${name}" created!`, "success");
-                _closeNewProjectModal();
+                window.AppShellProjectPanel.closeNewProjectModal();
                 if (nameInput) nameInput.value = "";
                 await loadProjects();
                 selectProject(name);
@@ -314,33 +299,34 @@
 
             console.log(`[AppShell] Quick Action: ${action} [Project: ${project}]`);
 
+            const QuickActions = window.AppShellQuickActions;
             switch (action) {
                 case "image":
-                    _handlePromptCreator();
+                    QuickActions.handlePromptCreator();
                     break;
                 case "image_gen":
-                    _handleImageGen();
+                    QuickActions.handleImageGen();
                     break;
                 case "deepsearch":
-                    _handleDeepSearch();
+                    QuickActions.handleDeepSearch();
                     break;
                 case "new_chat":
-                    _handleNewChat();
+                    QuickActions.handleNewChat();
                     break;
                 case "split_screen":
                     _toggleSplitView();
                     break;
                 case "summarize":
-                    _handleSummarize();
+                    QuickActions.handleSummarize();
                     break;
                 case "translate":
-                    _handleTranslate();
+                    QuickActions.handleTranslate();
                     break;
                 case "code_assist":
-                    _handleCodeAssist();
+                    QuickActions.handleCodeAssist();
                     break;
                 case "explain_code":
-                    _handleExplainCode();
+                    QuickActions.handleExplainCode();
                     break;
                 case "gdrive":
                     if (window.googleDriveConnector) {
@@ -354,79 +340,6 @@
                     break;
                 default:
                     console.log(`[AppShell] No handler for action: ${action}`);
-            }
-        });
-    }
-
-    // ── Quick Swap ────────────────────────────────────────────
-
-    async function _wireQuickSwap() {
-        const select   = document.getElementById("otfmsEngineSelect");
-        const applyBtn = document.getElementById("applyEngineBtn");
-        if (!select || !applyBtn) return;
-
-        // Add search filter for models
-        const searchInput = document.createElement("input");
-        searchInput.type = "text";
-        searchInput.className = "sdoa-input";
-        searchInput.placeholder = "Filter engines…";
-        searchInput.style.cssText = "font-size:11px; padding:4px 8px; margin-bottom:4px;";
-        select.parentElement.insertBefore(searchInput, select);
-
-        searchInput.addEventListener("input", (e) => {
-            const filter = e.target.value.toLowerCase();
-            select.querySelectorAll("option").forEach(opt => {
-                if (!opt.value) return;
-                opt.style.display = opt.textContent.toLowerCase().includes(filter) ? "" : "none";
-            });
-            select.querySelectorAll("optgroup").forEach(group => {
-                const hasVisible = Array.from(group.querySelectorAll("option")).some(o => o.style.display !== "none");
-                group.style.display = hasVisible ? "" : "none";
-            });
-        });
-
-        await updateQuickSwap();
-
-        applyBtn.addEventListener("click", () => {
-            const model = select.value;
-            window.quickSwapEngine = model || undefined;
-            localStorage.setItem("protoai:quickswap:engine", model);
-
-            const opt = select.querySelector(`option[value="${CSS.escape(model)}"]`);
-            const label = opt ? opt.textContent : model;
-
-            if (model) {
-                window.ToastPrim?.show(`Quick Swap active: ${label}`, "info");
-            } else {
-                window.ToastPrim?.show("Quick Swap cleared — using profile default.", "info");
-            }
-
-            applyBtn.textContent = model ? "✓ Applied" : "Apply to Chat";
-            setTimeout(() => { applyBtn.textContent = "Apply to Chat"; }, 2000);
-        });
-
-        window.EventBus?.on("models:updated", () => updateQuickSwap());
-
-        // When FileExplorer opens a file, load it into Monaco if editor pane is active
-        window.EventBus?.on("filemanager:fileOpened", async ({ path }) => {
-            if (!_splitActive || _splitMode !== "editor" || !path) return;
-            try {
-                const res = await window.backendConnector?.runWorkflow("fs_read_file", { path });
-                const text = res?.content || res?.data?.content || "";
-                if (_monacoEditor) {
-                    window.CodeEditorPrim?.setValue(_monacoEditor, text);
-                    const ext = path.split(".").pop().toLowerCase();
-                    const langMap = { js:"javascript", ts:"typescript", py:"python", rs:"rust",
-                                      json:"json", html:"html", css:"css", md:"markdown" };
-                    const lang = langMap[ext] || "plaintext";
-                    window.CodeEditorPrim?.setLanguage(_monacoEditor, lang);
-                    const label = document.getElementById("monacoFileLabel");
-                    if (label) label.textContent = path.split(/[\/]/).pop();
-                    const sel = document.getElementById("monacoLangSelect");
-                    if (sel) sel.value = lang;
-                }
-            } catch (err) {
-                window.ToastPrim?.show("Could not load file: " + (err.message || err), "error");
             }
         });
     }
@@ -468,531 +381,24 @@
         updateModeUI();
     }
 
-    // ── Handlers ──────────────────────────────────────────────
-
-    function _handlePromptCreator() {
-        const input = document.getElementById("chatInput");
-        if (!input || !input.value.trim()) {
-            window.ToastPrim?.show("Type a basic prompt first!", "info");
-            return;
-        }
-        window.EventBus?.emit("chat:promptOptimize", { text: input.value });
-    }
-
-    async function _handleImageGen() {
-        const input      = document.getElementById("chatInput");
-        const promptText = input?.value || "A futuristic AI laboratory";
-        window.ToastPrim?.show("Generating image...", "info");
-        try {
-            const res = await window.backendConnector?.runWorkflow("image_gen", { text: promptText, project: window.currentProject || "default" });
-            const url = res?.data?.url || res?.url || res?.data?.path || res?.path;
-            if (url) {
-                window.EventBus?.emit("chat:appendSystemMessage", { text: `Generated: ![Image](${url})` });
-            }
-        } catch (err) {
-            window.ToastPrim?.show("Image generation failed: " + err.message, "error");
-        }
-    }
-
-    function _handleDeepSearch() {
-        const input = document.getElementById("chatInput");
-        if (!input || !input.value.trim()) {
-            window.ToastPrim?.show("Enter a research topic first.", "info");
-            return;
-        }
-        window.EventBus?.emit("chat:deepSearch", { query: input.value });
-    }
-
-    function _handleNewChat() {
-        const msgList = document.getElementById("chatMessages");
-        if (msgList) {
-            msgList.innerHTML = `
-                <div class="chat-empty-state" style="text-align:center; padding-top:100px; color:var(--text-dim);">
-                    <h2>ProtoAI Assistant</h2>
-                    <p>New chat started. Type a message to begin.</p>
-                </div>
-            `;
-        }
-        document.getElementById("chatInput")?.focus();
-        window.ToastPrim?.show("New chat started", "info");
-        window.EventBus?.emit("chat:cleared", {});
-    }
-
-    function _handleSummarize() {
-        const messages = document.querySelectorAll(".chat-message--assistant .content");
-        const lastMsg  = messages[messages.length - 1];
-        const text     = lastMsg?.textContent?.trim();
-        if (!text) {
-            window.ToastPrim?.show("No assistant message to summarize yet.", "info");
-            return;
-        }
-        const input = document.getElementById("chatInput");
-        if (input) {
-            input.value = `Please summarize the following in 3 bullet points:\n\n${text.slice(0, 1000)}`;
-            input.style.height = "auto";
-            input.style.height = input.scrollHeight + "px";
-        }
-        window.ToastPrim?.show("Summarize prompt loaded — press Enter to send", "info");
-    }
-
-    function _handleTranslate() {
-        const LANGUAGES = [
-            "Spanish", "French", "German", "Italian", "Portuguese",
-            "Japanese", "Chinese (Simplified)", "Chinese (Traditional)",
-            "Korean", "Russian", "Arabic", "Hindi", "Dutch",
-            "Swedish", "Polish", "Turkish", "Vietnamese", "Thai"
-        ];
-
-        const existing = document.getElementById("translatePickerOverlay");
-        if (existing) { existing.remove(); return; }
-
-        const overlay = document.createElement("div");
-        overlay.id = "translatePickerOverlay";
-        overlay.style.cssText = [
-            "position:fixed;z-index:9999;top:50%;left:50%;",
-            "transform:translate(-50%,-50%);",
-            "background:var(--bg-surface);border:1px solid var(--border-subtle);",
-            "border-radius:12px;padding:16px;min-width:230px;",
-            "box-shadow:0 8px 32px rgba(0,0,0,0.6);"
-        ].join("");
-        overlay.innerHTML = `
-            <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--text);">🌐 Translate To</div>
-            <select id="translateLangSelect" class="sdoa-select" style="width:100%;margin-bottom:12px;">
-                ${LANGUAGES.map(l => `<option value="${l}">${l}</option>`).join("")}
-            </select>
-            <div style="display:flex;gap:6px;justify-content:flex-end;">
-                <button id="translateCancelBtn" class="sdoa-button sdoa-button--ghost sdoa-button--sm">Cancel</button>
-                <button id="translateGoBtn" class="sdoa-button sdoa-button--primary sdoa-button--sm">Translate ➤</button>
-            </div>`;
-        document.body.appendChild(overlay);
-
-        const lastLang = localStorage.getItem("protoai:translate:lang") || "Spanish";
-        const sel = overlay.querySelector("#translateLangSelect");
-        if (sel) sel.value = lastLang;
-
-        overlay.querySelector("#translateCancelBtn").addEventListener("click", () => overlay.remove());
-        overlay.querySelector("#translateGoBtn").addEventListener("click", () => {
-            const lang = overlay.querySelector("#translateLangSelect").value;
-            localStorage.setItem("protoai:translate:lang", lang);
-            overlay.remove();
-            const input = document.getElementById("chatInput");
-            const currentText = input?.value?.trim();
-            if (currentText) {
-                input.value = `Translate the following to ${lang}:\n\n${currentText}`;
-            } else {
-                const messages = document.querySelectorAll(".chat-message .content");
-                const lastMsg  = messages[messages.length - 1];
-                const text     = lastMsg?.textContent?.trim();
-                if (!text) { window.ToastPrim?.show("Type text to translate, or send a message first.", "info"); return; }
-                if (input) input.value = `Translate the following to ${lang}:\n\n${text.slice(0, 1000)}`;
-            }
-            window.ToastPrim?.show(`Translate to ${lang} — press Enter to send`, "info");
-        });
-        setTimeout(() => {
-            document.addEventListener("click", function _closeTranslate(e) {
-                if (!overlay.contains(e.target)) { overlay.remove(); document.removeEventListener("click", _closeTranslate); }
-            });
-        }, 100);
-    }
-
-    function _handleCodeAssist() {
-        const input       = document.getElementById("chatInput");
-        const currentText = input?.value?.trim();
-        if (currentText) {
-            input.value = `As a code assistant, help me with:\n\n${currentText}`;
-        } else {
-            if (input) input.value = "I need help writing code for: ";
-        }
-        input?.focus();
-        window.ToastPrim?.show("Code Assistant — describe what you need", "info");
-    }
-
-    function _handleExplainCode() {
-        const input       = document.getElementById("chatInput");
-        const currentText = input?.value?.trim();
-        if (currentText) {
-            input.value = `Please explain this code step by step:\n\`\`\`\n${currentText}\n\`\`\``;
-        } else {
-            if (input) input.value = "Explain this code:\n```\n\n```";
-        }
-        input?.focus();
-        window.ToastPrim?.show("Explain Code — paste your code and press Enter", "info");
-    }
-
-    // ── Split View ────────────────────────────────────────────
-
-    let _splitActive = false;
-    let _splitMode = "files"; // "files" | "editor"
-    let _monacoEditor = null;
+    // ── Split View (thin wrapper — state lives here, logic in sibling) ──
 
     function _toggleSplitView() {
-        _splitActive = !_splitActive;
-        const workspace = document.getElementById("workspace");
-        const paneRight = document.getElementById("pane-right");
-        const btn       = document.getElementById("splitToggleBtn");
-
-        if (workspace) workspace.classList.toggle("split-active", _splitActive);
-        if (paneRight) paneRight.classList.toggle("split-visible", _splitActive);
-        if (btn) {
-            btn.title = _splitActive ? "Close split view (Ctrl+Shift+E)" : "Toggle split view (Ctrl+Shift+E)";
-            btn.classList.toggle("active", _splitActive);
-        }
-
-        if (_splitActive) {
-            _renderRightModeTabs();
-            _mountRightPane(_splitMode);
-        } else {
-            _clearRightPane();
-            window.ToastPrim?.show("Split view closed", "info");
-        }
+        window.AppShellSplitView.toggleSplitView(_buildSplitCtx());
     }
 
-    function _renderRightModeTabs() {
-        const bar = document.getElementById("rightModeTabs");
-        if (!bar) return;
-        const tabs = [
-            { id: "files",    label: "📁 Files"    },
-            { id: "editor",   label: "📝 Editor"   },
-            { id: "terminal", label: "📟 Terminal" }
-        ];
-        bar.innerHTML = tabs.map(t => {
-            const active = t.id === _splitMode;
-            return `<button class="sdoa-tabgroup__tab${active ? " sdoa-tabgroup__tab--active" : ""}"
-                data-right-mode="${t.id}" style="font-size:12px; padding:4px 12px;">${t.label}</button>`;
-        }).join("");
-        bar.querySelectorAll("[data-right-mode]").forEach(btn => {
-            btn.addEventListener("click", () => {
-                _splitMode = btn.dataset.rightMode;
-                _renderRightModeTabs();
-                _mountRightPane(_splitMode);
-            });
-        });
-    }
+    // ── Project Management (thin wrappers — logic lives in sibling) ────
 
-    function _mountRightPane(mode) {
-        const content = document.getElementById("rightPaneContent");
-        if (!content) return;
-
-        // Dispose Monaco if active
-        if (_monacoEditor) {
-            window.CodeEditorPrim?.dispose(_monacoEditor);
-            _monacoEditor = null;
-        }
-        // Unmount terminal if active
-        if (window.TerminalFeature?.unmount) {
-            window.TerminalFeature.unmount();
-        }
-
-        if (mode === "files") {
-            content.innerHTML = "";
-            if (window.FileExplorerFeature?.mount) {
-                window.FileExplorerFeature.mount(content);
-                if (window.currentProject) window.FileExplorerFeature.setRootPath?.(window.currentProject);
-                window.ToastPrim?.show("Split view — File Explorer", "info");
-            } else {
-                content.innerHTML = `<div style="padding:20px;color:var(--text-dim);text-align:center;margin-top:60px;font-size:13px;">File Explorer</div>`;
-            }
-        } else if (mode === "editor") {
-            content.innerHTML = "";
-            content.style.cssText = "position:relative; display:flex; flex-direction:column; height:100%;";
-
-            // Toolbar: language selector + file name indicator
-            const toolbar = document.createElement("div");
-            toolbar.style.cssText = "display:flex; align-items:center; gap:8px; padding:6px 10px; background:var(--bg-deep); border-bottom:1px solid var(--border-subtle); flex-shrink:0;";
-            toolbar.innerHTML = `
-                <span id="monacoFileLabel" style="font-size:11px; color:var(--text-dim); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">No file open</span>
-                <select id="monacoLangSelect" class="sdoa-select" style="font-size:11px; padding:2px 6px; height:24px; width:120px;">
-                    <option value="javascript">JavaScript</option>
-                    <option value="typescript">TypeScript</option>
-                    <option value="python">Python</option>
-                    <option value="rust">Rust</option>
-                    <option value="json">JSON</option>
-                    <option value="html">HTML</option>
-                    <option value="css">CSS</option>
-                    <option value="markdown">Markdown</option>
-                    <option value="plaintext">Plain Text</option>
-                </select>
-                <button id="monacoCopyBtn" class="sdoa-button sdoa-button--ghost sdoa-button--sm" style="font-size:11px; padding:2px 8px; height:24px;">Copy</button>
-                <button id="monacoClearBtn" class="sdoa-button sdoa-button--ghost sdoa-button--sm" style="font-size:11px; padding:2px 8px; height:24px;">Clear</button>
-            `;
-            content.appendChild(toolbar);
-
-            const editorDiv = document.createElement("div");
-            editorDiv.id = "monacoEditorMount";
-            editorDiv.style.cssText = "flex:1; min-height:0;";
-            content.appendChild(editorDiv);
-
-            // Create editor asynchronously
-            (async () => {
-                _monacoEditor = await window.CodeEditorPrim?.create(editorDiv, {
-                    language: "javascript",
-                    value: "// ProtoAI Code Editor\n// Open a file via the File Explorer or paste code here.\n",
-                });
-                window.ToastPrim?.show("Split view — Monaco Editor", "info");
-
-                // Wire toolbar buttons
-                const langSel = content.querySelector("#monacoLangSelect");
-                langSel?.addEventListener("change", () => {
-                    window.CodeEditorPrim?.setLanguage(_monacoEditor, langSel.value);
-                });
-
-                content.querySelector("#monacoCopyBtn")?.addEventListener("click", () => {
-                    const val = window.CodeEditorPrim?.getValue(_monacoEditor) || "";
-                    navigator.clipboard?.writeText(val);
-                    window.ToastPrim?.show("Copied to clipboard", "info");
-                });
-
-                content.querySelector("#monacoClearBtn")?.addEventListener("click", () => {
-                    window.CodeEditorPrim?.setValue(_monacoEditor, "");
-                });
-            })();
-        } else if (mode === "terminal") {
-            content.innerHTML = "";
-            content.style.cssText = "position:relative; display:flex; flex-direction:column; height:100%;";
-            if (window.TerminalFeature?.mount) {
-                window.TerminalFeature.mount({ container: content, shell: "powershell" });
-                window.ToastPrim?.show("Split view — Terminal", "info");
-            } else {
-                content.innerHTML = `<div style="padding:20px;color:var(--text-dim);text-align:center;margin-top:60px;font-size:13px;">Terminal module not loaded</div>`;
-            }
-        }
-    }
-
-    function _clearRightPane() {
-        const content = document.getElementById("rightPaneContent");
-        if (_monacoEditor) {
-            window.CodeEditorPrim?.dispose(_monacoEditor);
-            _monacoEditor = null;
-        }
-        if (window.TerminalFeature?.unmount) {
-            window.TerminalFeature.unmount();
-        }
-        if (content) content.innerHTML = "";
-        const bar = document.getElementById("rightModeTabs");
-        if (bar) bar.innerHTML = "";
-    }
-
-    // ── Project Management ────────────────────────────────────
-
-    function _openNewProjectModal() {
-        const overlay = document.getElementById("newProjectOverlay");
-        if (overlay) {
-            overlay.classList.remove("hidden");
-            overlay.classList.add("sdoa-modal-overlay--visible");
-            const input = document.getElementById("npName");
-            if (input) { input.value = ""; input.focus(); }
-        }
-    }
-
-    function _closeNewProjectModal() {
-        const overlay = document.getElementById("newProjectOverlay");
-        if (overlay) {
-            overlay.classList.add("hidden");
-            overlay.classList.remove("sdoa-modal-overlay--visible");
-        }
-    }
-
-    async function _promptRenameProject(name) {
-        const newName = prompt(`Rename project "${name}" to:`, name);
-        if (!newName || newName.trim() === name) return;
-        try {
-            await window.backendConnector?.runWorkflow("rename_project", { project: name, newName: newName.trim() });
-            window.ToastPrim?.show(`Renamed to "${newName.trim()}"`, "success");
-            if (window.currentProject === name) window.currentProject = newName.trim();
-            await loadProjects();
-        } catch (err) {
-            window.ToastPrim?.show("Rename failed: " + (err.message || err), "error");
-        }
-    }
-
-    async function _duplicateProject(name) {
-        const newName = prompt(`Duplicate "${name}" as:`, name + " Copy");
-        if (!newName || !newName.trim()) return;
-        try {
-            await window.backendConnector?.runWorkflow("duplicate_project", { project: name, newName: newName.trim() });
-            window.ToastPrim?.show(`Duplicated as "${newName.trim()}"`, "success");
-            await loadProjects();
-        } catch (err) {
-            window.ToastPrim?.show("Duplicate failed: " + (err.message || err), "error");
-        }
-    }
-
-    async function _confirmDeleteProject(name) {
-        if (!confirm(`Delete project "${name}"? This cannot be undone.`)) return;
-        try {
-            await window.backendConnector?.runWorkflow("delete_project", { project: name });
-            window.ToastPrim?.show(`Project "${name}" deleted`, "success");
-            if (window.currentProject === name) window.currentProject = null;
-            await loadProjects();
-        } catch (err) {
-            window.ToastPrim?.show("Delete failed: " + (err.message || err), "error");
-        }
-    }
-
-    async function loadProjects() {
-        const list = document.getElementById("projectList");
-        if (!list) return;
-
-        try {
-            console.log("[AppShell] Syncing projects with backend...");
-            const res      = await window.backendConnector?.runWorkflow("projects");
-            const projects = res?.projects || res?.data?.projects || [];
-
-            list.innerHTML = projects.map(p => {
-                const name   = typeof p === "string" ? p : (p.name || "Unknown");
-                const isSelf = name.toLowerCase() === "protoai";
-                return `
-                    <li class="project-item ${window.currentProject === name ? "active" : ""}" data-project="${name}"
-                        style="display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; cursor:pointer; list-style:none; margin-bottom:2px; font-size:12px;">
-                        <span class="icon">${isSelf ? "🤖" : "📁"}</span>
-                        <span class="name" style="flex:1; font-weight: 500;">${name}</span>
-                        ${isSelf ? '<span class="sdoa-badge" style="font-size:9px; background:var(--accent); color:white;">SELF</span>' : ""}
-                    </li>
-                `;
-            }).join("");
-
-            list.querySelectorAll(".project-item").forEach(item => {
-                item.addEventListener("click", () => selectProject(item.dataset.project));
-
-                // Right-click context menu for project management
-                item.addEventListener("contextmenu", (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const p = item.dataset.project;
-                    window.ContextMenuPrim?.show({
-                        items: [
-                            { label: "Open Project",      icon: "📂", onClick: () => selectProject(p) },
-                            { separator: true },
-                            { label: "Rename Project",    icon: "✏️",  onClick: () => _promptRenameProject(p) },
-                            { label: "Duplicate Project", icon: "📋", onClick: () => _duplicateProject(p) },
-                            { separator: true },
-                            { label: "Delete Project",    icon: "🗑", danger: true, onClick: () => _confirmDeleteProject(p) },
-                        ],
-                        position: { x: e.clientX, y: e.clientY }
-                    });
-                });
-            });
-
-            const countEl = document.getElementById("projectCount");
-            if (countEl) countEl.textContent = projects.length;
-
-            _updateActiveProjectUI();
-        } catch (err) {
-            console.error("[AppShell] Failed to load projects:", err);
-            window.ToastPrim?.show("Project list unavailable", "error");
-        }
+    function loadProjects() {
+        return window.AppShellProjectPanel.loadProjects();
     }
 
     function selectProject(project) {
-        console.log(`[AppShell] Context Switch: ${project}`);
-        window.currentProject = project;
-        if (window.StateStore) window.StateStore.set("currentProject", project);
-        localStorage.setItem("protoai:currentProject", project);
-        window.EventBus?.emit("app:projectSelected", { project });
-        _updateActiveProjectUI();
-    }
-
-    function _updateActiveProjectUI() {
-        document.querySelectorAll(".project-item").forEach(item => {
-            item.classList.toggle("active", item.dataset.project === window.currentProject);
-        });
-        const status = document.getElementById("currentProjectName");
-        if (status) status.textContent = window.currentProject || "No project selected";
+        return window.AppShellProjectPanel.selectProject(project);
     }
 
     function updateProfileUI() {
-        const currentProfile = localStorage.getItem("protoai:profile:active") || "default";
-        const badge = document.getElementById("profileBadge");
-        if (badge) badge.textContent = currentProfile.charAt(0).toUpperCase();
-        const text = document.getElementById("currentProfileName");
-        if (text) text.textContent = currentProfile;
-    }
-
-    // ── History Panel ─────────────────────────────────────────
-
-    function _initHistoryPanel() {
-        const toggle     = document.getElementById("historyToggle");
-        const content    = document.getElementById("historyContent");
-        const chevron    = document.getElementById("historyChevron");
-        const refreshBtn = document.getElementById("refreshHistoryBtn");
-        if (!toggle || !content) return;
-
-        const collapsed = localStorage.getItem("protoai:history:collapsed") !== "false";
-        content.style.display = collapsed ? "none" : "block";
-        if (chevron) chevron.textContent = collapsed ? "▶" : "▼";
-
-        toggle.addEventListener("click", () => {
-            const isHidden = content.style.display === "none";
-            content.style.display = isHidden ? "block" : "none";
-            if (chevron) chevron.textContent = isHidden ? "▼" : "▶";
-            localStorage.setItem("protoai:history:collapsed", isHidden ? "false" : "true");
-            if (isHidden) _loadHistory();
-        });
-
-        refreshBtn?.addEventListener("click", () => _loadHistory());
-        window.EventBus?.on("chat:sessionCreated", () => _loadHistory());
-        window.EventBus?.on("app:projectSelected", () => {
-            if (content.style.display !== "none") _loadHistory();
-        });
-
-        if (!collapsed) _loadHistory();
-    }
-
-    async function _loadHistory() {
-        const list  = document.getElementById("historyList");
-        const empty = document.getElementById("historyListEmpty");
-        if (!list) return;
-
-        const project = window.currentProject;
-        if (!project) {
-            list.innerHTML = "";
-            if (empty) { empty.style.display = "block"; empty.textContent = "Select a project first."; }
-            return;
-        }
-
-        try {
-            list.innerHTML = `<li style="padding:8px 12px;color:var(--text-dim);font-size:11px;">Loading…</li>`;
-            const res = await window.backendConnector?.runWorkflow("chat_session", { action: "list", project });
-            const sessions = (res?.data || res?.sessions || []);
-
-            if (!sessions.length) {
-                list.innerHTML = "";
-                if (empty) { empty.style.display = "block"; empty.textContent = "No sessions yet."; }
-                return;
-            }
-            if (empty) empty.style.display = "none";
-
-            list.innerHTML = sessions.slice(-25).reverse().map(s => {
-                const label = s.name || (s.id ? s.id.slice(0, 10) : "Session");
-                const ts    = s.updatedAt || s.createdAt;
-                const ago   = ts ? _relativeTime(ts) : "";
-                return `<li data-chat-id="${s.id}" style="cursor:pointer;padding:6px 10px;border-radius:6px;font-size:11px;display:flex;align-items:center;gap:6px;margin-bottom:2px;">
-                    <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">💬 ${label}</span>
-                    ${ago ? `<span style="color:var(--text-dim);font-size:9px;flex-shrink:0;">${ago}</span>` : ""}
-                </li>`;
-            }).join("");
-
-            list.querySelectorAll("[data-chat-id]").forEach(item => {
-                item.addEventListener("click", () => {
-                    const chatId = item.dataset.chatId;
-                    window.EventBus?.emit("chat:loadSession", { project, chatId });
-                    window.ToastPrim?.show("Loading session…", "info");
-                });
-                item.addEventListener("mouseenter", () => item.style.background = "rgba(255,255,255,0.04)");
-                item.addEventListener("mouseleave", () => item.style.background = "");
-            });
-        } catch (err) {
-            console.warn("[AppShell] Failed to load history:", err);
-            list.innerHTML = `<li style="padding:8px 12px;color:var(--error);font-size:11px;">Failed to load sessions</li>`;
-        }
-    }
-
-    function _relativeTime(ts) {
-        const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
-        if (diff < 60)    return `${diff}s ago`;
-        if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
-        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-        return `${Math.floor(diff / 86400)}d ago`;
+        return window.AppShellProjectPanel.updateProfileUI();
     }
 
     // ── Model Status ──────────────────────────────────────────
