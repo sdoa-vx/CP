@@ -1,8 +1,13 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    Oracle.service.js
-// Version: 5.4.0
-// Updated: 2026-06-28T00:00:00Z
-// Changes: Amendment 4.2 — Autonomous Routing Mesh.
+// Version: 6.0.0
+// Updated: 2026-07-13T00:00:00Z
+// Changes: Phase 5 (oversized-file split) — extracted the sleeve mesh
+//          subsystem (telemetry scoring, drift-penalty cache, rankSleeves,
+//          meshStatus) into OracleSleeveMesh.service.js. Oracle now
+//          composes it via constructor injection and delegates the
+//          sleeve-facing commands. Public API is unchanged.
+// Previous: Amendment 4.2 — Autonomous Routing Mesh.
 //          _driftCache (moduleId → { penalty, severity, capturedAt }) populated
 //          by cartographer:modelDrift and cartographer:boundaryDrift events.
 //          _score() now applies drift penalty (-3 high, -8 critical).
@@ -26,7 +31,6 @@
 //          New command: whoHasBoundary({ system }) — lists sleeves
 //          wrapping a given external system.
 // ──────────────────────────────────────────────────────────────────
-// Last modified: 2026-06-01 00:00 UTC
 // Oracle.service.js — SDOA v5.0 Service (Universal)
 // Validated by: ProbationOfficer.workflow.rs
 //
@@ -42,14 +46,22 @@
 
 "use strict";
 
+const OracleSleeveMesh = require("./OracleSleeveMesh.service");
+
 class OracleService {
   static MANIFEST = {
-    id:      "Oracle.service",
-    type:    "service",
-    "non-sdoa-compliant": true,
+    id:           "Oracle.service",
+    type:         "service",
+    layer:        3,
+    runtime:      "Universal",
+    version:      "6.0.0",
+    capabilities: ["oracle.query", "oracle.describeModule", "oracle.dumpSurface", "oracle.sleeveMesh"],
+    dependencies: ["OracleSleeveMesh.service"],
     docs: {
-      description: "Exceeds the 500-line Layer 3 hard cap (capability query sovereign — live registry manifest index, drift-penalty mesh scoring, sleeve boundary queries). Flagged for the oversized-file split scheduled in a later remediation phase; not fixed here."
-    }
+      description: "Capability query sovereign — scans the live registry manifest surface to answer 'who can handle X / emits Y / accepts Z / has capability C', returning scored ranked candidates. Sleeve mesh scoring/ranking is delegated to OracleSleeveMesh.service.",
+      author: "ProtoAI team"
+    },
+    last_modified: "2026-07-13T00:00:00Z"
   };
 
   // ── Private State ─────────────────────────────────────────────
@@ -57,9 +69,7 @@ class OracleService {
   _index         = null;
   _busUnsub      = [];
   _queryCounter  = 0;
-  _pulse         = null;   // resolved lazily — not all runtimes have Pulse
-  _driftCache    = new Map();   // Amendment 4.2: moduleId → { penalty, severity, capturedAt }
-  _driftCacheTtlMs = 5 * 60 * 1000;  // 5 min; stale entries cleared in _score()
+  _mesh          = new OracleSleeveMesh({ getRegistry: () => this._registry });
 
   // ── Lifecycle ──────────────────────────────────────────────────
 
@@ -237,127 +247,39 @@ class OracleService {
 
   /**
    * rankSleeves({ capability?, limit? }) → SleeveRankEntry[]
-   *
-   * Amendment 3.4: live-scored ranking of all sleeve modules, filtered
-   * by the given capability token if supplied. Re-reads Pulse telemetry
-   * on every call so the rank reflects current health, not the stale
-   * state captured at index-build time.
-   *
-   * Returned fields per entry:
-   *   moduleId, score, scoreFactors[], system, transport, capabilities[],
-   *   p95Ms, errorRatePct, faultCount
+   * Delegates to OracleSleeveMesh — see that module for scoring detail.
    */
   rankSleeves({ capability, limit = 10 } = {}) {
     this._ensureIndex();
-    const results = [];
-
-    for (const entry of this._index.modules) {
-      const m = entry.manifest;
-      if (m.type !== "sleeve") continue;
-      if (capability && !(m.capabilities ?? []).includes(capability)) continue;
-
-      const telemetry  = this._getSleeveTelemetry(m.id);
-      let   score      = 10;  // base score — all known sleeves start equal
-      const scoreFactors = [];
-
-      if (telemetry) {
-        if (telemetry.p95Ms != null) {
-          if      (telemetry.p95Ms <  200)  { score += 3; scoreFactors.push("latency(fast)"); }
-          else if (telemetry.p95Ms > 2000)  { score -= 3; scoreFactors.push("latency(slow)"); }
-        }
-        if (telemetry.errorRatePct != null) {
-          if      (telemetry.errorRatePct > 20) { score -= 5; scoreFactors.push("errorRate(high)"); }
-          else if (telemetry.errorRatePct >  5) { score -= 2; scoreFactors.push("errorRate(elevated)"); }
-        }
-        if (telemetry.boundaryFaultCount != null) {
-          const penalty = Math.min(telemetry.boundaryFaultCount, 5);
-          if (penalty > 0) { score -= penalty; scoreFactors.push(`faults(${penalty})`); }
-        }
-      }
-
-      results.push({
-        moduleId:     m.id,
-        score,
-        scoreFactors,
-        system:       m.external?.system    ?? null,
-        transport:    m.external?.transport ?? null,
-        capabilities: m.capabilities ?? [],
-        p95Ms:        telemetry?.p95Ms            ?? null,
-        errorRatePct: telemetry?.errorRatePct      ?? null,
-        faultCount:   telemetry?.boundaryFaultCount ?? null
-      });
-    }
-
-    results.sort((a, b) => b.score - a.score);
-    return results.slice(0, Math.max(1, limit));
+    return this._mesh.rankSleeves({ modules: this._index.modules, capability, limit });
   }
 
   /**
    * getDriftPenalty({ moduleId }) → { penalty, severity, capturedAt } | null
-   * Amendment 4.2: read cached Cartographer drift penalty for one module.
+   * Delegates to OracleSleeveMesh.
    */
   getDriftPenalty({ moduleId } = {}) {
-    const entry = this._driftCache.get(moduleId);
-    if (!entry) return null;
-    if ((Date.now() - entry.capturedAt) >= this._driftCacheTtlMs) {
-      this._driftCache.delete(moduleId); return null;
-    }
-    return entry;
+    return this._mesh.getDriftPenalty({ moduleId });
   }
 
   /**
    * meshStatus() → MeshEntry[]
-   * Amendment 4.2: full sleeve mesh view with live score, drift penalty, transport.
+   * Delegates to OracleSleeveMesh, passing this._score as the scoring
+   * function so mesh entries use the same score query() would produce.
    */
   meshStatus() {
     this._ensureIndex();
-    const results = [];
-    for (const entry of this._index.modules) {
-      const m = entry.manifest;
-      if (m.type !== "sleeve") continue;
-      const tel   = this._getSleeveTelemetry(m.id);
-      const drift = this.getDriftPenalty({ moduleId: m.id });
-      const { score, matchedFields } = this._score(entry, {}, false);
-      results.push({
-        moduleId:        m.id,
-        score,
-        scoreFactors:    matchedFields,
-        system:          m.external?.system    ?? null,
-        transport:       m.external?.transport ?? null,
-        capabilities:    m.capabilities ?? [],
-        p95Ms:           tel?.p95Ms           ?? null,
-        errorRatePct:    tel?.errorRatePct     ?? null,
-        faultCount:      tel?.boundaryFaultCount ?? null,
-        driftPenalty:    drift?.penalty        ?? 0,
-        driftSeverity:   drift?.severity       ?? null,
-        driftCapturedAt: drift?.capturedAt     ?? null
-      });
-    }
-    results.sort((a, b) => b.score - a.score);
-    return results;
+    return this._mesh.meshStatus({
+      modules: this._index.modules,
+      scoreFn: (entry) => this._score(entry, {}, false)
+    });
   }
 
-  // Amendment 4.2: handle Cartographer drift events — update _driftCache
+  // Amendment 4.2: handle Cartographer drift events — delegates cache
+  // update to OracleSleeveMesh, passing our own _emit through so the
+  // oracle:driftPenaltyUpdated event still fires from Oracle.
   _onDriftDetected(event) {
-    const items = event.driftItems ?? [];
-    const SEVERITY_PENALTY = { low: 1, medium: 3, high: 5, critical: 8 };
-    for (const item of items) {
-      if (!item.moduleId) continue;
-      const penalty = SEVERITY_PENALTY[item.severity] ?? 0;
-      this._driftCache.set(item.moduleId, {
-        penalty,
-        severity:    item.severity ?? "low",
-        capturedAt:  Date.now()
-      });
-      if (penalty > 0) {
-        this._emit("oracle:driftPenaltyUpdated", {
-          moduleId: item.moduleId,
-          penalty,
-          severity: item.severity,
-          source:   event.source ?? "cartographer"
-        });
-      }
-    }
+    this._mesh.onDriftDetected(event, (name, payload) => this._emit(name, payload));
   }
 
   // ── Index Management ───────────────────────────────────────────
@@ -409,6 +331,9 @@ class OracleService {
    *   Exact match on secondary field     → +5
    *   Fuzzy (substring) match            → +2
    *   Each additional criterion matched  → cumulative
+   *
+   * Sleeve telemetry and drift-penalty adjustments are delegated to
+   * OracleSleeveMesh — see telemetryScoreAdjustment / driftScoreAdjustment.
    */
   _score(entry, criteria, fuzzy) {
     const m            = entry.manifest;
@@ -490,56 +415,19 @@ class OracleService {
       }
     }
 
-    // ── Phase 5: Sleeve telemetry scoring ───
-    // For sleeve modules, adjust score by latency, error rate,
-    // and stability (boundaryFault count). Lower is worse.
+    // ── Phase 5 Item 6: Sleeve telemetry scoring (delegated) ────
     if (m.type === "sleeve") {
-      const telemetry = this._getSleeveTelemetry(m.id);
-      if (telemetry) {
-        // Latency: +3 if p95 < 200ms, -3 if p95 > 2000ms
-        if (telemetry.p95Ms != null) {
-          if      (telemetry.p95Ms <  200)  { score += 3; matchedFields.push("sleeve:latency(fast)"); }
-          else if (telemetry.p95Ms > 2000)  { score -= 3; matchedFields.push("sleeve:latency(slow)"); }
-        }
-        // Error rate: -5 if >20%, -2 if >5%
-        if (telemetry.errorRatePct != null) {
-          if      (telemetry.errorRatePct > 20) { score -= 5; matchedFields.push("sleeve:errorRate(high)"); }
-          else if (telemetry.errorRatePct >  5) { score -= 2; matchedFields.push("sleeve:errorRate(elevated)"); }
-        }
-        // Stability: -1 per boundary fault (capped at -5)
-        if (telemetry.boundaryFaultCount != null) {
-          const penalty = Math.min(telemetry.boundaryFaultCount, 5);
-          if (penalty > 0) { score -= penalty; matchedFields.push(`sleeve:faults(${penalty})`); }
-        }
-      }
+      const adj = this._mesh.telemetryScoreAdjustment(m);
+      score += adj.delta;
+      matchedFields.push(...adj.matchedFields);
     }
 
-    // ── Amendment 4.2: Drift penalty from Cartographer ──────────
-    const drift = this._driftCache.get(m.id);
-    if (drift && (Date.now() - drift.capturedAt) < this._driftCacheTtlMs) {
-      if (drift.penalty > 0) { score -= drift.penalty; matchedFields.push(`drift:${drift.severity}(-${drift.penalty})`); }
-    } else if (drift) {
-      this._driftCache.delete(m.id);  // evict stale entry
-    }
+    // ── Amendment 4.2: Drift penalty from Cartographer (delegated) ──
+    const drift = this._mesh.driftScoreAdjustment(m.id);
+    score += drift.delta;
+    matchedFields.push(...drift.matchedFields);
 
     return { score, matchedFields };
-  }
-
-  _getSleeveTelemetry(moduleId) {
-    // Resolve Pulse lazily so Oracle stays Universal-runtime
-    if (!this._pulse && this._registry) {
-      try { this._pulse = this._registry.get?.("Pulse.workflow"); } catch (_) {}
-    }
-    if (!this._pulse?.getModuleProfile) return null;
-    try {
-      const profile = this._pulse.getModuleProfile({ moduleId });
-      const data    = profile?.data ?? {};
-      return {
-        p95Ms:             data.p95           ?? null,
-        errorRatePct:      data.errorRatePct  ?? null,
-        boundaryFaultCount: data.boundaryFaultCount ?? null
-      };
-    } catch (_) { return null; }
   }
 
   // ── EventBus Wiring ────────────────────────────────────────────
@@ -550,7 +438,7 @@ class OracleService {
 
     const onRegistered   = () => this._rebuildIndex();
     const onDeregistered = () => this._rebuildIndex();
-    // Amendment 4.2: drift signals from Cartographer populate _driftCache
+    // Amendment 4.2: drift signals from Cartographer populate the mesh's drift cache
     const onDrift        = (e) => this._onDriftDetected(e);
 
     bus.on("registry:moduleRegistered",   onRegistered);
