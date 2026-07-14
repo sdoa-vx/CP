@@ -148,7 +148,7 @@ class MultiModelOrchestrator {
     // ── _getModelPath ─────────────────────────────────────────
     _getModelPath() {
         if (!local || typeof local.generate !== "function") {
-            const AdapterClass = require("../access/llm/LocalModelAdapter");
+            const AdapterClass = require("../adapters/LocalModelAdapter");
             local = new AdapterClass();
         }
         if (!this._canUseLocal()) return null;
@@ -345,7 +345,7 @@ class MultiModelOrchestrator {
         persona = persona || "advisor";
 
         if (!commentaryLocal || typeof commentaryLocal.generate !== "function") {
-            const AdapterClass = require("../access/llm/LocalModelAdapter");
+            const AdapterClass = require("../adapters/LocalModelAdapter");
             commentaryLocal = new AdapterClass();
         }
 

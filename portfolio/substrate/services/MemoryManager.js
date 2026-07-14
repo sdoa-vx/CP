@@ -178,7 +178,7 @@ class MemoryManager {
 
     async _runLlmDistillation(memory) {
         if (!local || typeof local.generate !== 'function') {
-            const AdapterClass = require("../access/llm/LocalModelAdapter");
+            const AdapterClass = require("../adapters/LocalModelAdapter");
             local = new AdapterClass();
         }
         const modelPath = await this._getLocalModelPath();
