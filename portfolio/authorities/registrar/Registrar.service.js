@@ -1,7 +1,7 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    Registrar.service.js
-// Version: 5.3.0
-// Updated: 2026-06-28T00:00:00Z
+// Version: 5.3.1
+// Updated: 2026-07-13T00:00:00Z
 // Changes: Amendment 4.4 — Model Version Lineage.
 //          recordModelLineage({ moduleId, adapterId, version?, parentAdapterId? })
 //            — appends a lineage entry, emits registrar:lineageRecorded.
@@ -14,10 +14,12 @@
 //          of the sole healing path. Listens for coach:mutationReady,
 //          writes patched source, re-processes through ProbationOfficer,
 //          and re-fields the module in the active roster.
+// SDOA manifest-compliance pass (2026-07-13): added capabilities,
+//          dependencies, and last_modified fields; version bump to 5.3.1.
 // ──────────────────────────────────────────────────────────────────
-// Last modified: 2026-06-02 12:10 UTC
+// Last modified: 2026-07-13 00:00 UTC
 // Module Type: service | Operational Role: registrar
-// Version: 5.1.0 | Runtime: NodeJS
+// Version: 5.3.1 | Runtime: NodeJS
 
 const fs = require('fs');
 const path = require('path');
@@ -29,9 +31,17 @@ class RegistrarService extends EventEmitter {
     type: "service",
     layer: 3,
     runtime: "NodeJS",
-    version: "5.3.0",
+    version: "5.3.1",
     operationalRole: "registrar",
     requires: ["ResponseFormatter.service", "ProbationOfficer.workflow", "AssemblyLine.service"],
+    capabilities: [
+      "portfolio:discovery",
+      "module:quarantine",
+      "module:fielding",
+      "module:hotSwap",
+      "model:lineageTracking"
+    ],
+    dependencies: ["ResponseFormatter.service", "ProbationOfficer.workflow", "AssemblyLine.service"],
     dataFiles: [],
     lifecycle: ["init", "dispose"],
     actions: {
@@ -71,7 +81,8 @@ class RegistrarService extends EventEmitter {
       description: "Hardened Dynamic Evolution Arbitrator. Enforces a two-tier verification pipeline before fielding polyglot assets.",
       author: "ProtoAI Core Architecture Group",
       sdoa: "5.0.0"
-    }
+    },
+    last_modified: "2026-07-13T00:00:00Z"
   };
 
   constructor() {

@@ -1,4 +1,4 @@
-// Last modified: 2026-06-09 08:45 UTC (index.ts — SDOA v5.0 Task)
+// Last modified: 2026-07-13 00:00 UTC (index.ts — SDOA v5.0 Task)
 import { Registry, SdoaManifest } from '../registrar/Registry.service';
 import { LoggerService } from '../../substrate/services/Logger.service';
 import { ComparatorsService } from '../../substrate/services/Comparators.service';
@@ -30,7 +30,7 @@ export class ConductorTask {
     type: "task",
     layer: 3,
     runtime: "NodeJS",
-    version: "5.0.0",
+    version: "5.0.1",
     operationalRole: "savant",
     requires: [
       "Registry.service", "Logger.service", "Comparators.service", "Evaluator.service",
@@ -53,7 +53,8 @@ export class ConductorTask {
       description: "Main orchestrator task driving SDOA v5 tests, visual blueprint outputs, and AI self-healing.",
       author: "ProtoAI team",
       sdoa: "5.0.0"
-    }
+    },
+    last_modified: "2026-07-13T00:00:00Z"
   };
 }
 
@@ -98,18 +99,21 @@ async function main() {
     type: "engine",
     layer: 3,
     runtime: "Wasm",
-    version: "5.0.0",
+    version: "5.0.1",
     operationalRole: "savant",
     requires: [],
+    capabilities: [],
+    dependencies: [],
     optimization: {
       priority: "speed",
       assertionSuite: ""
     },
     docs: {
-      description: "Low-level WebAssembly mathematical engine loaded in-memory.",
+      description: "Low-level WebAssembly mathematical engine loaded in-memory. Note: current binary is a minimal stub (magic header + version only, no real exports) — capabilities intentionally left empty pending a real compiled module.",
       author: "ProtoAI team",
       sdoa: "5.0.0"
-    }
+    },
+    last_modified: "2026-07-13T00:00:00Z"
   };
 
   await registry.registerWasm(wasmManifest, wasmBinary);

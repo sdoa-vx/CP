@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# Last modified: 2026-06-03 06:15 UTC
+# Last modified: 2026-07-13 00:00 UTC
 # ============================================================
 # bootstrap.py — ProtoAI Local AI First-Run Setup
-# version: 1.1.0
+# version: 1.1.1
 # ============================================================
 
 # MANIFEST = {
@@ -28,7 +28,7 @@ MANIFEST_JSON = """
   "type": "utility",
   "layer": 3,
   "runtime": "Python",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "operationalRole": "bootstrap",
   "requires": [],
   "capabilities": ["environment_provisioning", "model_downloader"],
@@ -37,7 +37,8 @@ MANIFEST_JSON = """
     "description": "One-time setup sequence: bootstraps pip, venv, and downloads models.",
     "author": "ProtoAI team",
     "sdoa": "5.0.0"
-  }
+  },
+  "last_modified": "2026-07-13T00:00:00Z"
 }
 """
 
@@ -55,7 +56,7 @@ MANIFEST = {
     "type": "utility",
     "layer": 3,
     "runtime": "Python",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "operationalRole": "bootstrap",
     "requires": [],
     "capabilities": ["environment_provisioning", "model_downloader"],
@@ -64,7 +65,8 @@ MANIFEST = {
         "description": "One-time setup sequence: bootstraps pip, venv, and downloads models.",
         "author": "ProtoAI team",
         "sdoa": "5.0.0"
-    }
+    },
+    "last_modified": "2026-07-13T00:00:00Z"
 }
 
 # Default to Coder variant — smaller and more practical than Omni-7B

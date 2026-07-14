@@ -1,10 +1,10 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    Registry.service.ts
-// Version: 5.0.0
-// Updated: 2026-06-17T00:00:00Z
-// Changes: Relocated to canonical sdoavx/ structure
+// Version: 5.0.1
+// Updated: 2026-07-13T00:00:00Z
+// Changes: SDOA manifest-compliance pass — added last_modified field.
 // ──────────────────────────────────────────────────────────────────
-// Last modified: 2026-06-03 05:10 UTC
+// Last modified: 2026-07-13 00:00 UTC
 
 /** v5.4 Sleeve external boundary declaration (SDOA Whitepaper §3.2) */
 export interface SleeveExternal {
@@ -58,7 +58,7 @@ export class Registry {
     type: "service",
     layer: 3,
     runtime: "NodeJS",
-    version: "5.0.0",
+    version: "5.0.1",
     operationalRole: "registrar",
     requires: [],
     capabilities: ["module_registration", "wasm_invocation", "proxy_interception"],
@@ -79,7 +79,8 @@ export class Registry {
       description: "Auto-discovering system registry, service lifecycle coordinator, and Wasm container.",
       author: "ProtoAI team",
       sdoa: "5.0.0"
-    }
+    },
+    last_modified: "2026-07-13T00:00:00Z"
   };
 
   private modules = new Map<string, any>();

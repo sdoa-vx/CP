@@ -1,10 +1,11 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    Router.service.js
-// Version: 5.0.0
-// Updated: 2026-06-17T00:00:00Z
-// Changes: Relocated to canonical sdoavx/ structure
+// Version: 5.0.1
+// Updated: 2026-07-13T00:00:00Z
+// Changes: SDOA manifest-compliance pass — added capabilities,
+//          dependencies, and last_modified fields.
 // ──────────────────────────────────────────────────────────────────
-// Last modified: 2026-06-01 00:00 UTC
+// Last modified: 2026-07-13 00:00 UTC
 // Router.service.js — SDOA v5.0 Service (Universal)
 // Validated by: ProbationOfficer.workflow.rs
 //
@@ -33,11 +34,18 @@ class RouterService {
     type:            "service",
     layer:           3,
     runtime:         "Universal",
-    version:         "5.0.0",
+    version:         "5.0.1",
     operationalRole: "savant",
 
     // ── Dependencies ──────────────────────────
     requires:  ["ResponseFormatter.service", "Chronicle.service"],
+    capabilities: [
+      "routing:autoDiscovery",
+      "routing:middlewareStack",
+      "routing:expressLanes",
+      "routing:manualRegistration"
+    ],
+    dependencies: ["ResponseFormatter.service", "Chronicle.service"],
     dataFiles: [],
 
     // ── Lifecycle ─────────────────────────────
@@ -103,7 +111,8 @@ class RouterService {
       description: "Auto-discovering IPC message dispatcher — the backend spine. Converts incoming snake_case message types (e.g. 'fetch_users') to PascalCase workflow IDs ('FetchUsers.workflow') and dispatches with no manual registration. Supports a configurable middleware stack (logging, auth, rate-limiting) and express lanes for read-only operations that bypass middleware entirely.",
       author: "ProtoAI Core Architecture Group",
       sdoa:   "5.0.0"
-    }
+    },
+    last_modified: "2026-07-13T00:00:00Z"
   };
 
   // ── Express lane types (bypass middleware) ─────────────────────

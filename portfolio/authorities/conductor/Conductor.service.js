@@ -1,10 +1,11 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    Conductor.service.js
-// Version: 5.0.0
-// Updated: 2026-06-17T00:00:00Z
-// Changes: Distributed from _variances to canonical sdoavx/ structure
+// Version: 5.0.1
+// Updated: 2026-07-13T00:00:00Z
+// Changes: SDOA manifest-compliance pass — added capabilities,
+//          dependencies, and last_modified fields.
 // ──────────────────────────────────────────────────────────────────
-// Last modified: 2026-06-07 22:00 UTC
+// Last modified: 2026-07-13 00:00 UTC
 "use strict";
 
 class ConductorService {
@@ -13,9 +14,16 @@ class ConductorService {
     type:            "service",
     layer:           3,
     runtime:         "NodeJS",
-    version:         "5.0.0",
+    version:         "5.0.1",
     operationalRole: "conductor",
     requires:  ["Chronicle.service", "ResponseFormatter.service"],
+    capabilities: [
+      "events:suppression",
+      "events:circuitBreaker",
+      "events:rateLimiting",
+      "events:chainBreaking"
+    ],
+    dependencies: ["Chronicle.service", "ResponseFormatter.service"],
     dataFiles: [],
     lifecycle: ["init", "run", "dispose"],
     actions: {
@@ -44,7 +52,8 @@ class ConductorService {
       description: "Event-Mesh Coordinator sovereign. Manages EventBus circuit breakers, event suppression timers, circular chain breaking, and per-event rate caps. Receives alerts from Sentinel via Captain and responds by suppressing or capping the offending event types. Reports sovereign status to StatusBar.",
       author: "ProtoAI Core Architecture Group",
       sdoa:   "5.0.0"
-    }
+    },
+    last_modified: "2026-07-13T00:00:00Z"
   };
 
   _registry    = null;

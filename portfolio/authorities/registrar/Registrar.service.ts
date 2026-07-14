@@ -1,10 +1,12 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    Registrar.service.ts  (logical id: Curator.service)
-// Version: 5.1.0
-// Updated: 2026-06-27T00:00:00Z
+// Version: 5.1.1
+// Updated: 2026-07-13T00:00:00Z
 // Changes: V6 compliance — watchPath replaced with PathResolver-based
 //          derivation from process.env.PROTOAI_PORTFOLIO_ROOT or cwd().
 //          Stale "C:\\Projects\\SDOAvX" hardcode removed.
+// SDOA manifest-compliance pass (2026-07-13): added capabilities,
+//          dependencies, and last_modified fields.
 // ──────────────────────────────────────────────────────────────────
 
 import { SdoaManifest, Registry } from './Registry.service';
@@ -17,9 +19,16 @@ export class CuratorService {
     type: "service",
     layer: 3,
     runtime: "NodeJS",
-    version: "5.1.0",
+    version: "5.1.1",
     operationalRole: "savant",
     requires: ["Registry.service"],
+    capabilities: [
+      "portfolio:catalogBuilding",
+      "manifest:parsing",
+      "manifest:collisionResolution",
+      "optimization:recommendations"
+    ],
+    dependencies: ["Registry.service"],
     lifecycle: ["init"],
     actions: {
       commands: {
@@ -34,10 +43,11 @@ export class CuratorService {
       assertionSuite: ""
     },
     docs: {
-      description: "Catalog builder: scans the portfolio, parses manifests, resolves collisions, and writes master.manifest.json. (The live portfolio governor is Registrar.service, the .js v5.1.0.)",
+      description: "Catalog builder: scans the portfolio, parses manifests, resolves collisions, and writes master.manifest.json. (The live portfolio governor is Registrar.service, the .js v5.3.1.)",
       author: "ProtoAI team",
       sdoa: "5.0.0"
-    }
+    },
+    last_modified: "2026-07-13T00:00:00Z"
   };
 
   private registry!: Registry;

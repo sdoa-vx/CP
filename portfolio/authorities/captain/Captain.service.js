@@ -1,10 +1,11 @@
 // ──────────────────────────────────────────────────────────────────
 // File:    Captain.service.js
-// Version: 5.0.0
-// Updated: 2026-06-17T00:00:00Z
-// Changes: Relocated to canonical sdoavx/ structure
+// Version: 5.0.1
+// Updated: 2026-07-13T00:00:00Z
+// Changes: SDOA manifest-compliance pass — added capabilities,
+//          dependencies, and last_modified fields.
 // ──────────────────────────────────────────────────────────────────
-// Last modified: 2026-06-01 00:00 UTC
+// Last modified: 2026-07-13 00:00 UTC
 // Captain.service.js — SDOA v5.0 Service (Universal)
 
 "use strict";
@@ -16,11 +17,24 @@ class CaptainService {
     type:            "service",
     layer:           3,
     runtime:         "Universal",
-    version:         "5.0.0",
+    version:         "5.0.1",
     operationalRole: "captain",
 
     // ── Dependencies ──────────────────────────
     requires:  [
+      "Chronicle.service",
+      "Router.service",
+      "Oracle.service",
+      "ResponseFormatter.service"
+    ],
+    capabilities: [
+      "boot:sequenceOrchestration",
+      "module:lifecycleInit",
+      "module:isolation",
+      "fallback:protocols",
+      "error:globalContainment"
+    ],
+    dependencies: [
       "Chronicle.service",
       "Router.service",
       "Oracle.service",
@@ -101,7 +115,8 @@ class CaptainService {
       description: "System State Sovereign. Owns the boot sequence, Chronicle wiring into StateStore and EventBus, the app:backendStatus signal, global error containment, and fallback protocols.",
       author: "ProtoAI Core Architecture Group",
       sdoa:   "5.0.0"
-    }
+    },
+    last_modified: "2026-07-13T00:00:00Z"
   };
 
   // ── Boot order tiers ───────────────────────────────────────────
