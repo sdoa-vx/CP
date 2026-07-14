@@ -1,8 +1,40 @@
-// Last modified: 2026-06-01 00:00 UTC
-// Playground.feature.js — SDOA v5.0 Feature (Browser)
+// Last modified: 2026-07-14
+// Playground.feature.js — SDOA v5.1 Feature (Browser)
 // Validated by: ProbationOfficer.workflow.rs
 //
 // Change log:
+//   5.1.0 — Phase 5 (oversized-file split). Extracted three
+//           self-contained pieces into prototype mixins, applied via
+//           Object.assign(PlaygroundFeature.prototype, ...) below:
+//             PlaygroundFormExecution.utility.js — inputForType()/
+//               parseValue(), _renderForm(), _execute().
+//             PlaygroundResultHistory.utility.js — _renderResult(),
+//               _clearResult(), _renderHistory(), _clearHistory().
+//             PlaygroundDomBuilder.utility.js     — _buildDOM().
+//           PlaygroundFeature has no documented subclass override
+//           contract (confirmed via grep — no "extends PlaygroundFeature"
+//           anywhere in the repo), so unlike SleeveBase this split isn't
+//           preserving an override hook; Object.assign was simply the
+//           lowest-risk way to move methods off the class body with
+//           zero changes to any method's own code — every `this.`
+//           reference in the three mixins resolves exactly as it did
+//           when the methods were inline. File was 628 lines (flagged
+//           non-sdoa-compliant purely for size); now under the Layer 1
+//           cap and fully manifest-compliant.
+//
+//           LOAD ORDER NOTE: Object.assign(prototype, ...) below runs
+//           synchronously at script-parse time, so
+//           PlaygroundFormExecution.utility.js, PlaygroundResultHistory
+//           .utility.js, and PlaygroundDomBuilder.utility.js MUST be
+//           loaded via <script> tags before this file, or this throws
+//           immediately (window.PlaygroundFormExecution etc. would be
+//           undefined). This is sharper than SleeveBase's require()-based
+//           mixins, which resolve correctly regardless of require()
+//           order. Currently moot -- Playground.feature.js, like
+//           Blueprint.feature.js, has no <script> tag anywhere in the
+//           repo (confirmed via grep) and is not part of any load
+//           order today. Flagging here so whoever eventually wires
+//           this up doesn't get bitten by it.
 //   5.0.0 — Initial implementation. Live command executor — Swagger UI for SDOA.
 //            Loads registry surface from Oracle. Renders a module/command selector.
 //            Auto-generates a typed input form from the selected command's input schema.
@@ -12,49 +44,6 @@
 (function () {
   "use strict";
 
-  // -- Type -> input element mapping ------------------------------------
-  function inputForType(type, id, value) {
-    const base = type?.replace("?", "") ?? "string";
-    if (base === "boolean") {
-      const el = document.createElement("select");
-      ["true", "false"].forEach(v => {
-        const o = document.createElement("option");
-        o.value = v; o.textContent = v;
-        if (String(value) === v) o.selected = true;
-        el.appendChild(o);
-      });
-      return el;
-    }
-    if (base === "number") {
-      const el = document.createElement("input");
-      el.type  = "number";
-      el.value = value ?? "";
-      return el;
-    }
-    if (base === "object" || base === "object[]") {
-      const el = document.createElement("textarea");
-      el.rows  = 4;
-      el.value = value ? JSON.stringify(value, null, 2) : "{}";
-      return el;
-    }
-    const el = document.createElement("input");
-    el.type  = "text";
-    el.value = value ?? "";
-    return el;
-  }
-
-  function parseValue(type, rawValue) {
-    const base = type?.replace("?", "") ?? "string";
-    if (base === "boolean") return rawValue === "true";
-    if (base === "number")  return Number(rawValue);
-    if (base === "object" || base === "object[]") {
-      try { return JSON.parse(rawValue); } catch { return rawValue; }
-    }
-    return rawValue;
-  }
-
-  // ---------------------------------------------------------------------
-
   class PlaygroundFeature {
     static MANIFEST = {
       // -- Identity ------------------------------------------
@@ -62,12 +51,17 @@
       type:            "feature",
       layer:           1,
       runtime:         "Browser",
-      version:         "5.0.1",
-      "non-sdoa-compliant": true,
+      version:         "5.1.0",
       operationalRole: "savant",
 
       // -- Dependencies --------------------------------------
-      requires:  ["Panel.prim", "Select.prim", "Form.prim", "Badge.prim", "Toast.prim"],
+      requires:  [
+        "Panel.prim", "Select.prim", "Form.prim", "Badge.prim", "Toast.prim",
+        "PlaygroundFormExecution.utility", "PlaygroundResultHistory.utility", "PlaygroundDomBuilder.utility"
+      ],
+      dependencies: [
+        "PlaygroundFormExecution.utility", "PlaygroundResultHistory.utility", "PlaygroundDomBuilder.utility"
+      ],
       dataFiles: [],
 
       // -- Lifecycle -----------------------------------------
@@ -121,10 +115,11 @@
       ],
 
       docs: {
-        description: "Exceeds 500-line hard cap, pending refactor in Phase 5. Live command executor -- Swagger UI for SDOA. Loads the full registry surface from Oracle and presents a two-panel interface: left for module/command selection with an auto-generated typed form, right for formatted result output and execution history. Zero additional tooling needed to explore or test any registered module.",
+        description: "Live command executor -- Swagger UI for SDOA. Loads the full registry surface from Oracle and presents a two-panel interface: left for module/command selection with an auto-generated typed form, right for formatted result output and execution history. Zero additional tooling needed to explore or test any registered module. Form rendering/execution, result/history rendering, and DOM construction are contributed via prototype mixins (see dependencies).",
         author: "ProtoAI Core Architecture Group",
-        sdoa:   "5.0.0"
-      }
+        sdoa:   "5.1.0"
+      },
+      last_modified: "2026-07-14T00:00:00Z"
     };
 
     // -- Private State ------------------------------------
@@ -238,214 +233,6 @@
       this._clearResult();
     }
 
-    // -- Form Rendering -----------------------------------
-
-    _renderForm(cmdSchema) {
-      this._formPanel.replaceChildren();
-
-      if (!cmdSchema) {
-        const hint = document.createElement("p");
-        hint.className   = "sdoa-playground__hint";
-        hint.textContent = "Select a module and command to generate the input form.";
-        this._formPanel.appendChild(hint);
-        this._runBtn.disabled = true;
-        return;
-      }
-
-      const inputSchema = cmdSchema.input ?? {};
-      const isEmpty     = Object.keys(inputSchema).length === 0;
-
-      if (isEmpty) {
-        const note = document.createElement("p");
-        note.className   = "sdoa-playground__hint";
-        note.textContent = "This command takes no inputs.";
-        this._formPanel.appendChild(note);
-        this._runBtn.disabled = false;
-        return;
-      }
-
-      for (const [param, type] of Object.entries(inputSchema)) {
-        const isOptional = param.endsWith("?") || type?.endsWith("?");
-        const cleanParam = param.replace("?", "");
-
-        const row = document.createElement("div");
-        row.className = "sdoa-playground__field";
-
-        const label = document.createElement("label");
-        label.className   = "sdoa-playground__label";
-        label.htmlFor     = `pg-${cleanParam}`;
-        label.textContent = cleanParam + (isOptional ? "" : " *");
-
-        const typeTag = document.createElement("span");
-        typeTag.className   = "sdoa-playground__type-tag";
-        typeTag.textContent = (type ?? "string").replace("?", "");
-
-        const inputEl = inputForType(type, `pg-${cleanParam}`, "");
-        inputEl.id        = `pg-${cleanParam}`;
-        inputEl.className = "sdoa-playground__input";
-        inputEl.dataset.param = cleanParam;
-        inputEl.dataset.type  = type ?? "string";
-
-        label.appendChild(typeTag);
-        row.appendChild(label);
-        row.appendChild(inputEl);
-        this._formPanel.appendChild(row);
-      }
-
-      this._runBtn.disabled = false;
-    }
-
-    // -- Execution ----------------------------------------
-
-    async _execute() {
-      if (!this._selectedModule || !this._selectedCmd) return;
-
-      // Collect params from form
-      const params = {};
-      this._formPanel.querySelectorAll("[data-param]").forEach(el => {
-        params[el.dataset.param] = parseValue(el.dataset.type, el.value ?? el.textContent);
-      });
-
-      const dispatchId = `pg-${Date.now()}-${++this._dispatchSeq}`;
-      const t0         = Date.now();
-
-      this._setStatus("running", `Dispatching ${this._selectedModule} > ${this._selectedCmd}...`);
-      this._runBtn.disabled = true;
-      this._renderResult(null, null, true);
-
-      window.EventBus?.emit?.("playground:commandDispatched", {
-        moduleId:   this._selectedModule,
-        commandId:  this._selectedCmd,
-        params,
-        dispatchId
-      });
-
-      try {
-        const result = await window.EventBus?.commandAsync?.(
-          this._selectedModule,
-          this._selectedCmd,
-          params
-        );
-        const durationMs = Date.now() - t0;
-
-        this._history.unshift({
-          dispatchId, moduleId: this._selectedModule, commandId: this._selectedCmd,
-          params, result, error: null, durationMs, ts: new Date().toISOString()
-        });
-
-        this._renderResult(result, durationMs, false);
-        this._renderHistory();
-        this._setStatus("ready", `[ok] ${durationMs}ms`);
-
-        window.EventBus?.emit?.("playground:resultReceived", { dispatchId, result, durationMs });
-      } catch (err) {
-        const durationMs = Date.now() - t0;
-        this._history.unshift({
-          dispatchId, moduleId: this._selectedModule, commandId: this._selectedCmd,
-          params, result: null, error: err.message, durationMs, ts: new Date().toISOString()
-        });
-
-        this._renderResult(null, durationMs, false, err.message);
-        this._renderHistory();
-        this._setStatus("error", "[x] " + err.message);
-
-        window.EventBus?.emit?.("playground:executionFailed", { dispatchId, error: err.message });
-      } finally {
-        this._runBtn.disabled = false;
-      }
-    }
-
-    // -- Result Rendering ---------------------------------
-
-    _renderResult(result, durationMs, loading, error) {
-      this._resultPanel.replaceChildren();
-
-      if (loading) {
-        const spinner = document.createElement("div");
-        spinner.className   = "sdoa-playground__spinner";
-        spinner.textContent = "Dispatching...";
-        this._resultPanel.appendChild(spinner);
-        return;
-      }
-
-      const header = document.createElement("div");
-      header.className = "sdoa-playground__result-header";
-
-      const label = document.createElement("span");
-      label.className   = "sdoa-playground__result-label";
-      label.textContent = error ? "[x] Error" : "[ok] Result";
-      label.style.color = error ? "var(--color-error)" : "var(--color-success)";
-
-      const timing = document.createElement("span");
-      timing.className   = "sdoa-playground__result-timing";
-      timing.textContent = durationMs != null ? `${durationMs}ms` : "";
-
-      header.appendChild(label);
-      header.appendChild(timing);
-
-      const pre = document.createElement("pre");
-      pre.className   = "sdoa-playground__result-body" + (error ? " sdoa-playground__result-body--error" : "");
-      pre.textContent = error
-        ? error
-        : JSON.stringify(result ?? null, null, 2);
-
-      this._resultPanel.appendChild(header);
-      this._resultPanel.appendChild(pre);
-    }
-
-    _clearResult() {
-      this._resultPanel.replaceChildren();
-      const hint = document.createElement("p");
-      hint.className   = "sdoa-playground__hint";
-      hint.textContent = "Result will appear here after execution.";
-      this._resultPanel.appendChild(hint);
-    }
-
-    // -- History Rendering --------------------------------
-
-    _renderHistory() {
-      this._historyPanel.replaceChildren();
-
-      if (this._history.length === 0) {
-        const hint = document.createElement("p");
-        hint.className   = "sdoa-playground__hint";
-        hint.textContent = "No executions yet.";
-        this._historyPanel.appendChild(hint);
-        return;
-      }
-
-      for (const run of this._history.slice(0, 20)) {
-        const row = document.createElement("div");
-        row.className = "sdoa-playground__history-row" +
-          (run.error ? " sdoa-playground__history-row--error" : "");
-
-        const main = document.createElement("span");
-        main.className   = "sdoa-playground__history-main";
-        main.textContent = `${run.moduleId} > ${run.commandId}`;
-
-        const meta = document.createElement("span");
-        meta.className   = "sdoa-playground__history-meta";
-        meta.textContent = `${run.durationMs}ms · ${run.ts.slice(11, 19)}`;
-
-        row.appendChild(main);
-        row.appendChild(meta);
-
-        // Click to restore that run's result
-        row.addEventListener("click", () => {
-          this._renderResult(run.result, run.durationMs, false, run.error);
-          this._selectModuleById(run.moduleId);
-          this._selectCommandById(run.commandId);
-        });
-
-        this._historyPanel.appendChild(row);
-      }
-    }
-
-    _clearHistory() {
-      this._history = [];
-      this._renderHistory();
-    }
-
     // -- Select Population --------------------------------
 
     _populateModuleSelect() {
@@ -497,133 +284,20 @@
       this._statusBadge.textContent = msg;
     }
 
-    // -- DOM Construction ---------------------------------
-
-    _buildDOM() {
-      this._root = document.createElement("div");
-      this._root.className = "sdoa-playground";
-
-      // -- Top Bar -------------------------------------------
-      const topBar = document.createElement("div");
-      topBar.className = "sdoa-playground__topbar";
-
-      const title = document.createElement("span");
-      title.className   = "sdoa-playground__title";
-      title.textContent = "Playground -- Live Command Executor";
-
-      this._statusBadge = document.createElement("span");
-      this._statusBadge.className = "sdoa-playground__status sdoa-playground__status--loading";
-      this._statusBadge.textContent = "Initializing...";
-
-      const refreshBtn = document.createElement("button");
-      refreshBtn.className   = "sdoa-playground__toolbar-btn";
-      refreshBtn.textContent = "Refresh";
-      refreshBtn.addEventListener("click", () => this.refresh());
-
-      const clearHistBtn = document.createElement("button");
-      clearHistBtn.className   = "sdoa-playground__toolbar-btn";
-      clearHistBtn.textContent = "Clear History";
-      clearHistBtn.addEventListener("click", () => this._clearHistory());
-
-      topBar.appendChild(title);
-      topBar.appendChild(this._statusBadge);
-      topBar.appendChild(refreshBtn);
-      topBar.appendChild(clearHistBtn);
-
-      // -- Selector Row --------------------------------------
-      const selectorRow = document.createElement("div");
-      selectorRow.className = "sdoa-playground__selector-row";
-
-      this._moduleSelect = document.createElement("select");
-      this._moduleSelect.className = "sdoa-playground__select";
-      this._moduleSelect.setAttribute("aria-label", "Select module");
-      this._moduleSelect.addEventListener("change", e => {
-        const id = e.target.value;
-        if (id) this._selectModuleById(id);
-      });
-
-      const arrow = document.createElement("span");
-      arrow.className   = "sdoa-playground__arrow";
-      arrow.textContent = ">";
-
-      this._cmdSelect = document.createElement("select");
-      this._cmdSelect.className = "sdoa-playground__select";
-      this._cmdSelect.disabled  = true;
-      this._cmdSelect.setAttribute("aria-label", "Select command");
-      this._cmdSelect.addEventListener("change", e => {
-        const name = e.target.value;
-        if (name) this._selectCommandById(name);
-      });
-
-      this._runBtn = document.createElement("button");
-      this._runBtn.className   = "sdoa-playground__run-btn";
-      this._runBtn.textContent = "Run";
-      this._runBtn.disabled    = true;
-      this._runBtn.addEventListener("click", () => this._execute());
-
-      selectorRow.appendChild(this._moduleSelect);
-      selectorRow.appendChild(arrow);
-      selectorRow.appendChild(this._cmdSelect);
-      selectorRow.appendChild(this._runBtn);
-
-      // -- Main Body -----------------------------------------
-      const body = document.createElement("div");
-      body.className = "sdoa-playground__body";
-
-      // Left: form
-      const formCol = document.createElement("div");
-      formCol.className = "sdoa-playground__col sdoa-playground__col--form";
-      const formTitle = document.createElement("div");
-      formTitle.className   = "sdoa-playground__col-title";
-      formTitle.textContent = "Input Parameters";
-      this._formPanel = document.createElement("div");
-      this._formPanel.className = "sdoa-playground__form-panel";
-      const hint = document.createElement("p");
-      hint.className   = "sdoa-playground__hint";
-      hint.textContent = "Select a module and command to generate the input form.";
-      this._formPanel.appendChild(hint);
-      formCol.appendChild(formTitle);
-      formCol.appendChild(this._formPanel);
-
-      // Middle: result
-      const resultCol = document.createElement("div");
-      resultCol.className = "sdoa-playground__col sdoa-playground__col--result";
-      const resultTitle = document.createElement("div");
-      resultTitle.className   = "sdoa-playground__col-title";
-      resultTitle.textContent = "Result";
-      this._resultPanel = document.createElement("div");
-      this._resultPanel.className = "sdoa-playground__result-panel";
-      this._clearResult();
-      resultCol.appendChild(resultTitle);
-      resultCol.appendChild(this._resultPanel);
-
-      // Right: history
-      const historyCol = document.createElement("div");
-      historyCol.className = "sdoa-playground__col sdoa-playground__col--history";
-      const historyTitle = document.createElement("div");
-      historyTitle.className   = "sdoa-playground__col-title";
-      historyTitle.textContent = "History";
-      this._historyPanel = document.createElement("div");
-      this._historyPanel.className = "sdoa-playground__history-panel";
-      this._renderHistory();
-      historyCol.appendChild(historyTitle);
-      historyCol.appendChild(this._historyPanel);
-
-      body.appendChild(formCol);
-      body.appendChild(resultCol);
-      body.appendChild(historyCol);
-
-      this._root.appendChild(topBar);
-      this._root.appendChild(selectorRow);
-      this._root.appendChild(body);
-      this._container.appendChild(this._root);
-    }
-
     _unsubscribeEventBus() {
       this._busUnsub.forEach(fn => fn());
       this._busUnsub = [];
     }
   }
+
+  // Prototype mixins — see file header for why this split uses
+  // Object.assign onto PlaygroundFeature.prototype.
+  Object.assign(
+    PlaygroundFeature.prototype,
+    window.PlaygroundFormExecution.mixin,
+    window.PlaygroundResultHistory.mixin,
+    window.PlaygroundDomBuilder.mixin
+  );
 
   window.PlaygroundFeature = PlaygroundFeature;
 })();
