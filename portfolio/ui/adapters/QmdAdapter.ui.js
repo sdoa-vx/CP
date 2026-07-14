@@ -29,9 +29,9 @@
         static MANIFEST = {
             id:      "QmdAdapter.ui",
             type:    "adapter",
+            layer:   2,
             runtime: "Browser",
-            version: "3.0.1",
-            "non-sdoa-compliant": true,
+            version: "3.0.2",
 
             capabilities: [
                 "semantic.search",
@@ -43,7 +43,7 @@
                 "BackendConnector.ui.js"
             ],
             docs: {
-                description: "Undeclared duplicate of the canonical QmdAdapter.ui module (also present in components/); pending consolidation in Phase 4. Browser-safe QMD adapter. Routes semantic search and indexing requests through BackendConnector.ui to the Tauri backend.",
+                description: "Browser-safe QMD adapter. Routes semantic search and indexing requests through BackendConnector.ui to the Tauri backend.",
                 input: {
                     search: { query: "string" },
                     index:  { path: "string" }
@@ -63,6 +63,7 @@
                     - All versions are backward and forward compatible.
                 `
             },
+            last_modified: "2026-07-13T00:00:00Z",
 
             actions: {
                 commands: {

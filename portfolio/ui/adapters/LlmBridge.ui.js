@@ -36,9 +36,9 @@
         static MANIFEST = {
             id:      "LlmBridge.ui",
             type:    "adapter",
+            layer:   2,
             runtime: "Browser",
-            version: "3.0.2",
-            "non-sdoa-compliant": true,
+            version: "3.0.3",
 
             // v1.2 fields — always present, never removed
             capabilities: [
@@ -53,7 +53,7 @@
                 "LlmPolicyEngine.ui.js"
             ],
             docs: {
-                description: "Undeclared duplicate of the canonical LlmBridge.ui module (also present in components/); pending consolidation in Phase 4. Browser-safe LLM generation bridge. Passes generation requests and tier hints to the backend via BackendConnector.ui. Emits UI-level events for route selection and failure. Failover logic is owned by the backend LlmBridge.js.",
+                description: "Browser-safe LLM generation bridge. Passes generation requests and tier hints to the backend via BackendConnector.ui. Emits UI-level events for route selection and failure. Failover logic is owned by the backend LlmBridge.js.",
                 input: {
                     generate: {
                         prompt:       "string",
@@ -75,6 +75,7 @@
                     - All versions are backward and forward compatible.
                 `
             },
+            last_modified: "2026-07-13T00:00:00Z",
 
             // v3.0 action surface — additive only
             actions: {

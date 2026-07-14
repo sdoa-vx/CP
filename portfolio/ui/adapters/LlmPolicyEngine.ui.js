@@ -31,9 +31,9 @@
         static MANIFEST = {
             id:      "LlmPolicyEngine.ui",
             type:    "adapter",
+            layer:   2,
             runtime: "Browser",
-            version: "3.0.1",
-            "non-sdoa-compliant": true,
+            version: "3.0.2",
 
             capabilities: [
                 "policy.read",
@@ -46,7 +46,7 @@
                 "BackendConnector.ui.js"
             ],
             docs: {
-                description: "Undeclared duplicate of the canonical LlmPolicyEngine.ui module (also present in components/); pending consolidation in Phase 4. Browser-safe governance adapter. Reads and writes LLM routing policy via BackendConnector.ui. Exposes resolveRoute, getPolicy, and updatePolicy to UI surfaces.",
+                description: "Browser-safe governance adapter. Reads and writes LLM routing policy via BackendConnector.ui. Exposes resolveRoute, getPolicy, and updatePolicy to UI surfaces.",
                 input: {
                     resolveRoute:  { requestedTier: "string" },
                     updatePolicy:  { newSettings: "object" }
@@ -67,6 +67,7 @@
                     - All versions are backward and forward compatible.
                 `
             },
+            last_modified: "2026-07-13T00:00:00Z",
 
             actions: {
                 commands: {

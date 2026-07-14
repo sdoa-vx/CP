@@ -31,16 +31,17 @@
     const MANIFEST = {
         id:      "FileList.ui",
         type:    "primitive",
+        layer:   2,
         runtime: "Browser",
-        version: "1.0.1",
-        "non-sdoa-compliant": true,
+        version: "1.0.2",
         capabilities: [
             "list.render", "list.select", "list.multiselect",
             "list.dragdrop", "list.contextmenu", "list.keyboard"
         ],
         dependencies: ["tauri-utils.js", "EventBus.ui.js"],
-        docs: { description: "Undeclared duplicate of the canonical FileList.ui module (also present in components/); pending consolidation in Phase 4. Windows Explorer-style file list. Full selection model, drag/drop, right-click context menu with ProtoAI extras.",
+        docs: { description: "Windows Explorer-style file list. Full selection model, drag/drop, right-click context menu with ProtoAI extras.",
             author: "ProtoAI team" },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands: {
                 loadPath:        { description: "Load and display a directory path.", input: { path: "string" }, output: "void" },

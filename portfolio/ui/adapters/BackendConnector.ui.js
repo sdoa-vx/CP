@@ -20,13 +20,15 @@
         type:    "adapter",
         layer:   2,
         runtime: "Browser",
-        version: "4.0.1",
-        "non-sdoa-compliant": true,
+        version: "4.0.2",
+        capabilities: ["backend:ipc", "backend:statusPolling", "backend:autoReconnect"],
         requires: ["tauri-utils.js"],
+        dependencies: ["tauri-utils.js"],
         docs: {
-            description: "Undeclared duplicate of the canonical BackendConnector.ui module (also present in components/); pending consolidation in Phase 4. Primary bridge between the UI and the Rust sidecar — handles IPC routing, status polling, and auto-reconnection.",
+            description: "Primary bridge between the UI and the Rust sidecar — handles IPC routing, status polling, and auto-reconnection.",
             author: "ProtoAI Team"
-        }
+        },
+        last_modified: "2026-07-13T00:00:00Z"
     };
 
     class BackendConnector {

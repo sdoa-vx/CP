@@ -25,13 +25,14 @@
     const MANIFEST = {
         id:      "ManifestPanel.ui",
         type:    "primitive",
+        layer:   2,
         runtime: "Browser",
-        version: "1.0.1",
-        "non-sdoa-compliant": true,
+        version: "1.0.2",
         capabilities: ["manifest.display", "vfs.status", "vfs.add"],
         dependencies: ["tauri-utils.js", "EventBus.ui.js"],
-        docs: { description: "Undeclared duplicate of the canonical ManifestPanel.ui module (also present in components/); pending consolidation in Phase 4. Displays VFS purpose manifest for a selected file. Shows metadata, purpose fields, VFS status and permissions.",
+        docs: { description: "Displays VFS purpose manifest for a selected file. Shows metadata, purpose fields, VFS status and permissions.",
             author: "ProtoAI team" },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands: {
                 render:     { description: "Render manifest panel into container.", input: { container: "DOMElement" }, output: "void" },

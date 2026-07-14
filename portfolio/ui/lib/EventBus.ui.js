@@ -35,9 +35,9 @@
     const MANIFEST = {
         id:      "EventBus.ui",
         type:    "service",
+        layer:   2,
         runtime: "Browser",
-        version: "1.0.1",
-        "non-sdoa-compliant": true,
+        version: "1.0.2",
 
         capabilities: [
             "event.publish",
@@ -48,7 +48,7 @@
         ],
         dependencies: ["tauri-utils.js"],
         docs: {
-            description: "Undeclared duplicate of the canonical EventBus.ui module (also present in components/); pending consolidation in Phase 4. Central pub/sub event bus. Activates the SDOA v3 action surface across all UI modules. Modules emit events here; app.js and other modules subscribe. Eliminates direct module-to-module coupling.",
+            description: "Central pub/sub event bus. Activates the SDOA v3 action surface across all UI modules. Modules emit events here; app.js and other modules subscribe. Eliminates direct module-to-module coupling.",
             author: "ProtoAI team",
             sdoa_compatibility: `
                 SDOA v3 contract — all versions forward/backward compatible.
@@ -56,6 +56,7 @@
                 Higher versions preserve old semantics.
             `
         },
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands: {
                 emit:    { description: "Publish an event to all subscribers.",          input: { event: "string", data: "any" },    output: "void" },

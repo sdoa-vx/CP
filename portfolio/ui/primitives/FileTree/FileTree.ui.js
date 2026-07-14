@@ -25,13 +25,14 @@
     const MANIFEST = {
         id:      "FileTree.ui",
         type:    "primitive",
+        layer:   2,
         runtime: "Browser",
-        version: "1.0.1",
-        "non-sdoa-compliant": true,
+        version: "1.0.2",
         capabilities: ["tree.render", "tree.navigate", "tree.expand"],
         dependencies: ["tauri-utils.js", "EventBus.ui.js"],
-        docs: { description: "Undeclared duplicate of the canonical FileTree.ui module (also present in components/); pending consolidation in Phase 4. Visual collapsible file tree. Emits selection events to EventBus." },
+        docs: { description: "Visual collapsible file tree. Emits selection events to EventBus." },
             author: "ProtoAI team",
+        last_modified: "2026-07-13T00:00:00Z",
         actions: {
             commands: {
                 render:      { description: "Render tree into container.",   input: { container: "DOMElement", rootPath: "string" }, output: "void" },
