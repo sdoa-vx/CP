@@ -4,7 +4,6 @@
 // Updated: 2026-06-17T00:00:00Z
 // Changes: Relocated to canonical sdoavx/ structure (substrate/access/fs/)
 // ──────────────────────────────────────────────────────────────────
-#!/usr/bin/env node
 // Last modified: 2026-05-04 03:11 UTC
 // ProtoAI File Permissions CLI
 // Usage:
