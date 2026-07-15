@@ -9,7 +9,7 @@
 // then optionally runs semantic search to verify indexing.
 
 const paths = require("../access/env/paths");
-const QmdAdapter = require("../adapters/QmdAdapter");
+const QmdAdapter = require("../adapters/QmdAdapter.adapter");
 
 class IngestWorkflow {
 
