@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "SleeveTelemetry.schema.json",
+  "$id": "sleeve-telemetry.schema.json",
   "title": "SDOA v5.5 Sleeve Telemetry Standard — Amendment 3.1",
   "description": "Canonical event shapes for all sleeve lifecycle telemetry. Every event emitted by a sleeve sovereign must conform to the base fields plus the event-specific fields defined here. Consumers (Triage, Cartographer, Chronicle, tracksdoa.us) must accept these shapes.",
   "ratified": "2026-06-27",
