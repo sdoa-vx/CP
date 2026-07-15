@@ -1,5 +1,5 @@
 // ──────────────────────────────────────────────────────────────────
-// File:    SpellcheckWorkflow.js
+// File:    VoiceChatWorkflow.js
 // Version: 1.0.0
 // Updated: 2026-06-17T00:00:00Z
 // Changes: Relocated to canonical sdoavx/ structure; adjusted require paths
@@ -15,18 +15,18 @@ const paths = require("../access/env/paths");
 exports.VERSION = "1.0.0";
 exports.getVersion = () => exports.VERSION;
 
-class SpellcheckWorkflow extends WorkflowBase {
+class VoiceChatWorkflow extends WorkflowBase {
 
     static MANIFEST = {
-        id:           "SpellcheckWorkflow.workflow",
+        id:           "VoiceChat.workflow",
         type:         "workflow",
         layer:        3,
         runtime:      "NodeJS",
         version:      "1.0.1",
-        capabilities: ["text:spellcheck"],
+        capabilities: ["voice:transcript-chat"],
         dependencies: [],
         docs: {
-            description: "Runs a spellcheck pass over chat text via a spawned external checker, returning corrections for the given engine/profile/project context.",
+            description: "Runs a voice-originated chat turn: takes a transcript (and optional recorded audio path) and routes it through the standard chat pipeline for a project/profile/engine.",
             author: "ProtoAI team",
         },
         last_modified: "2026-07-13T00:00:00Z",
@@ -39,10 +39,10 @@ class SpellcheckWorkflow extends WorkflowBase {
     };
       async run(payload) {
     try {
-      const { text, engine, profile, project } = payload;
+      const { project, profile, engine, transcript, audioPath } = payload;
 
-      if (!text || text.trim() === "") {
-        return WorkflowResult.error("Spellcheck requires text.");
+      if (!transcript && !audioPath) {
+        return WorkflowResult.error("VoiceChat requires transcript or audioPath.");
       }
 
       const ipcPath = path.resolve(__dirname, "..", "server-ipc.js");
@@ -51,11 +51,12 @@ class SpellcheckWorkflow extends WorkflowBase {
       }
 
       const request = {
-        type: "spellcheck",
-        text,
-        engine,
+        type: "voice_chat",
+        project,
         profile,
-        project
+        engine,
+        transcript,
+        audioPath
       };
 
       const result = spawnSync("node", [ipcPath], {
@@ -81,8 +82,16 @@ class SpellcheckWorkflow extends WorkflowBase {
         return WorkflowResult.error(`Invalid JSON from engine: ${stdout}`);
       }
 
-      // expected: { corrected: "...", suggestions: [...] }
-      return WorkflowResult.ok(parsed);
+      if (!parsed.reply) {
+        return WorkflowResult.error("Engine did not return a reply.");
+      }
+
+      return WorkflowResult.ok({
+        reply: parsed.reply,
+        engine,
+        profile,
+        project
+      });
 
     } catch (err) {
       return WorkflowResult.error(err);
@@ -90,4 +99,4 @@ class SpellcheckWorkflow extends WorkflowBase {
   }
 }
 
-module.exports = SpellcheckWorkflow;
+module.exports = VoiceChatWorkflow;

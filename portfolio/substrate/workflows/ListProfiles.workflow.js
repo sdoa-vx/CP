@@ -14,7 +14,7 @@ exports.getVersion = () => exports.VERSION;
 class ListProfilesWorkflow extends WorkflowBase {
 
     static MANIFEST = {
-        id:           "ListProfilesWorkflow.workflow",
+        id:           "ListProfiles.workflow",
         type:         "workflow",
         layer:        3,
         runtime:      "NodeJS",

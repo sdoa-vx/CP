@@ -13,7 +13,7 @@ const WorkflowResult = require("./WorkflowResult");
 class ListProjectsWorkflow extends WorkflowBase {
 
     static MANIFEST = {
-        id:           "ListProjectsWorkflow.workflow",
+        id:           "ListProjects.workflow",
         type:         "workflow",
         layer:        3,
         runtime:      "NodeJS",
