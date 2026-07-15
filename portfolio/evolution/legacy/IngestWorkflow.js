@@ -3,6 +3,16 @@
 // Version: 1.1.3
 // Updated: 2026-06-25T00:00:00Z
 // Changes: Added required MANIFEST.type ("workflow"); rescued from D: to portfolio.
+//
+// ARCHIVED (Phase 6/7 governance cleanup, 2026-07-15): moved from
+// substrate/workflows/ to evolution/legacy/. This module requires
+// "../base/sdoa-base.js", which does not exist anywhere in the repo --
+// loading this file throws MODULE_NOT_FOUND. It was also never
+// registered in registerWorkflows.js. Its one call site
+// (FileContext.workflow.js) has been repointed to Ingest.workflow.js,
+// the correct, functional module with a matching run()/search() API.
+// Kept here for historical reference only -- do not re-wire without
+// first fixing the missing base-class dependency.
 // ──────────────────────────────────────────────────────────────────
 // SDOA v1.2 compliant — Background Sync Task
 const { Task } = require('../base/sdoa-base.js');

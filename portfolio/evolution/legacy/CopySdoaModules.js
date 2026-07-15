@@ -3,6 +3,19 @@
 // Version: 1.0.0
 // Updated: 2026-06-17T00:00:00Z
 // Changes: Relocated to canonical sdoavx/ structure
+//
+// ARCHIVED (Phase 6/7 governance cleanup, 2026-07-15): moved from
+// substrate/workflows/ to evolution/legacy/. This is a dead, one-shot
+// v3-to-v4/v5 migration script: it requires "../base/sdoa-base.js"
+// (does not exist), and hardcodes srcRoot/destRoot to
+// "C:\Projects\SDOAvX", which does not match this repo's actual path
+// (C:\MCP). Its mappings array is the traced origin of two separate
+// governance findings: the invalid ModuleLoader.service.js duplicate
+// in substrate/services/ (line ~81, deleted), and the missing
+// substrate/base/sdoa-base.js dependency that breaks IngestWorkflow.js
+// and this file itself (line ~92, "Also reorganize sdoa-base.js!" --
+// that copy apparently never completed). Kept here for historical
+// reference only; do not re-run.
 // ──────────────────────────────────────────────────────────────────
 // Last modified: 2026-06-03 03:45 UTC
 // ============================================================

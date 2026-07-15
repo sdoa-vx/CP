@@ -267,9 +267,17 @@ class FileContextWorkflow {
     }
 
     // Step 0: Optional QMD Semantic Search
+    // NOTE (Phase 6/7 governance fix, 2026-07-15): this previously required
+    // "./IngestWorkflow" (IngestWorkflow.js), which throws MODULE_NOT_FOUND
+    // (missing ../base/sdoa-base.js) and, even if it loaded, has no search()
+    // method -- the error was silently swallowed by the catch below, so
+    // semantic search has been a silent no-op. "./Ingest.workflow"
+    // (Ingest.workflow.js) is the correct module: it implements both run()
+    // and search(). IngestWorkflow.js itself has been archived to
+    // evolution/legacy/ as broken dead code.
     let semanticContext = "";
     try {
-      const IngestWorkflow = require("./IngestWorkflow");
+      const IngestWorkflow = require("./Ingest.workflow");
       const ingest = new IngestWorkflow();
       const qmdResult = await ingest.search({ query: message, project });
       if (qmdResult.status === "success" && qmdResult.results && qmdResult.results.length > 0) {

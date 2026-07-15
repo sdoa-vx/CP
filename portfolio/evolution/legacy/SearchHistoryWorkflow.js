@@ -3,6 +3,15 @@
 // Version: 1.0.0
 // Updated: 2026-06-17T00:00:00Z
 // Changes: Relocated to canonical sdoavx/ structure; adjusted require paths
+//
+// ARCHIVED (Phase 6/7 governance cleanup, 2026-07-15): moved from
+// substrate/workflows/ to evolution/legacy/. This is a buggy, drifted
+// duplicate of SearchHistory.workflow.js -- line ~92 pushes the raw
+// `project` payload field into each result instead of the per-project
+// loop variable `proj`, so with allProjects:true every result reports
+// the wrong project. Confirmed unreferenced anywhere in the codebase.
+// SearchHistory.workflow.js is canonical and correct; use that instead.
+// Kept here for historical reference only.
 // ──────────────────────────────────────────────────────────────────
 "use strict";
 
