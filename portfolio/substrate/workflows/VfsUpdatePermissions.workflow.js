@@ -13,7 +13,7 @@
 
 const WorkflowBase    = require("./WorkflowBase");
 const WorkflowResult  = require("./WorkflowResult");
-const FsVfsRepository = require("../access/fs/FsVfsRepository");
+const FsVfsRepository = require("../access/fs/FsVfsRepository.repository");
 
 exports.VERSION    = "1.0.0";
 exports.getVersion = () => exports.VERSION;

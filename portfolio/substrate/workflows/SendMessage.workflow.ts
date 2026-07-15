@@ -59,8 +59,8 @@ class SendMessageWorkflow {
 
     try {
       const paths = require("../access/env/paths");
-      const FsProfileRepository = require("../access/fs/FsProfileRepository");
-      const FsProjectRepository = require("../access/fs/FsProjectRepository");
+      const FsProfileRepository = require("../access/fs/FsProfileRepository.repository");
+      const FsProjectRepository = require("../access/fs/FsProjectRepository.repository");
 
       this.profileRepo = new FsProfileRepository();
       this.projectRepo = new FsProjectRepository();

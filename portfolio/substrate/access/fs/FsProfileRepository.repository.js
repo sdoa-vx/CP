@@ -6,7 +6,7 @@
 // ──────────────────────────────────────────────────────────────────
 // Last modified: 2026-05-04 03:11 UTC
 const path = require("path");
-const BaseRepository = require("./BaseRepository");
+const BaseRepository = require("./BaseRepository.repository");
 const paths = require("../env/paths");
 
 class FsProfileRepository extends BaseRepository {

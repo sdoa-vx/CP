@@ -6,7 +6,7 @@
 // ──────────────────────────────────────────────────────────────────
 const WorkflowBase = require("./WorkflowBase");
 const WorkflowResult = require("./WorkflowResult");
-const FsProfileRepository = require("../access/fs/FsProfileRepository");
+const FsProfileRepository = require("../access/fs/FsProfileRepository.repository");
 
 exports.VERSION = "2.0.0";
 exports.getVersion = () => exports.VERSION;

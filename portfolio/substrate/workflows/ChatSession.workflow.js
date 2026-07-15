@@ -6,7 +6,7 @@
 // ──────────────────────────────────────────────────────────────────
 const WorkflowResult = require("./WorkflowResult");
 const paths = require("../access/env/paths");
-const FsProjectRepository = require("../access/fs/FsProjectRepository");
+const FsProjectRepository = require("../access/fs/FsProjectRepository.repository");
 
 class ChatSessionWorkflow {
 

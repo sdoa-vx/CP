@@ -5,7 +5,7 @@
 // Changes: Relocated to canonical sdoavx/ structure (substrate/access/fs/)
 // ──────────────────────────────────────────────────────────────────
 // Last modified: 2026-05-04 03:11 UTC
-const BaseRepository = require("./BaseRepository");
+const BaseRepository = require("./BaseRepository.repository");
 const paths = require("../env/paths");
 
 class FsMemoryRepository extends BaseRepository {

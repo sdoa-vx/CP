@@ -33,8 +33,8 @@ class SendMessageWorkflow {
         // Dynamic resolution matching Tauri app kernel workspace structure
         try {
             const paths = require("../access/env/paths");
-            const FsProfileRepository = require("../access/fs/FsProfileRepository");
-            const FsProjectRepository = require("../access/fs/FsProjectRepository");
+            const FsProfileRepository = require("../access/fs/FsProfileRepository.repository");
+            const FsProjectRepository = require("../access/fs/FsProjectRepository.repository");
             this.profileRepo = new FsProfileRepository();
             this.projectRepo = new FsProjectRepository();
             this._settingsPath = paths.data("settings.json");

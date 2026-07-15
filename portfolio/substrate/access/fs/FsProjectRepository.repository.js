@@ -7,7 +7,7 @@
 // Last modified: 2026-05-04 03:11 UTC
 const fs = require("fs-extra");
 const path = require("path");
-const BaseRepository = require("./BaseRepository");
+const BaseRepository = require("./BaseRepository.repository");
 const paths = require("../env/paths");
 
 class FsProjectRepository extends BaseRepository {

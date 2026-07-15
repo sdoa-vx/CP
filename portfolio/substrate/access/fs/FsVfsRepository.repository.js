@@ -26,7 +26,7 @@
 
 const fs   = require("fs-extra");
 const path = require("path");
-const BaseRepository = require("./BaseRepository");
+const BaseRepository = require("./BaseRepository.repository");
 const paths = require("../env/paths");
 
 // ── manifest type detection ───────────────────────────────────
