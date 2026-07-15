@@ -19,7 +19,7 @@
 
 const WorkflowBase = require("./WorkflowBase");
 const WorkflowResult = require("./WorkflowResult");
-const orchestrator = require("./MultiModelOrchestrator");
+const orchestrator = require("../services/MultiModelOrchestrator.service");
 
 class PartnerCommentaryWorkflow extends WorkflowBase {
     static MANIFEST = {

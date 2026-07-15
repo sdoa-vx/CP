@@ -28,4 +28,4 @@ const MANIFEST = {
 // This avoids duplicating the MemoryManager source while satisfying
 // all require("../lib/MemoryManager") calls from substrate/services/
 // and require("../../lib/MemoryManager") calls from substrate/workflows/.
-module.exports = require("../services/MemoryManager");
+module.exports = require("../services/MemoryManager.service");

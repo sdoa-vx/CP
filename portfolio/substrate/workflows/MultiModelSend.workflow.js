@@ -25,7 +25,7 @@
 const WorkflowBase        = require("./WorkflowBase");
 const WorkflowResult      = require("./WorkflowResult");
 const SendMessageWorkflow = require("./SendMessage.workflow");
-const orchestrator        = require("./MultiModelOrchestrator");
+const orchestrator        = require("../services/MultiModelOrchestrator.service");
 let commentaryPool        = null;
 
 class MultiModelSendWorkflow extends WorkflowBase {

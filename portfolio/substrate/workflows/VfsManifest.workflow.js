@@ -14,7 +14,7 @@
 const WorkflowBase         = require("./WorkflowBase");
 const WorkflowResult       = require("./WorkflowResult");
 const FsVfsRepository      = require("../access/fs/FsVfsRepository");
-const VfsManifestExtractor = require("./VfsManifestExtractor");
+const VfsManifestExtractor = require("../services/VfsManifestExtractor.service");
 
 exports.VERSION    = "1.0.0";
 exports.getVersion = () => exports.VERSION;

@@ -4,7 +4,7 @@
 const fs   = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
-const fallback = require("./VfsManifestExtractorFallback.js");
+const fallback = require("./VfsManifestExtractorFallback.service.js");
 
 class VfsManifestExtractor {
     static MANIFEST = {
