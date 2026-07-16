@@ -15,6 +15,16 @@ coverage/
 .eslintcache
 
 # ---------------------------------------------------------
+# Phase 7 (2026-07-15): server/src compiled .ts/.js twins.
+# tsc currently emits .js in place next to its .ts sources
+# instead of to dist/ -- until the build is redirected there
+# (a future modernization), these compiled twins are gitignored
+# rather than tracked. The .ts files are the real source.
+# ---------------------------------------------------------
+server/src/**/*.js
+server/src/**/*.js.map
+
+# ---------------------------------------------------------
 # MCP Server / CLI / VSX
 # ---------------------------------------------------------
 # Local runtime artifacts
