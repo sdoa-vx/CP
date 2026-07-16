@@ -1,7 +1,7 @@
 ================================================================================
 SDOA GOVERNANCE OUTLINE
-Version: 5.1
-Date: 2026-07-13
+Version: 5.2
+Date: 2026-07-15
 Classification: Internal — Development Team & Project Leads
 ================================================================================
 
@@ -91,7 +91,8 @@ any of these fields will be rejected by the registry at startup.
 
   id            The module's unique identifier. No two modules share an id.
   type          The module type (primitive, feature, adapter, service, workflow,
-                repository, engine, dashboard, task, validator)
+                repository, engine, dashboard, task, validator, sleeve,
+                component, utility)
   version       Semantic version string (e.g., "1.0.0", "4.0.05")
   runtime       Execution environment: Browser | NodeJS | Universal | Rust |
                 Python | C++ | COBOL | VB
@@ -111,6 +112,44 @@ v5.0 added the following fields (required for v5.0 modules):
   operationalRole  System role (registrar/captain/conductor/coach/
                    probation-officer/assembly-line/triage/savant)
   optimization     Object: {priority, assertionSuite}
+
+v5.4 added the "sleeve" module type (Sleeve Module Class, ratified
+2026-06-27 — "Sovereign Integration & Sleeve Amendment"). A sleeve is the
+only class of module permitted to bridge internal SDOA state to an
+external system (CLI, HTTP API, another language runtime, a desktop IPC
+bridge, etc.). Sleeves are layer 3 only, capped at a 500-line ceiling,
+and forbidden from fs.writeFileSync to peer modules, eval()/Function(),
+hardcoded absolute paths, or raw fetch() when their declared transport
+is https. Every sleeve must additionally declare:
+  external      Object: {system, transport, path, commands[]} — the
+                 canonical external system name, one of the six
+                 permitted transports (https/cli/node-module/http+spawn/
+                 polyglot-bridge/window.__TAURI__), how its path is
+                 resolved, and its complete permitted command surface.
+  requires       Must include "ResponseFormatter.service" and
+                 "PathResolver.service".
+Full field-by-field rules (including validation rules R11-R17, sleeve-
+specific) live in documentation/Manifest-Spec/SDOA-Manifest-Spec-v5.4.txt
+— that document is the authoritative sleeve reference; this section only
+summarizes it so the mandatory-fields list above stays current.
+
+Known gap as of this amendment (2026-07-15): the five canonical sleeve
+sovereigns named in the v5.4 Release Notes are BrowserSleeve.module.js,
+QwenSleeve.module.js, PolicySleeve.module.js, ContextSleeve.module.py,
+and AiSleeve.module.ts. Of these, only the shared SleeveBase.module.js
+base class actually declares type: "sleeve" in its manifest today.
+PolicySleeve.module.js and QwenSleeve.module.js still declare
+type: "adapter" with an inline "sleeve pending typedef extension"
+comment — the v5.4 migration to the new type value was ratified but
+never fully carried out across all five sovereigns. This is a pending
+cleanup item, not a new violation to fix as part of this amendment.
+
+Separately: the v5.4 Release Notes' prose describes the sleeve file
+pattern as "*.sleeve.js", but every shipped example (in the release
+notes and in the actual codebase) uses ".module.js" instead. Section
+8.1 below documents the suffix actually in use (.module.js), not the
+prose description, per the "governance describes reality" principle
+established in Section 12.
 
 3.2 Non-Compliant File Handling
 ---------------------------------
@@ -377,10 +416,29 @@ SECTION 8 — NAMING CONVENTIONS
 | Workflow      | PascalCase.workflow.js  | CreateItem.workflow.js         |
 | Repository    | PascalCase.repository.js| Item.repository.js             |
 | Service       | PascalCase.service.js   | EventBus.service.js            |
+| Sleeve        | PascalCase.module.js    | BrowserSleeve.module.js        |
+| Component     | PascalCase.component.js | AppShellQuickActions.component.js |
+| Utility       | PascalCase.utility.js   | SleeveBoundaryBatching.utility.js |
 | Primitive CSS | PascalCase.prim.css     | Button.prim.css                |
 | Feature CSS   | PascalCase.feature.css  | Dashboard.feature.css          |
 | Schema files  | kebab-case.schema.json  | user-settings.schema.json      |
 | Variant file  | Parent.variant.type.js  | Workspace.compact.feature.js   |
+
+8.1.1 Amendment Notes (v5.2, 2026-07-15)
+------------------------------------------
+Sleeve, Component, and Utility were already in extensive, consistent use
+across the codebase (including files created during the Phase 5 module-
+splitting work) but were absent from this table — a documentation gap,
+not a code violation. This amendment records the suffixes actually in
+use rather than requiring a rename pass.
+
+One additional pattern remains in use but is NOT added as a first-class
+row: PascalCase.ui.js (e.g. FileList.ui.js, FileTree.ui.js,
+ManifestPanel.ui.js), all of which declare type: "primitive" in their
+manifest — it is an older, pre-.prim.js naming convention for the same
+Primitive type, not a distinct module type. New primitives should use
+.prim.js; existing .ui.js primitives do not need to be renamed solely
+for this reason.
 
 8.2 Module ID Conventions
   Format: Name.type  (e.g., "Button.prim", "Settings.feature", "Chat.workflow")
@@ -484,6 +542,12 @@ Known ratified amendments:
     sovereignty boundary rules (Section 2) wherever it interfaces with
     SDOA-governed modules. Ratifying authority: trechurch (project lead).
 
+  v5.2 Migration Cleanup Amendment (2026-07-15): Adds "sleeve", "component",
+    and "utility" to the Section 3.1 type enum and the Section 8.1 naming
+    table, documenting suffixes already in widespread use. Records the
+    "SDOA MCP Migration 2026" cleanup arc as Section 13. Ratifying
+    authority: trechurch (project lead).
+
 --------------------------------------------------------------------------------
 SECTION 11 — HYBRID INFRASTRUCTURE & CLOUD WORKER GOVERNANCE
 --------------------------------------------------------------------------------
@@ -539,6 +603,155 @@ violation — brings the governance document back in line with what the
 repository actually is, which is the entire point of governance: rules that
 describe reality, not aspirations that go silently unenforced.
 
+--------------------------------------------------------------------------------
+SECTION 13 — THE SDOA MCP MIGRATION 2026 (GOVERNANCE RECORD)
+--------------------------------------------------------------------------------
+
+13.1 Purpose
+--------------
+This section is the official record of the repository-wide governance
+cleanup carried out 2026-07 across the CP (sdoa-vx) repository. It exists
+so that future amendments have a single place to see what was found, what
+was changed, and — as important — what was investigated and deliberately
+left alone.
+
+13.2 Phases Completed
+------------------------
+Phase 0  Secrets & git hygiene.
+Phase 1  Removed non-source trees & build artifacts; Phase 1.5 removed
+         remaining vendored dirs; Phase 1.7 restored branding assets to
+         their canonical path.
+Phase 2  Resolved the two-roots conflict between portfolio/ (SDOA-native)
+         and server/ (pre-existing Node/TypeScript backend) by ratifying
+         the Section 12 backend subsystem exemption rather than forcing a
+         mechanical migration.
+Phase 3  Manifest compliance pass across ~250+ modules.
+Phase 4  Collapsed duplicate modules into variants per Section 9.
+Phase 5  Split oversized modules (>500 lines) into compliant sub-modules.
+Phase 6  Naming-convention cleanup per Section 8, described in full below
+         (13.3).
+Phase 7  Cleaned server/src .ts/.js compiled twins, described in full
+         below (13.4).
+Phase 8  This section, plus the Section 3.1/8.1 amendments above it.
+
+13.3 Phase 6 Findings: Naming Cleanup Surfaced Real Bugs
+------------------------------------------------------------
+Phase 6's naming-convention pass (repository/service/adapter/workflow
+renames, kebab-case schema rename) was not purely cosmetic. Cross-
+referencing require() call sites against actual file existence surfaced:
+
+  - An invalid duplicate: substrate/services/ModuleLoader.service.js was
+    a browser-only module wrongly copied into the Node-only
+    substrate/services/ layer. Deleted; the canonical copy lives in
+    ui/services/.
+  - A live bug: FileContext.workflow.js required "./IngestWorkflow"
+    (IngestWorkflow.js), which threw MODULE_NOT_FOUND (a missing
+    ../base/sdoa-base.js dependency) and, even had it loaded, had no
+    search() method — the exception was silently swallowed, making
+    semantic search a silent no-op. Fixed to require "./Ingest.workflow"
+    (Ingest.workflow.js), the correct module.
+  - Two more dead files archived to evolution/legacy/ alongside
+    IngestWorkflow.js: SearchHistoryWorkflow.js (a drifted duplicate of
+    SearchHistory.workflow.js with a bug that misreported the project
+    field on multi-project searches) and CopySdoaModules.js (the dead,
+    one-shot v3->v4/v5 migration script — hardcoded to a path that
+    doesn't match this repo — that was the traced origin of both the
+    ModuleLoader duplicate and the missing sdoa-base.js dependency).
+  - A second migration artifact of the same kind: substrate/services/
+    ModelManager.js, deleted for the same reason as ModuleLoader — its
+    own manifest already disclosed it as browser-only
+    ("ModelInventory.component", runtime: Browser) despite living in the
+    Node-only substrate/services/ layer. Canonical copy: ui/features/
+    ModelManager/ModelManager.feature.js.
+  - Two more latent MODULE_NOT_FOUND crashes in registerWorkflows.js's
+    dependency chain, fixed by the renames themselves: workflow files
+    requiring "./MultiModelOrchestrator" and "./VfsManifestExtractor"
+    (same-directory relative paths) when those services only ever lived
+    in ../services/. registerWorkflows.js now loads and registers all
+    workflows end-to-end, verified via direct require().
+
+13.4 Phase 7 Findings: Compiled Twins, Not Experiments
+------------------------------------------------------------
+During the residual-drift pass, server/src/{engine,federation,fisp,
+utils,workers}/*.js were initially proposed for archival as experimental
+prototypes. Verification before acting (per the Section 12.2 principle —
+governance describes reality, and reality must be checked, not assumed)
+found the opposite: every one of these .js files had an already-tracked
+.ts sibling, each .js file's own MANIFEST.id referenced its .ts filename,
+and dozens of live imports across server/src/routes/ and server/src/
+services/ depended on exactly these modules. They are tsc's compiled
+output, emitted in place next to their sources instead of to a separate
+dist/ directory — not drift, not experiments, and not safe to move.
+
+Resolution: added server/src/**/*.js and *.js.map to .gitignore;
+git rm --cached (not deleted from disk) the 8 twins that were already
+tracked. The .ts files remain the real, tracked source. Redirecting the
+build to a proper dist/ output is a future modernization, not done here.
+
+The same verify-before-archiving check caught a second false positive
+during the residual-drift pass: authorities/mcp/server.js was proposed
+as compiled output of a "cloud authority prototype." It has no .ts
+source anywhere, its own manifest declares runtime: "JavaScript", and it
+had just received a genuine 76-line addition — it is a real, live Model
+Context Protocol server implementation (@modelcontextprotocol/sdk,
+better-sqlite3, zod), unrelated to the already-archived cloud-authority
+prototype (research/cloud/authority/, formerly authorities/sdoa-mcp-
+cloud/). Left tracked and untouched.
+
+13.5 Repository Hygiene: Categories A, D, and E
+------------------------------------------------------
+Alongside the SDOA-specific work, the repository's working tree was
+cleared of accumulated drift, using git history to guarantee nothing was
+destroyed:
+
+  Category A (stray non-source artifacts): 27 files — legacy
+  documentation drafts, pre-rewrite dashboard assets/views, a stray
+  tarball, test.zip. Every file's exact content was checked out from git
+  history into C:\MCP-archive (a sibling folder outside the repo, not
+  tracked) before the removal was finalized, so nothing was destroyed —
+  only removed from version control.
+
+  Category D (canonical/research content brought in): book/ ->
+  compendium/, mesh/ -> research/mesh/, database/ -> evolution/database/,
+  authorities/sdoa-mcp-cloud/ -> research/cloud/authority/, dashboard_
+  old.ts -> evolution/legacy/.
+
+  Category E (residual drift): loose PDFs, sdoa_prime.db, and mcp-worker/
+  package-lock.json gitignored as personal/local-only artifacts;
+  tracksdoa-v2/, scripts/testWebhooks.ts, verify.ts, sonar-project.
+  properties, and server/public/legacy_v2/ archived to evolution/.
+  SvelteKit's .svelte-kit/ generated build tree (discovered inside
+  tracksdoa-v2/) was added to .gitignore for the same reason dist/ and
+  build/ already were.
+
+  Final classification pass: .sdoa-logs.jsonl (local runtime log)
+  gitignored; docs/governance/SDOA_Repo_Audit_2026-07-13.md and server/
+  public/state/meshState.js (a genuine, hand-written dashboard state
+  store, confirmed by reading its contents, not a runtime cache file)
+  brought under tracking.
+
+13.6 Outstanding Items (Not Yet Resolved)
+------------------------------------------------
+  - The v5.4 sleeve-type migration is incomplete: PolicySleeve.module.js
+    and QwenSleeve.module.js still declare type: "adapter" pending
+    typedef extension (see Section 3.1 amendment above).
+  - This document itself was found living in documentation/Archive/,
+    marked as a superseded edition by SDOA-v5.4-Release-Notes.txt
+    Section 11, while continuing to receive real amendments (this one
+    included). The team elected to keep amending it in place (v5.1 ->
+    v5.2) rather than author a new consolidated document at this time.
+    A future amendment should reconcile this outline with the v5.4
+    Manifest Spec and Release Notes into one current document.
+  - manifest.schema.json's type enum gap (noted in an earlier phase) has
+    not been independently re-verified against this section's additions.
+  - Several files remain tracked-but-unwired (no require() call site
+    found anywhere in portfolio/): substrate/services/BackendConnector.
+    service.js, FileManager.service.js, SettingsManager.service.js,
+    substrate/adapters/BunInstaller.adapter.js, substrate/access/fs/
+    FsMemoryRepository.repository.js. Not deleted, since no duplicate or
+    breakage was found (unlike ModuleLoader/ModelManager) — just flagged
+    as orphaned for a future pass.
+
 ================================================================================
-END OF SDOA GOVERNANCE OUTLINE v5.1
+END OF SDOA GOVERNANCE OUTLINE v5.2
 ================================================================================
