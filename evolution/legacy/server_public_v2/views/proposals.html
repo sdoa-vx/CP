@@ -1,0 +1,22 @@
+<h2>Proposals</h2>
+
+<div class="stats">
+  <span>Queued: <strong data-proposals-queued>0</strong></span>
+  <span>Accepted: <strong data-proposals-accepted>0</strong></span>
+  <span>Rejected: <strong data-proposals-rejected>0</strong></span>
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Status</th>
+      <th>Timestamp</th>
+    </tr>
+  </thead>
+  <tbody hx-get="/dashboard/api/proposals" hx-trigger="load, every 5s">
+    <!-- HTMX will populate rows -->
+  </tbody>
+</table>
+
+<div id="proposal-detail-pane"></div>

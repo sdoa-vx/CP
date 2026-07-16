@@ -105,3 +105,12 @@ git-filter-repo-2.47.0/
 build_staging/
 extract_vsix/
 portfolio/evolution/legacy/antigravity-sdk-python/
+
+# ---------------------------------------------------------
+# Personal / local-only artifacts (Category E, 2026-07-15)
+# Not part of MCP runtime, substrate, UI, compendium, or research.
+# ---------------------------------------------------------
+*.pdf
+*.db
+mcp-worker/package-lock.json
+.svelte-kit/
