@@ -1,0 +1,318 @@
+================================================================================
+SDOA COMPENDIUM — BOOK VI: MCP ARCHITECTURE & RUNTIME
+Edition: 2026 Constitutional Integration
+Date: 15 July 2026
+Classification: Canonical — Governance Reference
+Amendment Note: Compendium-internal addition (2026-07-15), companion to Book V.
+See ADOPTION NOTE at the end of this book.
+================================================================================
+
+BOOK VI — MCP ARCHITECTURE & RUNTIME
+
+0.0 Introduction
+────────────────────────────────────────────────────────────────────────────────
+Book VI defines the structural, operational, and runtime topology of the MCP
+engine — the substrate, workflows, server topology, dashboard, authority chain,
+federation model, worker lifecycle, and telemetry pipeline that Books I-V
+describe from the module, governance, sleeve, and constitutional angles.
+
+Terminology note: "MCP" is used in two senses in this codebase, and Book VI
+distinguishes them explicitly. In this Book's own title, "MCP" means the whole
+engine/runtime (the historical project shorthand — the repo itself is
+"sdoa-vx/CP"). In Section 7.0 (Authority Chain), "MCP" also names a literal
+implementation of Anthropic's Model Context Protocol at authorities/mcp/. These
+are related but not identical; do not assume every "MCP" reference in this
+repository means the protocol server.
+
+0.1 Table of Contents
+────────────────────────────────────────────────────────────────────────────────
+  0.0   Introduction
+  0.1   Table of Contents
+  0.2   Placement within the Compendium
+  0.3   Cross-Reference Map
+  1.0   Runtime Legitimacy
+  2.0   Substrate Architecture
+  3.0   Workflow Lifecycle
+  4.0   Server Runtime Topology
+  5.0   Sleeve Runtime Integration
+  6.0   Telemetry Pipeline
+  7.0   Authority Chain
+  8.0   Federation Model
+  9.0   Worker Lifecycle
+  10.0  Manifest-to-Runtime Mapping
+
+0.2 Placement within the Compendium
+────────────────────────────────────────────────────────────────────────────────
+Book VI — MCP Architecture & Runtime — defines the structural, operational, and
+runtime topology of the MCP engine. It does not replace Book IV (Operations &
+Certification); instead, it expands the architectural layer to include the
+substrate, workflows, server topology, dashboard, authority chain, federation
+model, worker lifecycle, and telemetry pipeline.
+
+  - Book I (Architecture & Module Taxonomy) defines the module-level taxonomy.
+    Book VI defines how those modules assemble into the MCP engine.
+
+  - Book II (Governance & Gates) defines enforcement and ratification.
+    Book VI defines the runtime structures those rules govern.
+
+  - Book III (Sleeve Amendment) defines sovereign sleeve behavior.
+    Book VI defines how sleeves integrate into the runtime topology.
+
+  - Book IV (Operations & Certification) defines operational behavior.
+    Book VI defines the architecture that operations act upon.
+
+  - Book V (The Charter / The Authority) defines constitutional legitimacy.
+    Book VI defines the runtime manifestation of that legitimacy.
+
+Book VI stands as the architectural and runtime description of the MCP engine,
+completing the structural layer of the Compendium.
+
+0.3 Cross-Reference Map
+────────────────────────────────────────────────────────────────────────────────
+Book I — Architecture & Module Taxonomy
+  - Book VI §2.0 (Substrate Architecture) expands module taxonomy into runtime
+    topology.
+  - Book VI §3.0 (Workflow Lifecycle) binds module classes to sovereign
+    workflows.
+
+Book II — Governance & Gates
+  - Book VI §7.0 (Authority Chain) defines the runtime structures governed by
+    ratification and enforcement.
+  - Book VI §8.0 (Federation Model) defines the sovereign boundaries enforced
+    by Book II.
+
+Book III — Sleeve Amendment
+  - Book VI §5.0 (Sleeve Runtime Integration) defines how sleeves bind to the
+    MCP engine.
+  - Book VI §6.0 (Telemetry Pipeline) incorporates sleeve observation and
+    drift rules.
+
+Book IV — Operations & Certification
+  - Book VI §4.0 (Server Runtime Topology) defines the operational structures
+    certified under Book IV.
+  - Book VI §9.0 (Worker Lifecycle) defines the runtime behavior of sovereign
+    workers.
+
+Book V — The Charter / The Authority
+  - Book VI §1.0 (Runtime Legitimacy) binds the MCP runtime to the
+    constitutional authority defined in Book V.
+  - Book VI §10.0 (Manifest-to-Runtime Mapping) defines how constitutional
+    doctrine becomes executable architecture.
+
+Summary: Book VI provides the runtime and architectural foundation for the MCP
+engine. It binds the structural taxonomy, governance rules, sleeve behavior,
+operational certification, and constitutional authority into a single coherent
+runtime model.
+
+1.0 Runtime Legitimacy
+────────────────────────────────────────────────────────────────────────────────
+The runtime described in this Book derives its legitimacy from Book V (the
+Charter) and, through it, from the Governance Outline. Verified against the
+live repository (2026-07-15), one open compliance item surfaced during that
+verification: authorities/mcp/server.js declares MANIFEST.layer = 4, but
+Manifest-Spec v5.4 §1 (layer) and Book II define layer as an enum of exactly
+1 | 2 | 3. This is a real, present-tense deviation, not a hypothetical one —
+recorded here rather than silently corrected, per the Constitutional Gap
+practice established in Book V §3.0.
+
+2.0 Substrate Architecture
+────────────────────────────────────────────────────────────────────────────────
+portfolio/substrate/ (139 files total, verified 2026-07-15):
+
+  - services/    ~39 files. Oracle.service.js, Chronicle.service.js,
+                 Chronicle.persistence.js, Registry.service.ts,
+                 Middleware.service.js, EventBus.service.js,
+                 MemoryContextBroker.service.js, MultiModelOrchestrator
+                 .service.js, Dashboard.service.ts, Sentinel.service.js,
+                 SettingsManager.service.js, OracleSleeveMesh.service.js,
+                 plus Python/TS outliers (LlmSettings.py,
+                 ProvisioningService.py, RefactorService.py,
+                 SystemHealth.py, Comparators.service.ts,
+                 Evaluator.service.ts, Logger.service.ts,
+                 PolyglotBridge.ts).
+  - workflows/   ~57 files. ProbationOfficer.workflow.js, Pulse.workflow.js,
+                 Cartographer.workflow.js, Coach.workflow.py,
+                 Triage.workflow.js, Scaffold.workflow.js,
+                 InnovationDetector.workflow.js, TestCore.workflow.js/.ts,
+                 TestRunner.workflow.ts, WorkflowRegistry.js,
+                 MemoryDistiller.workflow.js, VfsManifest.workflow.js,
+                 ChatSession.workflow.js, SysProvisionBun.workflow.js.
+  - adapters/    ~22 files. AiProvider.adapter.js, AiBroker.adapter.ts,
+                 AiSleeve.module.ts, QwenSleeve.module.js,
+                 BrowserSleeve.module.js, LlmConnector.adapter.js/.ts,
+                 TokenBudget.adapter.js/.ts, SleeveBase.module.js, plus
+                 sleeve utilities (SleeveSandbox.utility.js,
+                 SleeveModelTraining.utility.js,
+                 SleeveBoundaryBatching.utility.js,
+                 SleeveTransportNegotiation.utility.js).
+  - engines/     7 files. LlmPolicyEngine.js, LocalLlmServer.engine.py,
+                 ContextEngine.py, ContextSleeve.module.py,
+                 CommandPalette.rs, SystemHealth.rs, plus a legacy
+                 variants/qwen_server.legacy/qwen_server.py.
+  - access/      6 files. env/paths.js plus repositories:
+                 BaseRepository.repository.js, FsVfsRepository
+                 .repository.js, FsProjectRepository.repository.js,
+                 FsProfileRepository.repository.js,
+                 FsMemoryRepository.repository.js, permissions.js.
+  - bridges/     2 files. LlmBridge.js, PolicySleeve.module.js.
+  - tests/       Sleeve.tests.json.
+  - Types.ts     sits at substrate root, not in a subdirectory.
+
+3.0 Workflow Lifecycle
+────────────────────────────────────────────────────────────────────────────────
+Sovereign workflows (substrate/workflows/, Layer 3) follow the lifecycle
+contract fixed in Manifest-Spec v5.4 §1: ["init", "run", "dispose"]. The
+governance-critical sovereigns — ProbationOfficer, Registrar/Registry, Oracle,
+Triage, Coach, Cartographer — are documented in full in Book II §§2-7 and are
+not re-described here. Beyond those, confirmed operational workflows include
+Scaffold (creation pipeline, Book IV §4), InnovationDetector (pattern
+detection, Book IV §5), TestCore/TestRunner (certification, Book IV §1),
+WorkflowRegistry, MemoryDistiller, VfsManifest, ChatSession, and
+SysProvisionBun.
+
+4.0 Server Runtime Topology
+────────────────────────────────────────────────────────────────────────────────
+The backend lives at repo root, sibling to portfolio/ (server/, exempt from
+Book I/II placement and naming rules per the Section 12 Backend Subsystem
+Exemption already recorded in the Governance Outline). Confirmed 2026-07-15:
+
+  - server/src/index.ts is the entry point. It builds a custom Router (not
+    Express — utils/Router.ts) and mounts ~14 sub-routers under /dashboard
+    (dashboard, config, chronicle, pulse, assembly, provisioner, lifecycle,
+    arbitration, mesh, timemachine, governance, prime, diagnostics, report),
+    plus /api/github/webhooks and /public (static assets), a WebSocket layer
+    (ws.ts), and legacy explicit routes for /health and telemetry.
+  - server/src/{engine,federation,fisp,github,ipc,pipeline,routes,services,
+    shared,substrate,utils,validators,workers}/ hold the TypeScript sources;
+    compiled .js twins are gitignored in place per Phase 7 (2026-07-15), not
+    tracked in git.
+  - server/public/ is the real dashboard front end: index.html, app.js,
+    styles.css, and components/{lineage,pipeline,scan,audit,drift,
+    governance,fabrication,registry,routing,lifecycle,mesh,timemachine,
+    prime,control-center,library}.js — one component per dashboard panel.
+  - server/core/sdoa/ is a second, self-contained SDOA rules implementation
+    living inside the backend (constraints/, exemplars/, manifests/,
+    registry/, resolver/, sovereignty/, version/) — distinct from
+    portfolio/substrate/ and portfolio/authorities/. Its existence alongside
+    the portfolio-side governance modules is flagged here as an open
+    duplication question for a future dedup pass (see §6.0 for the parallel
+    Chronicle/Pulse case); it is not resolved by this Book.
+
+5.0 Sleeve Runtime Integration
+────────────────────────────────────────────────────────────────────────────────
+The five canonical sleeve sovereigns (Book III §7) resolve to concrete files
+in substrate/: AiSleeve.module.ts and QwenSleeve.module.js and
+BrowserSleeve.module.js in substrate/adapters/, PolicySleeve.module.js in
+substrate/bridges/, and ContextSleeve.module.py in substrate/engines/. All
+extend SleeveBase.module.js (substrate/adapters/). Sleeve-support utilities
+confirmed present: SleeveSandbox.utility.js, SleeveModelTraining.utility.js,
+SleeveBoundaryBatching.utility.js, SleeveTransportNegotiation.utility.js — all
+in substrate/adapters/, all using the .utility.js suffix added to the
+taxonomy in Book V §7.0.
+
+6.0 Telemetry Pipeline
+────────────────────────────────────────────────────────────────────────────────
+Telemetry is implemented twice, on both sides of the portfolio/server split:
+
+  - portfolio/substrate/services/: Chronicle.service.js (append-only,
+    SHA-256 hash-chained audit ledger; capabilities chronicle:record/replay/
+    verify/snapshot/clear) and a separate Chronicle.persistence.js.
+    portfolio/substrate/workflows/Pulse.workflow.js aggregates latency
+    (p50/p95/p99), error rates, and throughput from Chronicle/EventBus.
+    Oracle.service.js consumes Pulse data plus Cartographer drift events for
+    its scoring penalties (Book II §4).
+  - server/src/: a parallel services/Chronicle.service.ts and
+    services/Pulse.service.ts, exposed via routes/chronicle.ts and
+    routes/pulse.ts, plus engine/telemetry.ts and engine/telemetryPersister.ts.
+
+This is a real cross-root duplication, not a naming coincidence — two
+independently-implemented Chronicle ledgers and two independently-implemented
+Pulse aggregators exist today. It is recorded here as a candidate for a future
+Deduplication Rules pass (Book V §6.0) rather than resolved in this Book.
+
+7.0 Authority Chain
+────────────────────────────────────────────────────────────────────────────────
+Two distinct authority structures exist under portfolio/authorities/ and
+repo-root authorities/ — do not conflate them:
+
+  - portfolio/authorities/registrar/, captain/, conductor/, router/,
+    bootstrap/: Registry.service.ts (and a second file, Registrar.service.ts,
+    whose MANIFEST.id is actually "Curator.service" — a filename/id
+    mismatch, flagged not fixed); Captain.service.js (operationalRole:
+    "captain"); Conductor.service.js + index.ts (event-storm suppression,
+    circuit-breaking, rate-limiting); Router.service.js ("the backend spine
+    ... no switch statements, no manual registration"); bootstrap.py
+    (one-time pip/venv/model setup).
+  - repo-root authorities/mcp/: the literal Model Context Protocol server —
+    server.js, MANIFEST.type: "module", layer: 4 (see §1.0 flag),
+    operationalRole: "infrastructure", built on @modelcontextprotocol/sdk's
+    StdioServer plus better-sqlite3 and zod. It wires PortfolioManager
+    .service.js, graph/engine.js (CapabilityGraph), RunManager.service.js,
+    ConstraintSolver.service.js, and PipelineStateMachine.js, and exposes
+    eight MCP tools as workflows/: Analyze, Map, Reuse, Innovate, Plan,
+    Patch, Audit, Migrate.
+
+8.0 Federation Model
+────────────────────────────────────────────────────────────────────────────────
+Federation is implemented, but only on the server/ side — there is no
+portfolio-side federation module today. Confirmed: server/src/federation/
+{handshake.ts, replication.ts}, exposed via server/src/routes/federation.ts
+and wired into server/src/index.ts (handleFederation). Book V §5.0's
+directory-placement rules do not yet mention federation/ explicitly; a future
+revision of that section should.
+
+9.0 Worker Lifecycle
+────────────────────────────────────────────────────────────────────────────────
+The "worker model" is narrower in practice than the term suggests: three
+concrete files exist under server/src/workers/ — prWorker.ts, prJobWorker.ts
+(GitHub pull-request automation), and offlineSync.ts (with a stray compiled
+offlineSync.js twin, subject to the same Phase 7 gitignore rule as other
+server/src/**/*.js output). There is no generic worker-pool abstraction; these
+are two purpose-built background jobs, not a sleeve-style sovereign class.
+
+10.0 Manifest-to-Runtime Mapping
+────────────────────────────────────────────────────────────────────────────────
+Confirmed present at the portfolio root:
+
+  - blueprint.schema.json — frozen node descriptors (id, type, layer,
+    version, runtime, operationalRole, commands, events) generated after the
+    Phase 1 violation repairs and Phase 2 Sleeve ratification.
+  - sdoa-vnext.lock.json — sdoaVersion "5.4.0", frozenModules[],
+    frozenExternalSystems[] (the five sleeve boundary owners), and the
+    frozenHealingPath (AiSleeve.healTestFailure -> heal:patch-request ->
+    Coach.on_patch_request -> ProbationOfficer.run -> coach:mutationReady ->
+    Registrar.fieldChampion).
+  - Registry.service, which defines the SdoaManifest TypeScript interface
+    consumed by other services (e.g. Dashboard.service.ts imports it
+    directly) — present in three copies: authorities/registrar/Registry
+    .service.ts, substrate/services/Registry.service.ts, and
+    authorities/registrar/variants/Registry.service.legacy/Registry
+    .service.ts. Flagged as a dedup candidate, consistent with Book V §6.0.
+
+================================================================================
+ADOPTION NOTE (2026-07-15)
+────────────────────────────────────────────────────────────────────────────────
+Book VI is a Compendium-internal governance addition, added under the same
+project-lead direction and the same freeze caveat recorded in Book V's
+Adoption Note: documentation/Freeze/SDOA-v5.4-Freeze-Certificate.txt lists
+documentation/Compendium/ as frozen; this addition proceeds without
+re-ratification or a checksum update, on the project lead's determination
+that Compendium content is a living ledger. No existing checksummed file's
+content was modified; Book VI is additive only.
+
+Every factual claim in Sections 2.0-10.0 was verified directly against the
+live repository on 2026-07-15 rather than assumed from prior session notes.
+One correction worth recording: an initial survey pass scoped only to
+portfolio/ concluded that server/, authorities/mcp/, federation/, and workers/
+did not exist. That was a scoping error, not a fact about the repo — all four
+exist at repo root, sibling to portfolio/, and are documented accordingly
+above. Three open items surfaced during verification and are deliberately
+left unresolved here rather than silently patched: the authorities/mcp/
+server.js layer:4 manifest violation (§1.0), the cross-root Chronicle/Pulse
+duplication (§6.0), and the server/core/sdoa/ parallel rules implementation
+(§4.0).
+
+The constitution evolves only through governance — never through drift.
+================================================================================
+END OF BOOK VI
+================================================================================
