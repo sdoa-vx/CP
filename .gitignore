@@ -6,6 +6,9 @@ yarn-error.log
 pnpm-debug.log
 *.tsbuildinfo
 
+# Local runtime logs (Phase 8, 2026-07-15)
+.sdoa-logs.jsonl
+
 # Build output
 dist/
 build/
