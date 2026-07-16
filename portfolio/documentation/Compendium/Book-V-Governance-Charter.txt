@@ -1,0 +1,144 @@
+================================================================================
+SDOA COMPENDIUM — BOOK V: GOVERNANCE CHARTER
+Edition: 2026 Constitutional Integration
+Date: 15 July 2026
+Classification: Canonical — Governance Reference
+Amendment Note: Compendium-internal addition (2026-07-15). See ADOPTION NOTE
+at the end of this book before treating this as a v5.4-equivalent ratified
+doctrinal artifact.
+================================================================================
+
+BOOK V — GOVERNANCE CHARTER
+
+0.0 Introduction
+────────────────────────────────────────────────────────────────────────────────
+Book V establishes the unified governance framework for the SDOA ecosystem. It
+consolidates the constitutional content of the Governance Outline, the statutory
+rules introduced in the v5.4 Sleeve Amendment and Manifest-Spec, and the
+governance updates resulting from the MCP Migration 2026. Book V supersedes prior
+locations of governance content while preserving the historical record.
+
+0.1 Table of Contents
+────────────────────────────────────────────────────────────────────────────────
+  0.0  Introduction
+  1.0  Status of the Governance Outline
+  2.0  Sleeve Specification Integration
+  3.0  Constitutional Gap (2026)
+  4.0  Supremacy of Sleeve Amendment
+  5.0  Directory Placement Rules (2026 Revision)
+  6.0  Deduplication Rules (2026 Revision)
+  7.0  File-Type Taxonomy (2026 Update)
+  8.0  Migration Record
+
+1.0 Status of the Governance Outline
+────────────────────────────────────────────────────────────────────────────────
+The Governance Outline, previously archived and marked "superseded" in the
+SDOA-v5.4 Release Notes, remains the active constitutional layer. Amendments
+continued to target the Outline after its archival, confirming its ongoing
+authority. Book V incorporates the Outline by reference and restores its active
+status within the Compendium.
+
+2.0 Sleeve Specification Integration
+────────────────────────────────────────────────────────────────────────────────
+The v5.4 Sleeve Specification is incorporated into Book V as statutory governance.
+This includes:
+
+  - Manifest type: "sleeve"
+  - External block schema
+  - Lifecycle rules
+  - Runtime rules
+  - Validation Rules R1-R17
+  - Boundary topology and ghost-node rules
+  - Mesh and drift telemetry rules
+  - Oracle, Cartographer, and Triage sleeve roles
+
+These rules supersede all prior sleeve-related guidance. Full field-level detail
+remains authoritative in documentation/Manifest-Spec/SDOA-Manifest-Spec-v5.4.txt
+and Compendium/Book-III-Sleeve-Amendment.txt; this section incorporates both by
+reference rather than duplicating their text.
+
+3.0 Constitutional Gap (2026)
+────────────────────────────────────────────────────────────────────────────────
+The SDOA ecosystem currently operates with two governance sources: the
+constitutional Outline and the statutory v5.4 documents. The Outline provides
+sovereignty, naming, placement, deduplication, and amendment rules; the v5.4
+documents provide sleeve, manifest, and validation rules. Book V records this
+dual-authority structure and recommends unification in SDOA v6.0.
+
+4.0 Supremacy of Sleeve Amendment
+────────────────────────────────────────────────────────────────────────────────
+Where governance rules conflict between the Outline and the Sleeve Amendment, the
+Sleeve Amendment governs. Sleeve modules define sovereign behavior for all sleeve
+classes and supersede prior module-class definitions where overlap exists.
+
+5.0 Directory Placement Rules (2026 Revision)
+────────────────────────────────────────────────────────────────────────────────
+Directory placement rules are updated to reflect the MCP Migration 2026:
+
+  - substrate/services/   Node-only sovereign services
+  - substrate/lib/        stable re-export aliases
+  - workflows/            sovereign workflows
+  - server/src/           TypeScript runtime source
+  - server/public/        dashboard assets
+  - evolution/            archived or legacy modules
+  - research/             experimental or future modules
+  - compendium/           canonical documentation
+  - authorities/          MCP authority implementations
+
+Compiled .js twins in server/src/ are prohibited and must be gitignored in place.
+
+6.0 Deduplication Rules (2026 Revision)
+────────────────────────────────────────────────────────────────────────────────
+The following deduplication rules are added based on the MCP Migration 2026:
+
+  - Duplicate sovereigns created by migration scripts must be removed.
+  - Ghost workflows lacking required methods (e.g., .search()) must be archived.
+  - Dead migration scripts (e.g., CopySdoaModules.js) must be archived.
+  - Compiled .js twins must not be tracked in server/src/.
+  - Legacy UI directories (e.g., legacy_v2/) must be archived.
+  - Build artifacts (e.g., .svelte-kit/) must be ignored.
+  - Manifest type gaps (e.g., "sleeve") must be corrected.
+
+These rules supersede prior deduplication guidance.
+
+7.0 File-Type Taxonomy (2026 Update)
+────────────────────────────────────────────────────────────────────────────────
+The following file types are added to the canonical taxonomy:
+
+  - .module.js      cohesive runtime module
+  - .utility.js     pure helper functions without state
+  - .component.js   UI component with DOM-facing behavior
+  - .ui.js          UI logic module not bound to a component
+
+These types were introduced during the MCP Migration 2026 and are now part of the
+governance standard.
+
+8.0 Migration Record
+────────────────────────────────────────────────────────────────────────────────
+The complete record of the SDOA MCP Migration 2026 is preserved in Section 13 of
+the Governance Charter (documentation/Archive/SDOA-Governance-Outline.txt). Book V
+incorporates that record by reference and confirms its authority as the historical
+and technical ledger of the migration.
+
+================================================================================
+ADOPTION NOTE (2026-07-15)
+────────────────────────────────────────────────────────────────────────────────
+Book V is a Compendium-internal governance addition, not a v5.4 doctrinal
+amendment. It was added directly to documentation/Compendium/ under explicit
+project-lead direction, without triggering the Book II §8 ratification process
+and without updating the v5.4 Freeze Certificate checksums.
+
+Flagged for the record: documentation/Freeze/SDOA-v5.4-Freeze-Certificate.txt
+lists "documentation/Compendium/" among the directories frozen at v5.4 and
+states that changes to frozen directories require the Book II §8 process. This
+addition proceeds on the project lead's explicit determination that Compendium
+content is a living constitutional ledger, distinct from the frozen v5.4
+doctrinal artifacts (Whitepaper, Manifest-Spec, Diagrams, Release-Notes,
+Bundle), and therefore does not require re-ratification or a checksum update.
+Recorded here for auditability rather than left as silent drift. See Governance
+Outline Section 13.6 for the full migration record.
+
+The constitution evolves only through governance — never through drift.
+================================================================================
+END OF BOOK V
+================================================================================

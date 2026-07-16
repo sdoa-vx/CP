@@ -11,6 +11,18 @@ and project leads working in this codebase are expected to know and follow
 the rules in this document.
 
 --------------------------------------------------------------------------------
+CROSS-REFERENCE (2026-07-15)
+--------------------------------------------------------------------------------
+This outline is named as a superseded edition in the SDOA v5.4 Release Notes
+(Section 11), but amendments have continued to target it directly (v5.1, v5.2)
+and it remains the active constitutional layer in practice. Compendium/
+Book-V-Governance-Charter.txt formally re-affirms that active status and adds
+a 2026 overlay: v5.4 sleeve-specification integration, a Constitutional Gap
+record, a Sleeve Amendment supremacy clause, and revised directory-placement
+and deduplication rules. Read Book V alongside this outline; this file remains
+the base constitutional text and is not being retired.
+
+--------------------------------------------------------------------------------
 SECTION 1 — GOVERNANCE OVERVIEW
 --------------------------------------------------------------------------------
 
